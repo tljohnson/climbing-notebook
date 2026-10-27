@@ -1,6 +1,6 @@
 # Cragfolio Offline iOS Notebook: Architecture and Implementation Feature Plan
 
-**Status:** Partially approved; ZIP dependency exception and final implementation authorization pending.
+**Status:** Owner-approved implementation plan; prepared for execution by `gpt-luna-latest`. This planning session must not write application code.
 **Prepared:** 2026-10-27
 **Inputs:** `handoff.md` and the owner's clarification answers in this session.
 **Deliverable boundary:** Planning only. File names, contracts, and schemas below describe future work; this document creates no application scaffold.
@@ -33,7 +33,9 @@ The largest risks are data loss at database/file boundaries, destructive restore
 | Funding | Assume Apple developer membership exists. No other recurring costs. |
 | Deployment target | iOS 17+ approved. Minimum/current runtime and device testing remain implementation verification tasks. |
 | Staffing/development | One volunteer developer using an existing MacBook Pro, VS Code, and GitHub. Weekly availability is not specified. |
-| Repository/CI | GitHub Free, not GitLab. Use GitHub Actions; no GitLab pipeline or runner-tag requirement. Repository visibility remains to be confirmed. |
+| Repository/CI | GitHub Free, public repository confirmed by owner. Use standard hosted macOS GitHub Actions; no GitLab pipeline or runner-tag requirement. |
+| Approval and execution | Owner approved the plan after the dependency recommendation and confirmed public GitHub publication. Implementing agent: `gpt-luna-latest`; this session updates instructions only. |
+| Dependency exceptions | Approved plan includes native Xcode/SPM resolution on local/hosted Macs, reviewed stable ZIPFoundation resolution with committed Package.resolved, and immutable third-party Action references with deliberate updates. |
 | Integrity limits/restore | Initial intake/archive/library limits and generation-based replace/revert behavior approved as measurable targets, subject to the stated validation spikes. |
 
 The owner's explicit answers supersede handoff scope ambiguities. In particular, the handoff's OCR acceptance item becomes a later-release criterion, while non-OCR intake and share receiving become v1 requirements.
@@ -46,7 +48,7 @@ The owner's explicit answers supersede handoff scope ambiguities. In particular,
 - SwiftData selected only after the foundation proof of concept passes migration, snapshot, and generation-switch recovery tests. Core Data is the fallback if concrete failures cannot be resolved, not a second implementation maintained in parallel.
 - Minimal structured import: review manually, optionally copy unstructured text into selected sections. No heuristic name/grade/pitch extraction until the post-v1 import phase.
 - MIT is the recommended code license for contributor simplicity, subject to owner choice. Code licensing never licenses user-imported material.
-- Recommend ZIPFoundation through Swift Package Manager with reviewed stable-release updates and committed Package.resolved for reproducibility. This needs a narrow exception to host-installation and unpinned/no-lockfile rules; recommendation is not approval. No dependency installation occurs during planning.
+- Approved dependency direction: ZIPFoundation through Swift Package Manager with reviewed stable-release updates and committed Package.resolved for reproducibility. Native resolution and the narrow reproducibility exceptions are included in the owner's subsequent plan approval. No dependency installation occurs in this planning session.
 
 ### 2.3 Approval Gates
 
@@ -176,7 +178,7 @@ Use a single Xcode project with app, share-extension, unit/integration-test, and
 | User-initiated URL copy | WebKit preview, generic rendered-text capture, explicit selected-asset copying | Nonpersistent browsing session; no crawling or access-control bypass; resource and navigation policy tests |
 | Receiving share | UIKit extension controller, NSItemProvider, App Group mailbox | No direct database access, no assumed main-app launch |
 | Hashes | CryptoKit SHA-256, incrementally | Integrity, not authenticity or encryption |
-| Archive | ZIP manifest + originals, proposed ZIPFoundation | Licensing, untrusted archive limits, policy approval required |
+| Archive | ZIP manifest + originals, approved ZIPFoundation direction | Verify license, stable release, ZIP64 and untrusted archive limits in M1 |
 | Future OCR | Vision text recognition, separate later service | On-device, explicit uncertainty; never required for saved content |
 | Testing | XCTest/XCUITest with real temporary on-disk stores | In-memory tests alone cannot validate migrations or recovery |
 
@@ -414,7 +416,7 @@ The repository currently contains only the untracked `handoff.md`. Preserve it u
 | `CragfolioTests/Fixtures/` | Synthetic old-schema stores, safe/malicious archives, text/PDF/images | Each phase |
 | `CragfolioUITests/NotebookFlows.swift`, `ImportFlows.swift`, `AccessibilityFlows.swift` | Core scenario, review confirmation and accessible actions | M2-M5 |
 | `Scripts/test-ios.sh`, `Scripts/check-coverage.sh` | Standard xcodebuild test entry and real xcresult coverage gate | M1 |
-| `.github/workflows/ios-ci.yml` | Pull-request/main GitHub Actions jobs on standard hosted macOS, bounded artifacts, >=70% coverage | M1; visibility/quota verification |
+| `.github/workflows/ios-ci.yml` | Pull-request/main GitHub Actions jobs on standard hosted macOS for the public repository, bounded artifacts, >=70% coverage | M1; verify runner/toolchain availability |
 | Xcode project's shared SwiftPM `Package.resolved` | Commit reviewed dependency resolution for reproducible local/CI builds, only if exception approved | M1; ZIP policy gate |
 | `.gitignore`, `kilo.json` | Exclude/deny secrets, signing material, generated output and caches; no broad permission weakening | M0 |
 | `README.md`, `LICENSE`, `CONTRIBUTING.md` | Owner-approved license, setup/testing, architecture, release and governance | M0/M6 |
@@ -471,7 +473,7 @@ Estimates are focused contributor effort for the confirmed single volunteer, not
 
 | Milestone | Dependencies | Deliverables and exit criteria | Estimate |
 | --- | --- | --- | --- |
-| M0: Decisions/governance | Plan review | Record approved scope/target/limits and single-developer GitHub workflow; settle license direction, signing/App Group owner, ZIP exception and repository visibility/quota | 10-15 h |
+| M0: Decisions/governance | Approved plan | Record approved scope/target/limits, dependency exceptions and public single-developer GitHub workflow; identify release-only license/signing decisions without blocking simulator foundation | 10-15 h |
 | M1: Integrity foundation | M0 | Single Xcode project; versioned persistence; app/extension identifiers; on-disk migration/reopen, generation switch, ZIP64/limits spike; CI proof with coverage; sample area/route survives relaunch | 40-60 h |
 | M2: Core notebook | M1 accepted | Library/search, route/notes/pitches/edit drafts, revisions and save state, accessible reorder; five-pitch offline text scenario passes | 50-75 h |
 | M3: Media and recovery | M1 contracts; M2 model | Originals/thumbnails/PDF viewer, safe deletion, DTO backup, archive validator, full replace recovery; byte-identical round trip and injected restore failures pass | 70-110 h |
@@ -491,8 +493,8 @@ Each row can become a GitHub issue in the confirmed GitHub repository. GitHub pu
 | CF-02 | P0 / M0 | Choose license/release owner and register bundle/App Group identities without credentials in repo | CF-01 |
 | CF-03 | P0 / M1 | Establish Xcode targets, shared scheme, secret exclusions, attribution and versioned model | CF-01/02 |
 | CF-04 | P0 / M1 | Prove SwiftData migration, explicit save/reopen, context teardown and generation recovery on disk | CF-03 |
-| CF-05 | P0 / M1 | Prove standard ZIP streaming, ZIP64, bounded entry inspection, cancellation, and interoperable extraction | ZIP policy approval |
-| CF-06 | P0 / M1 | Wire GitHub Actions standard hosted macOS tests and real >=70% coverage failure on pull requests/main; prove failure with a controlled test change and verify no-paid-usage settings | Repository visibility/quota verification, CF-03 |
+| CF-05 | P0 / M1 | Prove standard ZIP streaming, ZIP64, bounded entry inspection, cancellation, and interoperable extraction | Approved ZIP policy; CF-03 |
+| CF-06 | P0 / M1 | Wire GitHub Actions standard hosted macOS tests and real >=70% coverage failure on pull requests/main; prove failure with a controlled test change, standard-runner selection and bounded storage | Confirmed public GitHub repository, CF-03 |
 | CF-07 | P0 / M2 | Implement area/route validation, edits, route moves, blocked nonempty-area deletion | CF-04 |
 | CF-08 | P0 / M2 | Implement route workspace and recoverable autosave/error/revision behavior | CF-07 |
 | CF-09 | P0 / M2 | Implement pitch CRUD and accessible atomic reorder; five-pitch test passes | CF-08 |
@@ -524,15 +526,15 @@ Each row can become a GitHub issue in the confirmed GitHub repository. GitHub pu
 
 The owner approved a native local app instead of a service. Do not add Go, PostgreSQL, OIDC, Docker, HTTP endpoints or API docs merely to satisfy unrelated service defaults. Apply secret protection, unit coverage, provenance, documentation, Novacoast manifest attribution, and explicit review gates.
 
-**Dependency recommendation, awaiting approval:** use ZIPFoundation [S11], a free MIT-licensed Swift library, through Swift Package Manager. Select a reviewed stable release rather than a moving development branch; commit the Xcode project's shared Package.resolved and make CI honor that resolution without silently updating it. Request a narrow exception permitting native Xcode/SPM resolution on the MBP and GitHub macOS runners, and reproducible dependency versions/lockfiles for this app. Docker cannot supply the native iOS SDK build environment. This is an explicit proposed departure from the general host-installation and unpinned/no-lockfile rules, not an already approved change.
+**Dependency direction, approved with the plan:** use ZIPFoundation [S11], a free MIT-licensed Swift library, through Swift Package Manager. Select a reviewed stable release rather than a moving development branch; commit the Xcode project's shared Package.resolved and make CI honor that resolution without silently updating it. The owner approved the plan after receiving this recommendation, including its narrow exceptions permitting native Xcode/SPM resolution on the MBP and GitHub macOS runners and reproducible dependency versions/lockfiles for this app. Docker cannot supply the native iOS SDK build environment. These exceptions do not authorize unrelated dependency installations.
 
 Rationale: portable backup is a launch-critical data recovery feature; a mature ZIP implementation is less maintenance and risk for one volunteer than implementing ZIP parsing. Reproducible dependency resolution makes failures and shipped versions traceable. Pinning is not a substitute for patching: review stable/security updates at least monthly and before releases, update via a dedicated pull request, and run archive corruption, ZIP64, cancellation and round-trip tests before merging. Record the resolved revision/license in release evidence. Keep the dependency out of the share extension unless needed. If the exception is declined, revisit a no-dependency document-package format instead of hand-writing a general ZIP parser. Foundation's ZIP upload snapshot [S12] alone does not solve bounded hostile ZIP restore.
 
 **CI decision, approved:** GitHub Free replaces GitLab and its `shared` runner tag. Use `.github/workflows/ios-ci.yml` on pull requests and pushes to main with standard GitHub-hosted macOS runners. Do not set up GitLab or install a persistent runner on the personal MBP.
 
-**Recommended repository posture:** public, consistent with the open-source product, after owner confirmation and a secrets/content audit. Standard hosted runners, including macOS, are free for public repositories [S13-S14], subject to platform usage limits. No paid/larger runner is permitted. Do not change repository visibility as part of plan editing.
+**Confirmed repository posture:** the owner reports the GitHub branch/repository is public. Previously observed remote: `https://github.com/tljohnson/cragfolio.git`; verify current metadata before relying on it. Standard hosted runners, including macOS, are free for public repositories [S13-S14], subject to platform usage limits. No paid/larger runner is permitted. Audit generated changes for secrets/content before any separately authorized publication. Do not change repository visibility.
 
-If the repository stays private, GitHub Free currently includes 2,000 minutes/month and 500 MB artifact storage, with OS-specific usage accounting/rates and account-wide consumption [S13]. Do not interpret that as 2,000 macOS wall-clock minutes. Verify current account billing/usage and quota before enabling CI, keep paid usage blocked, and set budgets with an actual stop-usage control where available; alerts alone are not a spending cap. When free capacity is exhausted, jobs may be blocked: run the same test script locally and record the result without misrepresenting it as a successful hosted check. Resolve required-check/release policy explicitly if CI remains unavailable; never enable overages to unblock it. Repository visibility is therefore a remaining operational decision, not a requirement to buy a plan.
+Private-repository allowances are not the selected CI model. If live metadata contradicts the owner's public-repository report, stop the hosted-CI assumption and report the discrepancy; do not change visibility or billing. Public free runner time does not authorize larger runners, excessive artifact/cache usage, or paid storage. Keep artifacts short-lived and bounded. A prepared workflow is not an executed CI result: until separately authorized changes are published, validate locally and report hosted execution as not yet run.
 
 ### 16.2 Cost and Ownership Budget
 
@@ -543,12 +545,12 @@ If the repository stays private, GitHub Free currently includes 2,000 minutes/mo
 | Build/test hardware | No new recurring spend | Existing MBP confirmed; verify Xcode compatibility, storage and test-device access |
 | CI hosting | $0 additional | Standard macOS Actions runners free for public repo; private repo limited to included allowance, with paid usage blocked |
 | Repository/docs/privacy/support page | Free existing hosting | Static repository pages are acceptable if available; no custom domain/server required |
-| ZIP dependency | $0 license fee | License notice, maintenance/security work, resolution policy approval |
+| ZIP dependency | $0 license fee | License notice and maintenance/security work; narrow resolution policy exception approved |
 | User backups | No app charge | User-selected cloud provider/device storage may have independent limits/costs; local Files/computer backup remains an option |
 
 CI should compile both targets, run unit/integration and selected UI tests, gather xcresult/coverage reports, and fail below threshold. Begin with one standard hosted macOS job on a documented supported image/Xcode combination rather than an expensive matrix; cancel superseded branch runs, cap job time, and keep failure artifacts briefly (proposed three days). Keep caches/artifacts within free storage budgets; never upload personal library data or full large-library fixtures. Perform large-device/old-runtime checks locally and before release.
 
-Use read-only workflow permissions, no signing secrets, and simulator signing-free builds. Test untrusted contributions with the pull_request event, never pull_request_target executing contributed code with privileges. Use GitHub-hosted ephemeral runners rather than exposing the MBP to public-fork code. Recommend immutable commit-SHA references for third-party Actions, with reviewed updates, as part of the pending reproducibility/security exception. Signed distribution remains a deliberate local Xcode operation by the owner; automatic App Store publishing is not required. Where GitHub Free/visibility supports required checks, enforce the CI check before merge; otherwise document the single-developer PR/check discipline without claiming plan features the account lacks.
+Use read-only workflow permissions, no signing secrets, and simulator signing-free builds. Test untrusted contributions with the pull_request event, never pull_request_target executing contributed code with privileges. Use GitHub-hosted ephemeral runners rather than exposing the MBP to public-fork code. Use immutable commit-SHA references for third-party Actions, with reviewed updates, under the approved reproducibility/security exception; verify their real upstream revisions rather than inventing SHAs. Signed distribution remains a deliberate local Xcode operation by the owner; automatic App Store publishing is not required. Document recommended required checks where supported, but changing GitHub repository protection/settings requires separate authorization.
 
 README requirements adapt to a native app: overview, architecture, prerequisites/Xcode, local build and test instructions, document/service contracts instead of HTTP reference, privacy/data storage, environment/signing variables if any, deployment/distribution, and contributing. Explain that Docker commands and service endpoints are intentionally not applicable.
 
@@ -567,8 +569,8 @@ App Store release requires a maintainable signing/release owner, support and pri
 | User mistakes imported beta for verified safety information | High / medium | Visible lineage and notebook positioning; no accuracy/current-condition claims |
 | Copyright/terms violation | High / medium | Explicit one-page user action rather than crawling; disclose that initiation does not settle permission; no bundled third-party beta; review site-specific support claims/adapters before release |
 | URL preview contacts trackers or hostile content | High / medium | Explicit network disclosure, nonpersistent isolated WebKit, no privileged bridge, enforceable destination/resource controls, inert saved output, safe fallbacks |
-| Private-repository CI allowance exhausted or hosted runtime unavailable | High / medium | Prefer public standard hosted macOS after visibility approval; block paid usage, bound jobs/storage, local MBP baseline tests and explicit blocked-check policy |
-| Dependency/action becomes vulnerable or update regresses recovery | High / medium | Recommend reviewed stable resolution/lockfile and immutable Action references; monthly/security updates, archive regression tests and release revision evidence; exception pending |
+| Hosted runtime unavailable or artifact use exceeds free limits | High / medium | Public standard hosted macOS only; bound jobs/storage, local MBP baseline tests, explicit unavailable-check reporting, no paid fallback |
+| Dependency/action becomes vulnerable or update regresses recovery | High / medium | Approved reviewed stable resolution/lockfile and immutable Action references; monthly/security updates, archive regression tests and release revision evidence |
 | Device loss before external export | Critical / medium | Launch backup core, clear reminders and OS-backup limitations; test clean-install recovery |
 | Disk-full/large-image memory termination | High / high | Preflight and enforced resource budgets, streaming/downsampling, oldest-device tests |
 | Volunteer/App Store owner disappears | High / medium | Document signing/release/support ownership, backup maintainer, portable source/data and reproducible instructions |
@@ -577,15 +579,15 @@ App Store release requires a maintainable signing/release owner, support and pri
 
 ## 18. Open Owner Decisions
 
-### Before Implementation Approval
+### Implementation Decisions Resolved
 
 1. **Approved:** iOS 17 minimum. Verify minimum/current runtime and device coverage during foundation; no further baseline decision needed unless testing identifies a concrete blocker.
 2. **Confirmed:** one volunteer developer, existing MBP, VS Code and GitHub. OCR remains postponed; manual intake/review is v1 scope. Weekly hours remain unspecified; calendar estimates are illustrative.
-3. **Recommendation awaiting approval:** ZIPFoundation via native Swift Package Manager, reviewed stable-release resolution, committed Package.resolved, and deliberate tested updates. Approve the narrow local/hosted-macOS dependency and reproducibility exceptions in section 16.1 before resolving dependencies; the same recommendation covers immutable third-party Action references.
-4. **Confirmed:** GitHub Free, not GitLab. Recommend standard hosted macOS GitHub Actions. Confirm public versus private repository visibility; public standard-runner usage is free, while private usage must stay within the account allowance with paid usage blocked. Do not change visibility or billing settings without authorization.
+3. **Approved with the plan:** ZIPFoundation via native Swift Package Manager, reviewed stable-release resolution, committed Package.resolved, and deliberate tested updates. Narrow local/hosted-macOS dependency and reproducibility exceptions apply; so do immutable third-party Action references. No blanket dependency-policy waiver.
+4. **Confirmed:** public GitHub repository on GitHub Free, not GitLab. Use standard hosted macOS GitHub Actions with bounded artifacts/cache. Do not change visibility, billing or repository settings without authorization.
 5. **Approved:** proposed intake/archive/library limits and generation-based replace/revert behavior, with measurement/fault-injection verification as specified.
 
-These numbered updates record the owner's decisions, not blanket approval to start implementation. Final implementation authorization and item 3 remain pending.
+The owner subsequently stated, `Plan is approved. GitHub branch has been published as public.` That resolves implementation authorization and item 3. The owner then instructed this session not to write code and requested instructions for `gpt-luna-latest`; section 21 defines that handoff. Do not treat this instruction document as permission to start visible sessions, commit, push or publish.
 
 ### Before Public Release
 
@@ -620,4 +622,66 @@ Consulted 2026-10-27. Official framework availability and dated submission rules
 
 ## 20. Plan Review Exit
 
-The next action is owner review of this document, especially sections 2, 9, 16, and 18. No app, extension, dependency installation, project configuration, or implementation code is authorized by the existence of this plan. Following approval, begin with M0/M1 validation gates rather than broad UI scaffolding. Record any approved changes and failed-spike decisions in this plan before dependent work proceeds.
+Plan approval is recorded. The next implementation assignment is the bounded M0/M1 handoff in section 21, to be executed by `gpt-luna-latest` when the owner starts or assigns that agent. This session remains planning-only. Record failed-spike evidence and any owner-approved architectural changes before dependent work proceeds. No commits, pushes, repository changes, signing changes, or App Store publication are authorized merely by plan approval.
+
+## 21. GPT-Luna Implementation Handoff
+
+### 21.1 Assignment and Scope
+
+**Intended implementing model:** `gpt-luna-latest`. These instructions are suitable as the opening assignment for an implementation session that also has access to this full plan. Do not create another Agent Manager session or worktree automatically. This document does not claim the implementing model has started or completed any work.
+
+Implement the approved Cragfolio plan, beginning with **M0/M1 only**. Read the full document before editing, particularly sections 6-9, 12-13, and 16. Deliver a buildable, tested foundation and measured feasibility findings, not an entire app in one unverified pass. Stop at the M1 handoff boundary; subsequent milestones can use section 21.5 when assigned. Do not ask again for already resolved iOS, dependency, public GitHub, restore, intake, or OCR decisions.
+
+The planning session has written no application code, resolved no dependencies, created no Xcode targets/workflows, and run no application tests. Earlier read-only checks reported a clean worktree, `Xcode 27.1 / Build version 27A9275`, and origin `https://github.com/tljohnson/cragfolio.git`. Treat those as historical observations: inspect the actual environment and repository, not assumptions. The original handoff may no longer exist in the current checkout; this approved plan is the implementation source of truth. Preserve any existing user/agent changes.
+
+### 21.2 Permissions and Guardrails
+
+- Use Swift/SwiftUI, iOS 17+, one Xcode project, on-device local persistence/files, and no account/backend. The approved native exceptions apply, including SPM on macOS and a committed resolution file. Do not install unrelated package managers, project generators, or dependencies to avoid learning the native project format.
+- VS Code is the preferred editor; Xcode and its tools remain the native build/test environment. Validate toolchain/runtime availability and use a real installed simulator identifier. Do not invent successful builds, test device names, package versions, Action SHAs, or coverage numbers.
+- No OCR, sync, nested areas, merge restore, weather/maps, paid services, analytics, LLM calls, or automatic route-field extraction. URL copying is explicit one-page user action, not reference-only and not unattended crawling.
+- No commits, pushes, PR creation, repository visibility/billing/protection changes, signing credential access, developer-portal registrations, real-site scraping probes, or App Store publishing without separate owner authorization. Use signing-free simulator builds. A provisional reverse-DNS namespace is acceptable for a simulator-only spike if clearly labeled, not registered or presented as final.
+- Do not choose a permanent license or invent Novacoast/App Store legal ownership. Record unresolved license/release identity items without blocking local simulator work; do not distribute a dependency without preserving its required notices.
+- Do not use real personal route libraries or third-party copyrighted guidebooks as fixtures. Use synthetic/generated test data and permitted originals. Never report saved/local status before files and metadata are durably acknowledged.
+- Keep changes small and executable. No empty feature scaffolds, placeholder success paths, disabled tests, in-memory-only integrity validation, generic sync layers, or permissive ZIP extraction hidden behind a convenience API.
+- If a foundation spike disproves the approved design, report the precise failing test/API behavior and the smallest proposed alternative. Do not silently switch to Core Data, reduce backup guarantees/limits, remove URL-copy capability, or weaken the destination policy. Independent safe work may continue, but dependent implementation must stop.
+
+### 21.3 First Work Packet: Foundation, WIP Limit One
+
+Maintain a local structured todo list with one active item. Use CF issue IDs from section 15 in progress/results; this is not permission to create GitHub issues. Work through the following packets in order, except that short feasibility checks may precede scaffolding where they eliminate substantial rework.
+
+| Packet | Work and required output | Exit evidence |
+| --- | --- | --- |
+| F0: Inspect and reconcile | Read repository/global instructions and this plan; inspect status/branch/remotes, Xcode/Swift versions, simulator runtimes/destinations and public repository metadata using read-only operations. Record approval in any stale plan text. Identify signing-only/license decisions as release gates. | Exact environment observations, clean/dirty file inventory, selected installed simulator, and unresolved external prerequisites. No destructive cleanup. |
+| F1: Minimal native build | Create the single Xcode project with app, share-extension, XCTest and UI-test targets/shared scheme. Add minimal launchable foundation UI only, required safe ignore/access-control rules and versioned schema. Build simulator targets before expanding. | Successful xcodebuild invocation with destination, scheme, exit result; shared target membership verified. No need for live App Group registration to prove simulator compilation. |
+| F2: Persistence/generation feasibility | Prove explicit save/reopen with stable IDs and representative related records; use temporary on-disk stores, versioned schemas, a synthetic migration, isolation of old/new library directories, close/rebind behavior, and injected interruption/reopen/rollback cases. | Test names/results and actual files checked. Demonstrate that missing/corrupt stores do not silently create an empty library and no restore path depends on moving only an open database file. |
+| F3: Archive feasibility | Review current stable ZIPFoundation release/license, resolve it reproducibly, record the real revision, and exercise entry-by-entry streaming, CRC/hash checks, cancellation, forbidden paths/link entries, inflated-byte limits, and ZIP64 boundary. | Interoperable archive inspection/round trip, actual >4 GiB boundary test or explicitly incomplete ZIP64 gate. Large generated files stay outside git; check free space and clean only owned scratch files. Do not substitute a tiny archive for a claimed large-file test. |
+| F4: URL-policy feasibility | Prototype only the smallest enforceability check for explicit load, generic text capture and selected-media copy. Use controlled local test content/test harness rather than fetching real guidebook pages. Distinguish harness-only loopback access from production public-destination policy. Verify which WebKit navigation/subresource/DNS/redirect/size protections are actually enforceable. | API availability on iOS 17, real observed behavior, test cases and limitations. A WKNavigationDelegate top-level check alone must not be called complete private-subresource/DNS-rebinding protection. Escalate the documented alternative-design decision if required guarantees cannot be enforced. |
+| F5: CI and evidence | Add the GitHub Actions workflow and shared local test/coverage scripts using free standard macOS runners, read-only permissions and verified immutable Action references. Run the equivalent build/tests locally, enforce >=70% first-party line coverage, and verify the checker fails on a below-threshold sample/result. | Exact local command outputs, target coverage breakdown and failure-gate proof. Workflow is syntax/configuration-validated but hosted CI remains unrun until separately authorized publication. Do not claim local tests prove hosted execution. |
+
+F2-F4 are **feasibility gates**, not permission to implement all route screens, full restore UX or production URL import before the findings are sound. Factor successful spike code into the modest production services only where it is already fit; do not leave duplicate prototype implementations in the shipped target. Provide a concise README for actual setup/build/tests and explain native exceptions, rather than a speculative finished-product manual.
+
+### 21.4 M1 Definition of Done and Return Format
+
+M1 is complete only when a clean checkout can resolve the approved dependency and build both native targets, the sample area's/route's acknowledged save survives reopen, actual on-disk integrity/migration/generation tests pass, the ZIP and URL-policy gates have evidence, and the local coverage check passes with meaningful assertions. A missing runtime, unexecuted large-archive case, unproven WebKit guarantee or unavailable hosted result must be reported explicitly; it is not a pass.
+
+Return one milestone report containing:
+
+1. **Completed CF IDs and files changed:** distinguish finished foundation behavior from feasibility-only work.
+2. **Validation:** exact commands, Xcode/runtime/destination, test counts/results, coverage numerator/denominator and exclusions, archive boundary measurements, and URL-policy observations. Reference retained local evidence paths when useful.
+3. **Failed/deferred gates:** concrete errors or API constraints; distinguish unrun from failed. Explain whether each blocks dependent work or only release verification.
+4. **Decisions required:** only new architecture/permission decisions supported by evidence; do not re-ask resolved scope questions. In an autonomous goal where questions are unavailable, stop dependent work and report a real blocker rather than guessing approval.
+5. **Next packet:** the smallest ready CF issue(s) and dependencies. Leave uncommitted changes available for review. Do not advance past M1 automatically under this first packet.
+
+### 21.5 Later Implementation Packets
+
+When separately assigned to continue, use the same WIP-one and evidence rules. Re-read current code and the prior report; do not repeat completed foundation work. Implement the actual approved feature flows, not just protocol declarations or service stubs.
+
+| Packet | Backlog | Required end-to-end checkpoint |
+| --- | --- | --- |
+| L2: Core notebook | CF-07 through CF-11 | Five-pitch route, common/custom notes, reorder, recoverable save errors, literal local search, accessible actions, acknowledged data retained after restart. |
+| L3: Media and recovery | CF-12 through CF-17 | Immutable originals/PDF viewing, captions/tags/owners, shared-reference deletion safety, portable full export, hostile archive rejection and old-or-new generation recovery. |
+| L4: Intake/share/URL review | CF-18 through CF-21 and CF-20A | Real Files/Photos/paste and extension inbox, receipt idempotence, editable manual review, explicit page/selected-media copying under proven policy, provenance and originals survive backup. |
+| L5: Reliability | CF-22 and CF-23 | Full acceptance matrix, real device/offline/accessibility coverage, resource/large-library measurements, no known critical data-loss issue and real coverage gate. |
+| L6: Release preparation | CF-24 and CF-25 preparation only | Accurate docs/privacy/attribution/licenses and a release checklist. TestFlight upload/App Store submission, signing changes and publication still require explicit authorization. |
+
+Run the relevant unit/integration/UI checks for every packet and the full local suite before milestone handoff. Required failures are work to fix, not reasons to skip tests or lower coverage. This assignment creates no ongoing monitoring schedules, remote publication, new visible sessions or authority to spend money.
