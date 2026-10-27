@@ -34,7 +34,7 @@ The largest risks are data loss at database/file boundaries, destructive restore
 | Deployment target | iOS 17+ approved. Minimum/current runtime and device testing remain implementation verification tasks. |
 | Staffing/development | One volunteer developer using an existing MacBook Pro, VS Code, and GitHub. Weekly availability is not specified. |
 | Repository/CI | GitHub Free, public repository confirmed by owner. Use standard hosted macOS GitHub Actions; no GitLab pipeline or runner-tag requirement. |
-| Approval and execution | Owner approved the plan after the dependency recommendation and confirmed public GitHub publication. Implementing agent: `gpt-luna-latest`; this session updates instructions only. |
+| Approval and execution | Owner approved the plan after the dependency recommendation and confirmed public GitHub publication. Implementing agent: `gpt-luna-latest`; |
 | Dependency exceptions | Approved plan includes native Xcode/SPM resolution on local/hosted Macs, reviewed stable ZIPFoundation resolution with committed Package.resolved, and immutable third-party Action references with deliberate updates. |
 | Integrity limits/restore | Initial intake/archive/library limits and generation-based replace/revert behavior approved as measurable targets, subject to the stated validation spikes. |
 
