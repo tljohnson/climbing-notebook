@@ -31,5 +31,10 @@ xcrun swiftc -O -I "$SCRATCH" -L "$SCRATCH" -lZIPFoundation \
 /usr/bin/time -l "$SCRATCH/probe" create "$SCRATCH"
 /usr/bin/time -l python3 "$ROOT/Scripts/archive-boundary-independent.py" "$SCRATCH"
 /usr/bin/time -l "$SCRATCH/probe" verify "$SCRATCH"
+if [[ "${CF05D_PREFLIGHT:-0}" == 1 ]]; then
+  xcrun swiftc -O "$ROOT/ClimbingNotebookTests/ArchivePreflightProbe.swift" \
+    "$ROOT/Scripts/ArchivePreflightHostProbe.swift" -o "$SCRATCH/preflight"
+  /usr/bin/time -l "$SCRATCH/preflight" "$SCRATCH"
+fi
 du -k "$SCRATCH"/*.zip
 printf 'PASS CF-05A large boundary probe; removing owned scratch %s\n' "$SCRATCH"

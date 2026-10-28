@@ -17,7 +17,7 @@ final class ArchiveHostileFeasibilityTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: scratch.path))
     }
 
-    private func open(_ data: Data) throws -> Archive {
+    func open(_ data: Data) throws -> Archive {
         // The out-of-range-offset fixture traps in MemoryFile.readData(buffer:) when
         // opened with Archive(data:accessMode:). File-backed reading returns nil.
         // Keep using the intended file input API; initial crash evidence is retained.
@@ -30,7 +30,7 @@ final class ArchiveHostileFeasibilityTests: XCTestCase {
         case path, type, entryCount, perEntry, aggregate, checksum, size
     }
 
-    private struct Record {
+    struct Record {
         var name = "manifest.json"
         var payload = Data("hello".utf8)
         var crc: UInt32 = 0x3610a686
@@ -40,15 +40,16 @@ final class ArchiveHostileFeasibilityTests: XCTestCase {
         var mode: UInt32 = 0o100644
         var localExtra = Data()
         var centralExtra = Data()
+        var descriptor = Data()
         var localPatches: [(Int, UInt32, Int)] = []
         var centralPatches: [(Int, UInt32, Int)] = []
     }
 
-    private func put(_ value: UInt32, in data: inout Data, at offset: Int, width: Int) {
+    func put(_ value: UInt32, in data: inout Data, at offset: Int, width: Int) {
         for index in 0..<width { data[offset + index] = UInt8(truncatingIfNeeded: value >> (8 * index)) }
     }
 
-    private func fixture(_ records: [Record], endPatches: [(Int, UInt32, Int)] = []) -> Data {
+    func fixture(_ records: [Record], endPatches: [(Int, UInt32, Int)] = []) -> Data {
         var locals = Data(), central = Data()
         for record in records {
             let name = Data(record.name.utf8)
@@ -63,6 +64,7 @@ final class ArchiveHostileFeasibilityTests: XCTestCase {
             local.append(name)
             local.append(record.localExtra)
             local.append(record.payload)
+            local.append(record.descriptor)
             var directory = Data(count: 46)
             for (offset, value, width) in [(0, UInt32(0x02014b50), 4), (4, 0x314, 2), (6, 20, 2),
                 (8, UInt32(record.flags), 2), (10, UInt32(record.method), 2), (16, record.crc, 4),

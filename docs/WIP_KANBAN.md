@@ -6,6 +6,13 @@
 
 ## Blocked
 
+- [ ] `CF-05D` Measure test-only bounded structural ZIP preflight
+  - Priority: P0
+  - Owner: Kilo/local
+  - Blocked by: Owner/independent review of exact compressed-input consumption and unresolved extra/layout semantics; see `../README.md` CF-05D for passing bounded matrix/large probe and retained counterexample.
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.1
+  - Done when: Bounded structural probe rejects hostile fixtures before extraction, verifies valid ZIP/ZIP64/descriptor controls and independent large fixtures, records simulator/coverage evidence and stops on unresolved compatibility/link/extraction guarantees.
+
 - [ ] `CF-05B` Bound hostile-entry/header rejection feasibility
   - Priority: P0
   - Owner: Kilo/local
@@ -21,6 +28,14 @@
   - Done when: Test-only synthetic migration preserves IDs, Unicode and relationships after explicit save/reopen; deterministic failure preserves an independent closed generation including sidecars, supports recovery/retry without empty-library fallback, and full minimum/current simulator suites and coverage pass with documented limits.
 
 ## Review
+
+- [ ] `CF-05C` Design the bounded archive preflight feasibility packet
+  - Priority: P0
+  - Owner: Kilo/local
+  - Depends on: Committed CF-05B evidence; owner authorized only the recommended test-only CF-05D spike
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.1
+  - Done when: Source-backed options, test-only API/data boundary, affected files, hostile/valid acceptance matrix and explicit approval boundary are recorded without dependency or production validator changes.
+  - Evidence: Plan §21.4.1; `../README.md` CF-05C/CF-05D; release/development source inspected without package changes; design awaits independent verification.
 
 - [ ] `CF-05A` Measure bounded ZIP64 and independent-tool interoperability
   - Priority: P0
