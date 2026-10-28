@@ -72,10 +72,13 @@ enum ArchivePreflightProbe {
     }
 
     // Framing is checked even for fields whose semantics are not implemented.
-    private static func extras(_ data: Data) throws -> [UInt64: Data] {
+    private static func extras(_ data: Data, reader: Reader) throws -> [UInt64: Data] {
         var result: [UInt64: Data] = [:]
         var position = 0
         while position < data.count {
+            if reader.cancelled() { throw Failure.cancelled }
+            // Research cardinality budget, not a production extra-field compatibility policy.
+            guard result.count < 64 else { throw Failure.budget }
             let id = try number(data, position, 2)
             let count = Int(try number(data, position + 2, 2))
             guard count <= data.count - position - 4, result[id] == nil else { throw Failure.malformed }
@@ -104,14 +107,19 @@ enum ArchivePreflightProbe {
         let tailSize = min(reader.length, 65_557)
         let tailStart = reader.length - tailSize
         let tail = try reader.read(tailStart, tailSize)
-        var candidates: [Int] = []
+        var candidate: Int?
         if tail.count >= 22 {
-            for index in 0...tail.count - 22 where tail[index] == 0x50 {
+            for index in 0...tail.count - 22 {
+                if index % 1024 == 0, cancelled() { throw Failure.cancelled }
+                guard tail[index] == 0x50 else { continue }
                 if try number(tail, index, 4) == 0x06054b50,
-                   index + 22 + Int(try number(tail, index + 20, 2)) == tail.count { candidates.append(index) }
+                   index + 22 + Int(try number(tail, index + 20, 2)) == tail.count {
+                    guard candidate == nil else { throw Failure.malformed }
+                    candidate = index
+                }
             }
         }
-        guard candidates.count == 1, let index = candidates.first else { throw Failure.malformed }
+        guard let index = candidate else { throw Failure.malformed }
         let eocd = tail.subdata(in: index..<index + 22)
         let eocdOffset = tailStart + UInt64(index)
         guard try number(eocd, 4, 2) == 0, try number(eocd, 6, 2) == 0 else { throw Failure.unresolvedLayout }
@@ -158,12 +166,12 @@ enum ArchivePreflightProbe {
             let nameCount = try number(cd, 28, 2), extraCount = try number(cd, 30, 2)
             let variableCount = try nameCount + extraCount + number(cd, 32, 2)
             let next = try end(cursor + 46, variableCount, within: directoryEnd)
-            // Includes transient variable fields and a conservative fixed record allowance.
+            // Encoded-byte accounting only; not a Swift heap allocation/RSS guarantee.
             guard variableCount + 256 <= UInt64(metadataLimit - retained) else { throw Failure.budget }
             retained += Int(variableCount) + 256
             let variable = try reader.read(cursor + 46, variableCount)
             let name = variable.subdata(in: 0..<Int(nameCount))
-            let extra = try extras(variable.subdata(in: Int(nameCount)..<Int(nameCount + extraCount)))
+            let extra = try extras(variable.subdata(in: Int(nameCount)..<Int(nameCount + extraCount)), reader: reader)
             let values = try effective([number(cd, 24, 4), number(cd, 20, 4), number(cd, 42, 4), number(cd, 34, 2)],
                                        widths: [8, 8, 8, 4], extra: extra[1])
             guard values[3] == 0 else { throw Failure.unresolvedLayout }
@@ -185,7 +193,7 @@ enum ArchivePreflightProbe {
             retained += Int(localNames + localExtras)
             let localVariable = try reader.read(localOffset + 30, localNames + localExtras)
             guard localVariable.prefix(Int(localNames)).elementsEqual(name) else { throw Failure.disagreement }
-            let lextra = try extras(localVariable.subdata(in: Int(localNames)..<localVariable.count))
+            let lextra = try extras(localVariable.subdata(in: Int(localNames)..<localVariable.count), reader: reader)
             var localSizes = try [number(local, 22, 4), number(local, 18, 4)]
             if let zipSizes = lextra[1] {
                 // APPNOTE 4.5.3 requires BOTH local sizes, unlike conditional CD fields.
@@ -245,12 +253,15 @@ enum ArchivePreflightProbe {
         }
         guard cursor == directoryEnd else { throw Failure.disagreement }
         var previous: UInt64 = 0
+        if cancelled() { throw Failure.cancelled }
         for item in items.sorted(by: { $0.local.lowerBound < $1.local.lowerBound }) {
+            if cancelled() { throw Failure.cancelled }
             guard item.local.lowerBound >= previous else { throw Failure.disagreement }
             guard item.local.lowerBound == previous else { throw Failure.unresolvedLayout }
             previous = item.descriptor.upperBound
         }
         guard previous == offset else { throw Failure.unresolvedLayout }
+        if cancelled() { throw Failure.cancelled }
         return Result(fileBytes: reader.length, directory: offset..<directoryEnd, items: items,
                       readBytes: reader.bytes, largestRead: reader.largest)
     }

@@ -2,6 +2,86 @@ import XCTest
 import ZIPFoundation
 
 extension ArchiveHostileFeasibilityTests {
+    func testZIP64ZeroOffsetAndLocalOnlyDescriptorRemainReconciliationGaps() throws {
+        let zero = Record(centralExtra: Data([1, 0, 8, 0]) + Data(count: 8),
+                          centralPatches: [(6, 45, 2), (42, .max, 4)])
+        let hidden = try open(fixture([zero]))
+        XCTAssertEqual(try ArchivePreflightProbe.inspect(hidden.url).items.count, 1)
+        XCTAssertEqual(Array(hidden).count, 0) // pinned library falls back to sentinel for offset zero
+
+        var extra = Data(count: 20)
+        put(1, in: &extra, at: 0, width: 2); put(16, in: &extra, at: 2, width: 2)
+        put(5, in: &extra, at: 4, width: 4); put(5, in: &extra, at: 12, width: 4)
+        var descriptor = Data(count: 24)
+        put(0x08074b50, in: &descriptor, at: 0, width: 4)
+        put(0x3610a686, in: &descriptor, at: 4, width: 4)
+        put(5, in: &descriptor, at: 8, width: 4); put(5, in: &descriptor, at: 16, width: 4)
+        let record = Record(flags: 0x808, localExtra: extra, descriptor: descriptor,
+                            localPatches: [(4, 45, 2), (14, 0, 4), (18, .max, 4), (22, .max, 4)])
+        let archive = try open(fixture([record]))
+        XCTAssertEqual(try ArchivePreflightProbe.inspect(archive.url).items[0].inflated, 5)
+        XCTAssertEqual(try XCTUnwrap(Array(archive).first).uncompressedSize, 0)
+        // Neither mismatch may authorize extraction; no compatibility rule is changed here.
+    }
+
+    func testPreflightExtraCardinalityAndMidInspectionCancellation() throws {
+        var extras = Data()
+        for id in 0..<16_383 {
+            var field = Data(count: 4)
+            put(UInt32(id + 100), in: &field, at: 0, width: 2)
+            extras.append(field)
+        }
+        let archive = try open(fixture([Record(centralExtra: extras)]))
+        XCTAssertThrowsError(try ArchivePreflightProbe.inspect(archive.url, metadataLimit: 66 * 1024)) {
+            XCTAssertEqual($0 as? ArchivePreflightProbe.Failure, .budget)
+        }
+        let valid = try open(fixture([Record(), Record(name: "second")]))
+        var checkpoints = 0
+        XCTAssertThrowsError(try ArchivePreflightProbe.inspect(valid.url, cancelled: {
+            checkpoints += 1
+            return checkpoints == 6
+        })) {
+            XCTAssertEqual($0 as? ArchivePreflightProbe.Failure, .cancelled)
+        }
+        XCTAssertEqual(checkpoints, 6)
+    }
+
+    func testProgressAndProviderReadCountsDoNotProveConsumedInput() throws {
+        let stream = Data([0xcb, 0x48, 0xcd, 0xc9, 0xc9, 0x07, 0])
+        for suffix in [Data(), Data([0xde, 0xad]), stream] {
+            let payload = stream + suffix
+            let archive = try open(fixture([Record(payload: payload, method: 8)]))
+            let entry = try XCTUnwrap(Array(archive).first)
+            for buffer in [2, 7, 32] {
+                let progress = Progress(totalUnitCount: 0)
+                var output = Data()
+                let crc = try archive.extract(entry, bufferSize: buffer, progress: progress) {
+                    guard $0.count <= 5 - output.count else { throw ArchivePreflightProbe.Failure.budget }
+                    output.append($0)
+                }
+                XCTAssertEqual(output, Data("hello".utf8))
+                XCTAssertEqual(crc, entry.checksum)
+                XCTAssertEqual(progress.totalUnitCount, 5)
+                XCTAssertEqual(progress.completedUnitCount, 5)
+            }
+            var supplied = 0
+            var output = Data()
+            let crc = try Data.decompress(size: Int64(payload.count), bufferSize: 32, skipCRC32: false,
+                provider: { position, size in
+                    XCTAssertEqual(Int(position), supplied)
+                    let bytes = payload.subdata(in: Int(position)..<Int(position) + size)
+                    supplied += bytes.count
+                    return bytes
+                }, consumer: {
+                    guard $0.count <= 5 - output.count else { throw ArchivePreflightProbe.Failure.budget }
+                    output.append($0)
+                })
+            XCTAssertEqual(supplied, payload.count) // read-ahead includes unused suffix
+            XCTAssertEqual(output, Data("hello".utf8))
+            XCTAssertEqual(crc, 0x3610a686)
+        }
+    }
+
     func testPreflightCannotProveExactDeflateConsumption() throws {
         // Structurally accounted payload has a valid stream followed by non-stream bytes.
         // ZIPFoundation returns matching content/CRC but exposes no consumed-input count.
@@ -41,6 +121,9 @@ extension ArchiveHostileFeasibilityTests {
                 XCTAssertEqual(result.items[0].descriptor.count, descriptor.count)
                 XCTAssertEqual(result.items[0].inflated, 5)
                 XCTAssertEqual(Array(archive).count, 1)
+                XCTAssertEqual(Array(archive).first?.uncompressedSize, result.items[0].inflated)
+                XCTAssertEqual(Array(archive).first?.compressedSize, result.items[0].compressed)
+                XCTAssertEqual(Array(archive).first.map { UInt64($0.checksum) }, result.items[0].crc)
                 var count = 0
                 let crc = try archive.extract(try XCTUnwrap(Array(archive).first), bufferSize: 2) { count += $0.count }
                 XCTAssertEqual(count, 5); XCTAssertEqual(crc, 0x3610a686)

@@ -29,6 +29,14 @@
 
 ## Review
 
+- [ ] `CF-05E` Review structural probe and strict extraction result boundary
+  - Priority: P0
+  - Owner: Kilo/local
+  - Depends on: Committed CF-05D; no decoder/fork/dependency expansion
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.2
+  - Done when: Bounded review findings have executable regressions, public progress/provider workarounds are checked, and strict extraction API requirements and remaining blockers are recorded with simulator/coverage evidence.
+  - Evidence: `../README.md` CF-05E; probe corrections and three regression methods; focused 17/17 each, full 33/35 each (known CF-04B only), coverage 167/194; `.build/CF05E-large-20261028.log`.
+
 - [ ] `CF-05C` Design the bounded archive preflight feasibility packet
   - Priority: P0
   - Owner: Kilo/local
