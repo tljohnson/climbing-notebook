@@ -2,35 +2,42 @@
 
 ## Ready
 
-- [ ] `CF-05G` Implement bounded local strict extraction and ZIP64 candidate
+- [ ] `CF-07A` Build disposable native notebook interaction prototype
   - Priority: P0
   - Owner: Unassigned
-  - Depends on: Explicit owner approval recorded in plan §21.4.3; Leif maintains, separate agent-assisted review
-  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.3
-  - Done when: Isolated test-only candidate has traceable pinned provenance, strict-result/ZIP64 acceptance evidence, required simulator/coverage/large checks and separate review, or documented stop-condition blockers; no production adoption or decoder replacement.
+  - Depends on: Owner-approved prototype-first sequencing exception; no archive or durable storage dependency
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.4
+  - Done when: Synthetic library/area-to-route flow supports five pitches, note edits and accessible reorder with a visible reset-on-relaunch notice; simulator/test/coverage evidence and Leif's usability review are recorded without durable-save claims.
 
 ## In Progress
 
 ## Blocked
 
+- [ ] `CF-05G` Implement bounded local strict extraction and ZIP64 candidate
+  - Priority: P2
+  - Owner: Kilo/local
+  - Blocked by: Owner paused archive research under §21.4.4; requires explicit reprioritization, not file access. Unused candidate copy removed.
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.3
+  - Done when: Isolated test-only candidate has traceable pinned provenance, strict-result/ZIP64 acceptance evidence, required simulator/coverage/large checks and separate review, or documented stop-condition blockers; no production adoption or decoder replacement.
+
 - [ ] `CF-05D` Measure test-only bounded structural ZIP preflight
   - Priority: P0
   - Owner: Kilo/local
-  - Blocked by: Owner/independent review of exact compressed-input consumption and unresolved extra/layout semantics; see `../README.md` CF-05D for passing bounded matrix/large probe and retained counterexample.
+  - Blocked by: Restore acceptance needs exact compressed-input consumption and extra/layout semantics; research paused under §21.4.4, not a CF-07A prerequisite. See `../README.md` CF-05D.
   - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.1
   - Done when: Bounded structural probe rejects hostile fixtures before extraction, verifies valid ZIP/ZIP64/descriptor controls and independent large fixtures, records simulator/coverage evidence and stops on unresolved compatibility/link/extraction guarantees.
 
 - [ ] `CF-05B` Bound hostile-entry/header rejection feasibility
   - Priority: P0
   - Owner: Kilo/local
-  - Blocked by: Owner review of strict preflight capability for silent enumeration/header-observability gaps; bounded matrix awaits independent verification. See `../README.md` CF-05B and `ClimbingNotebookTests/ArchiveHostileFeasibilityTests.swift`.
+  - Blocked by: Restore acceptance needs complete inspection despite silent enumeration/header gaps; research paused under §21.4.4, not a CF-07A prerequisite. See `../README.md` CF-05B.
   - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §§9.1–9.4, §21.3 F3
   - Done when: Small synthetic hostile fixtures distinguish library behavior from whole-archive policy rejection, expose observability gaps, and record minimum/current focused/full tests, coverage and remaining owner-review gates without production validation claims.
 
 - [ ] `CF-04B` Prove bounded on-disk migration preservation and recovery
   - Priority: P0
   - Owner: Kilo/local
-  - Blocked by: Owner review of reproducible SwiftData teardown failure; see `../README.md` CF-04B evidence and proposed test-only process-boundary investigation.
+  - Blocked by: Generation/migration recovery needs proven store teardown; not a disposable CF-07A prerequisite. See `../README.md` CF-04B and plan §21.4.4 for sequencing.
   - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §6.4, §9.5, §21.3 F2
   - Done when: Test-only synthetic migration preserves IDs, Unicode and relationships after explicit save/reopen; deterministic failure preserves an independent closed generation including sidecars, supports recovery/retry without empty-library fallback, and full minimum/current simulator suites and coverage pass with documented limits.
 
