@@ -2,6 +2,13 @@
 
 ## Ready
 
+- [ ] `CF-05G` Implement bounded local strict extraction and ZIP64 candidate
+  - Priority: P0
+  - Owner: Unassigned
+  - Depends on: Explicit owner approval recorded in plan §21.4.3; Leif maintains, separate agent-assisted review
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.3
+  - Done when: Isolated test-only candidate has traceable pinned provenance, strict-result/ZIP64 acceptance evidence, required simulator/coverage/large checks and separate review, or documented stop-condition blockers; no production adoption or decoder replacement.
+
 ## In Progress
 
 ## Blocked
@@ -28,6 +35,14 @@
   - Done when: Test-only synthetic migration preserves IDs, Unicode and relationships after explicit save/reopen; deterministic failure preserves an independent closed generation including sidecars, supports recovery/retry without empty-library fallback, and full minimum/current simulator suites and coverage pass with documented limits.
 
 ## Review
+
+- [ ] `CF-05F` Choose strict extraction and ZIP64 reconciliation implementation boundary
+  - Priority: P0
+  - Owner: Kilo/local
+  - Depends on: CF-05E evidence; design review only, no dependency/decoder implementation
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §§21.4.2–21.4.3
+  - Done when: Source-backed options, exact proposed API/source changes, maintenance ownership, acceptance matrix and explicit owner approval boundary are recorded for independent review without dependency or production changes.
+  - Evidence: Plan §21.4.3; `../README.md` CF-05F; source/destinations reverified, documentation diff check passes; owner approved bounded CF-05G with Leif maintaining and agent-assisted review; capability evidence remains Review.
 
 - [ ] `CF-05E` Review structural probe and strict extraction result boundary
   - Priority: P0
