@@ -4,7 +4,7 @@
 **Prepared:** 2026-10-27
 **Updated:** 2026-10-28
 **Inputs:** `handoff.md` and the owner's clarification answers in this session.
-**Deliverable boundary:** Planning only. File names, contracts, and schemas below describe future work; this document creates no application scaffold.
+**Deliverable boundary:** Approved implementation specification. The repository now contains a partial M0/M1 foundation; prospective files and contracts below are not claims of implemented features. Current measured evidence and remaining gates are maintained in `README.md` under Feasibility Status.
 
 ## 1. Executive Summary
 
@@ -42,7 +42,7 @@ The largest risks are data loss at database/file boundaries, destructive restore
 | Code license | Owner approved starting with MIT after discussing GPLv3 distribution concerns; MIT supersedes the earlier GPLv3 selection for first-party code. Preserve third-party notices. |
 | Release ownership | Leif Johnson owns signing, releases, support and privacy URLs. Owner-controlled leifdigital.com will host new app pages without additional hosting costs; pages are not yet built. |
 | Language and retention | English-first UI with Unicode user content confirmed; retain originals/raw text until explicit deletion, without automatic expiry of ready deliveries or saved drafts. |
-| Minimum-runtime availability | Owner reports downloading the iOS 17 Simulator in Xcode. Installation and test execution are not yet verified; deployment target remains iOS 17. |
+| Minimum-runtime availability | iOS 17.0 Simulator installation and execution verified on 2026-10-28: the 19-test foundation suite passes on iPhone 15 Pro, as well as iOS 27.0. Physical-device coverage remains unverified; deployment target remains iOS 17. |
 
 The owner's explicit answers supersede handoff scope ambiguities. In particular, the handoff's OCR acceptance item becomes a later-release criterion, while non-OCR intake and share receiving become v1 requirements.
 
@@ -396,7 +396,7 @@ Add Vision extraction only after v1 integrity gates. Rasterize selected PDF page
 
 ## 12. Planned Repository Files
 
-The repository currently contains only the untracked `handoff.md`. Preserve it unchanged. This plan is the only file created now. Paths below are prospective; create them only during approved implementation. Combine tiny files where practical rather than treating the map as a mandate for one class per file.
+The repository now contains a partial M0/M1 Xcode foundation, feasibility tests, scripts and CI configuration. Paths below remain the planned map, not an inventory of completed features; inspect source and `README.md` for actual implementation status. Preserve any existing handoff material unchanged. Combine tiny files where practical rather than treating the map as a mandate for one class per file.
 
 | Planned path | Action / responsibility | Phase |
 | --- | --- | --- |
@@ -669,6 +669,8 @@ Maintain a local structured todo list with one active item. Use CF issue IDs fro
 F2-F4 are **feasibility gates**, not permission to implement all route screens, full restore UX or production URL import before the findings are sound. Factor successful spike code into the modest production services only where it is already fit; do not leave duplicate prototype implementations in the shipped target. Provide a concise README for actual setup/build/tests and explain native exceptions, rather than a speculative finished-product manual.
 
 ### 21.4 M1 Definition of Done and Return Format
+
+CF-04A progress (2026-10-28): the generation feasibility harness now blocks initialization/replacement over pending recovery, rejects same-generation journals, and injects the descriptor-before-journal checkpoint without changing serialized journal phases. On-disk tests cover invalid replacements/metadata, missing/corrupt fallback, repeated recovery, and retry after repairing a failed-recovery fixture. The full 19-test suite passes on iOS 17.0 and iOS 27.0 with 167/194 combined first-party lines covered (86.08%). Exact commands, simulator IDs and result paths are in `README.md`. This closes only the bounded recovery-matrix increment, not CF-04 or M1: actual termination, broader migration, full schema/sample UI, ZIP64/interoperability and enforceable URL-policy gates remain.
 
 M1 is complete only when a clean checkout can resolve the approved dependency and build both native targets, the sample area's/route's acknowledged save survives reopen, actual on-disk integrity/migration/generation tests pass, the ZIP and URL-policy gates have evidence, and the local coverage check passes with meaningful assertions. A missing runtime, unexecuted large-archive case, unproven WebKit guarantee or unavailable hosted result must be reported explicitly; it is not a pass.
 
