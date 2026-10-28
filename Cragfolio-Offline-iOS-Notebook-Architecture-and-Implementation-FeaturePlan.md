@@ -2,6 +2,7 @@
 
 **Status:** Owner-approved implementation plan.
 **Prepared:** 2026-10-27
+**Updated:** 2026-10-28
 **Inputs:** `handoff.md` and the owner's clarification answers in this session.
 **Deliverable boundary:** Planning only. File names, contracts, and schemas below describe future work; this document creates no application scaffold.
 
@@ -37,17 +38,22 @@ The largest risks are data loss at database/file boundaries, destructive restore
 | Approval and execution | Owner approved the plan after the dependency recommendation and confirmed public GitHub publication. |
 | Dependency exceptions | Approved plan includes native Xcode/SPM resolution on local/hosted Macs, reviewed stable ZIPFoundation resolution with committed Package.resolved, and immutable third-party Action references with deliberate updates. |
 | Integrity limits/restore | Initial intake/archive/library limits and generation-based replace/revert behavior approved as measurable targets, subject to the stated validation spikes. |
+| Platform presentation | Owner confirmed iPhone as primary target with minimal iPad support. |
+| Code license | Owner approved starting with MIT after discussing GPLv3 distribution concerns; MIT supersedes the earlier GPLv3 selection for first-party code. Preserve third-party notices. |
+| Release ownership | Leif Johnson owns signing, releases, support and privacy URLs. Owner-controlled leifdigital.com will host new app pages without additional hosting costs; pages are not yet built. |
+| Language and retention | English-first UI with Unicode user content confirmed; retain originals/raw text until explicit deletion, without automatic expiry of ready deliveries or saved drafts. |
+| Minimum-runtime availability | Owner reports downloading the iOS 17 Simulator in Xcode. Installation and test execution are not yet verified; deployment target remains iOS 17. |
 
 The owner's explicit answers supersede handoff scope ambiguities. In particular, the handoff's OCR acceptance item becomes a later-release criterion, while non-OCR intake and share receiving become v1 requirements.
 
 ### 2.2 Proposed Defaults, Not Yet Approved
 
 - Schedule illustrations use 10 hours/week, not an owner-specified commitment. Staffing is confirmed as one volunteer; do not assume additional reviewers are available.
-- iPhone-first native UI with adaptive iPad presentation and no iPad-exclusive features. Test basic iPad support if the target declares iPad compatibility.
+- Owner-confirmed presentation: iPhone-first native UI with minimal adaptive iPad support and no iPad-exclusive features. Verify basic iPad functionality.
 - Foundation/SwiftData APIs must remain within the approved iOS 17 deployment target. Do not use newer SwiftData inheritance or custom-store APIs for v1.
 - SwiftData selected only after the foundation proof of concept passes migration, snapshot, and generation-switch recovery tests. Core Data is the fallback if concrete failures cannot be resolved, not a second implementation maintained in parallel.
 - Minimal structured import: review manually, optionally copy unstructured text into selected sections. No heuristic name/grade/pitch extraction until the post-v1 import phase.
-- MIT is the recommended code license for contributor simplicity, subject to owner choice. Code licensing never licenses user-imported material.
+- Owner approved MIT as the starting first-party code license on 2026-10-28, superseding the earlier GPLv3 selection. Code licensing never licenses user-imported material. Preserve dependency notices and confirm the copyright holder before finalizing the license notice; release ownership and Novacoast builder attribution do not independently establish copyright ownership.
 - Approved dependency direction: ZIPFoundation through Swift Package Manager with reviewed stable-release updates and committed Package.resolved for reproducibility. Native resolution and the narrow reproducibility exceptions are included in the owner's subsequent plan approval. No dependency installation occurs in this planning session.
 
 ### 2.3 Approval Gates
@@ -592,10 +598,10 @@ The owner subsequently stated, `Plan is approved. GitHub branch has been publish
 ### Before Public Release
 
 6. Final app name, bundle/UTType/App Group namespace, branding, and App Store seller/Novacoast attribution placement.
-7. Code license, contributor agreement/DCO if desired, issue/code review governance, and backup maintainer.
-8. Signer/App Store team authority, support/privacy URL owner, review cadence and long-term membership continuity.
-9. Confirm original/raw-text retention UX and user-visible warnings. Current default retains until explicit deletion; no automatic expiry of ready deliveries or saved drafts.
-10. Confirm English-first UI and basic iPad compatibility scope. No inferred map/location/grade-system requirements.
+7. MIT is selected as the starting code license. Confirm copyright ownership and finalize license text/notices, contributor agreement/DCO if desired, issue/code review governance, and backup maintainer. The earlier GPLv3-only versus GPLv3-or-later question no longer applies.
+8. Leif Johnson is the confirmed signing/release/support/privacy owner. Confirm Apple team authority, review cadence and long-term membership continuity. Build support/privacy pages on owner-controlled leifdigital.com; final page URLs are not yet selected or live.
+9. Retention until explicit deletion is confirmed, with no automatic expiry of ready deliveries or saved drafts. Validate the detailed retention UX and user-visible warnings before release.
+10. English-first UI with Unicode content and iPhone-primary/minimal-iPad scope are confirmed. No inferred map/location/grade-system requirements.
 
 Generic user-initiated URL copying is included in v1 per owner direction. Site-tailored automation/support claims, sync, nested areas, merge restore, and OCR need separate review later. User initiation changes the interaction boundary, not the site's license or technical access controls.
 

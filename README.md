@@ -54,7 +54,9 @@ The test-only WebKit harness loads explicit synthetic HTML into a nonpersistent 
 
 M1 is incomplete: the full schema/sample persistence UI, broader migration/fault matrix, ZIP64/interoperability and URL-policy gates, newest-installed-runtime and minimum-OS/device verification remain. Generation tests inject thrown interruptions within one process, not actual termination, and do not prove power-loss/fsync durability. A synthetic migration proves API feasibility, not released-schema compatibility. No M2 feature work has started. The next independent work is CF-04's complete generation/migration matrix and CF-05's ZIP64/interoperability evidence; CF-20A needs review of an enforceable networking design before production URL intake.
 
-The final app name, bundle/App Group identities, license, signer, release owner, support/privacy URLs, and store distribution remain release decisions. No license has yet been selected for this repository.
+The owner approved MIT as the starting first-party code license, superseding the earlier GPLv3 selection. Confirm the copyright holder before finalizing the repository's license notice; signing/release ownership and builder attribution do not independently establish copyright ownership. Preserve ZIPFoundation's MIT notice. The code license does not license user-imported content.
+
+Leif Johnson owns signing, releases, support and privacy URLs. New app pages are planned on owner-controlled leifdigital.com without additional hosting costs; no final page URLs are live or verified yet. Final app/bundle/App Group identities and Apple team registration remain pending. The owner confirmed iPhone-primary/minimal-iPad support, English-first UI with Unicode user content, and retention of originals/raw text until explicit deletion. The owner reports downloading the iOS 17 Simulator; installation and test success have not yet been verified.
 
 ## Contributing
 
