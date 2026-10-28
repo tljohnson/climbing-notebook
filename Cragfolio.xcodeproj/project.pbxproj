@@ -1,118 +1,57 @@
 // !$*UTF8*$!
 {
-	archiveVersion = 1;
-	classes = {};
-	objectVersion = 56;
-	objects = {
-/* Begin PBXBuildFile section */
-		A00000000000000000000001 /* CragfolioApp.swift */ = {isa = PBXBuildFile; fileRef = B00000000000000000000001; };
-		A00000000000000000000002 /* LibrarySchema.swift */ = {isa = PBXBuildFile; fileRef = B00000000000000000002; };
-		A00000000000000000000003 /* LibraryStore.swift */ = {isa = PBXBuildFile; fileRef = B00000000000000000003; };
-		A00000000000000000000004 /* ShareViewController.swift */ = {isa = PBXBuildFile; fileRef = B00000000000000000004; };
-		A00000000000000000000005 /* LibraryStoreTests.swift */ = {isa = PBXBuildFile; fileRef = B00000000000000000005; };
-		A00000000000000000000006 /* ArchiveFeasibilityTests.swift */ = {isa = PBXBuildFile; fileRef = B00000000000000000006; };
-		A00000000000000000000007 /* NotebookSmokeTests.swift */ = {isa = PBXBuildFile; fileRef = B00000000000000000007; };
-		A00000000000000000000008 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = C00000000000000000000001; };
-		A00000000000000000000009 /* CragfolioShare.appex in Embed Extensions */ = {isa = PBXBuildFile; fileRef = B00000000000000000009; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-/* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		D00000000000000000000001 = {isa = PBXContainerItemProxy; containerPortal = E00000000000000000000001; proxyType = 1; remoteGlobalIDString = F00000000000000000000001; remoteInfo = Cragfolio; };
-		D00000000000000000000002 = {isa = PBXContainerItemProxy; containerPortal = E00000000000000000000001; proxyType = 1; remoteGlobalIDString = F00000000000000000000004; remoteInfo = CragfolioShare; };
-		D00000000000000000000003 = {isa = PBXContainerItemProxy; containerPortal = E00000000000000000000001; proxyType = 1; remoteGlobalIDString = F00000000000000000000001; remoteInfo = Cragfolio; };
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		110000000000000000000001 /* Embed Extensions */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (A00000000000000000000009, ); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
-/* End PBXCopyFilesBuildPhase section */
-
-/* Begin PBXFileReference section */
-
-		B00000000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cragfolio/App/CragfolioApp.swift; sourceTree = "<group>"; };
-		B00000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cragfolio/Models/LibrarySchema.swift; sourceTree = "<group>"; };
-		B00000000000000000003 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cragfolio/Services/LibraryStore.swift; sourceTree = "<group>"; };
-		B00000000000000000004 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CragfolioShare/ShareViewController.swift; sourceTree = "<group>"; };
-		B00000000000000000005 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CragfolioTests/LibraryStoreTests.swift; sourceTree = "<group>"; };
-		B00000000000000000006 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CragfolioTests/ArchiveFeasibilityTests.swift; sourceTree = "<group>"; };
-		B00000000000000000007 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CragfolioUITests/NotebookSmokeTests.swift; sourceTree = "<group>"; };
-		B00000000000000000008 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = CragfolioShare/Info.plist; sourceTree = "<group>"; };
-		B00000000000000000009 = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CragfolioShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		B0000000000000000000A = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cragfolio.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B0000000000000000000B = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CragfolioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B0000000000000000000C = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CragfolioUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-/* End PBXFileReference section */
-
-/* Begin PBXFrameworksBuildPhase section */
-		120000000000000000000001 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		120000000000000000000002 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		120000000000000000000003 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000008, ); runOnlyForDeploymentPostprocessing = 0; };
-		120000000000000000000004 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-/* End PBXFrameworksBuildPhase section */
-
-/* Begin PBXGroup section */
-		130000000000000000000001 = {isa = PBXGroup; children = (B00000000000000000000001, B00000000000000000000002, B00000000000000000000003, B00000000000000000000004, B00000000000000000000005, B00000000000000000000006, B00000000000000000000007, B00000000000000000000008, 130000000000000000000006, ); sourceTree = "<group>"; };
-		130000000000000000000006 = {isa = PBXGroup; name = Products; sourceTree = "<group>"; children = (B0000000000000000000A, B00000000000000000009, B0000000000000000000B, B0000000000000000000C, ); };
-/* End PBXGroup section */
-
-/* Begin PBXNativeTarget section */
-		F00000000000000000000001 = {isa = PBXNativeTarget; buildConfigurationList = 140000000000000000000001; buildPhases = (150000000000000000000001, 120000000000000000000001, 160000000000000000000001, 110000000000000000000001, ); buildRules = (); dependencies = (170000000000000000000001, ); name = Cragfolio; packageProductDependencies = (); productName = Cragfolio; productReference = B0000000000000000000A; productType = "com.apple.product-type.application"; };
-		F00000000000000000000004 = {isa = PBXNativeTarget; buildConfigurationList = 140000000000000000000002; buildPhases = (150000000000000000000002, 120000000000000000000002, 160000000000000000000002, ); buildRules = (); dependencies = (); name = CragfolioShare; packageProductDependencies = (); productName = CragfolioShare; productReference = B00000000000000000009; productType = "com.apple.product-type.app-extension"; };
-		F00000000000000000000002 = {isa = PBXNativeTarget; buildConfigurationList = 140000000000000000000003; buildPhases = (150000000000000000000003, 120000000000000000000003, 160000000000000000000003, ); buildRules = (); dependencies = (170000000000000000000002, ); name = CragfolioTests; packageProductDependencies = (C00000000000000000000001, ); productName = CragfolioTests; productReference = B0000000000000000000B; productType = "com.apple.product-type.bundle.unit-test"; };
-		F00000000000000000000003 = {isa = PBXNativeTarget; buildConfigurationList = 140000000000000000000004; buildPhases = (150000000000000000000004, 120000000000000000000004, 160000000000000000000004, ); buildRules = (); dependencies = (170000000000000000000003, ); name = CragfolioUITests; packageProductDependencies = (); productName = CragfolioUITests; productReference = B0000000000000000000C; productType = "com.apple.product-type.bundle.ui-testing"; };
-/* End PBXNativeTarget section */
-
-/* Begin PBXProject section */
-		E00000000000000000000001 = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = 1; LastUpgradeCheck = 2710; TargetAttributes = {F00000000000000000000001 = {CreatedOnToolsVersion = 27.1; }; F00000000000000000000002 = {CreatedOnToolsVersion = 27.1; }; F00000000000000000000003 = {CreatedOnToolsVersion = 27.1; }; F00000000000000000000004 = {CreatedOnToolsVersion = 27.1; }; }; }; buildConfigurationList = 140000000000000000000005; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base, ); mainGroup = 130000000000000000000001; packageReferences = (180000000000000000000001, ); productRefGroup = 130000000000000000000006; projectDirPath = ""; projectRoot = ""; targets = (F00000000000000000000001, F00000000000000000000004, F00000000000000000000002, F00000000000000000000003, ); };
-/* End PBXProject section */
-
-/* Begin PBXResourcesBuildPhase section */
-		160000000000000000000001 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		160000000000000000000002 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		160000000000000000000003 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		160000000000000000000004 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-/* End PBXResourcesBuildPhase section */
-
-/* Begin PBXSourcesBuildPhase section */
-		150000000000000000000001 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000001, A00000000000000000000002, A00000000000000000000003, ); runOnlyForDeploymentPostprocessing = 0; };
-		150000000000000000000002 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000004, ); runOnlyForDeploymentPostprocessing = 0; };
-		150000000000000000000003 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000005, A00000000000000000000006, ); runOnlyForDeploymentPostprocessing = 0; };
-		150000000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000007, ); runOnlyForDeploymentPostprocessing = 0; };
-/* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		170000000000000000000001 = {isa = PBXTargetDependency; target = F00000000000000000000004; targetProxy = D00000000000000000000002; };
-		170000000000000000000002 = {isa = PBXTargetDependency; target = F00000000000000000000001; targetProxy = D00000000000000000000001; };
-		170000000000000000000003 = {isa = PBXTargetDependency; target = F00000000000000000000001; targetProxy = D00000000000000000000003; };
-/* End PBXTargetDependency section */
-
-/* Begin XCBuildConfiguration section */
-		190000000000000000000001 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGNING_ALLOWED = NO; CURRENT_PROJECT_VERSION = 1; ENABLE_TESTABILITY = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = Cragfolio; INFOPLIST_KEY_CFBundleGetInfoString = "Built at Novacoast."; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 0.1; PRODUCT_BUNDLE_IDENTIFIER = com.novacoast.cragfolio.foundation; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_STRICT_CONCURRENCY = targeted; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
-		190000000000000000000002 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGNING_ALLOWED = NO; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = Cragfolio; INFOPLIST_KEY_CFBundleGetInfoString = "Built at Novacoast."; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 0.1; PRODUCT_BUNDLE_IDENTIFIER = com.novacoast.cragfolio.foundation; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_STRICT_CONCURRENCY = targeted; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
-		190000000000000000000003 = {isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGNING_ALLOWED = NO; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_FILE = CragfolioShare/Info.plist; INFOPLIST_KEY_CFBundleExecutable = "$(EXECUTABLE_NAME)"; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 0.1; PRODUCT_BUNDLE_IDENTIFIER = com.novacoast.cragfolio.foundation.share; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SDKROOT = iphoneos; SWIFT_MODULE_NAME = CragfolioShare; SWIFT_STRICT_CONCURRENCY = targeted; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
-		190000000000000000000004 = {isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGNING_ALLOWED = NO; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_FILE = CragfolioShare/Info.plist; INFOPLIST_KEY_CFBundleExecutable = "$(EXECUTABLE_NAME)"; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 0.1; PRODUCT_BUNDLE_IDENTIFIER = com.novacoast.cragfolio.foundation.share; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SDKROOT = iphoneos; SWIFT_MODULE_NAME = CragfolioShare; SWIFT_STRICT_CONCURRENCY = targeted; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
-		190000000000000000000005 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.novacoast.cragfolio.foundation.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_STRICT_CONCURRENCY = targeted; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cragfolio.app/Cragfolio"; BUNDLE_LOADER = "$(TEST_HOST)"; TEST_TARGET_NAME = Cragfolio; }; name = Debug; };
-		190000000000000000000006 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.novacoast.cragfolio.foundation.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_STRICT_CONCURRENCY = targeted; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cragfolio.app/Cragfolio"; BUNDLE_LOADER = "$(TEST_HOST)"; TEST_TARGET_NAME = Cragfolio; }; name = Release; };
-		190000000000000000000007 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.novacoast.cragfolio.foundation.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_STRICT_CONCURRENCY = targeted; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = Cragfolio; }; name = Debug; };
-		190000000000000000000008 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.novacoast.cragfolio.foundation.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_STRICT_CONCURRENCY = targeted; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = Cragfolio; }; name = Release; };
-		190000000000000000000009 = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; }; name = Debug; };
-		19000000000000000000000A = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; }; name = Release; };
-/* End XCBuildConfiguration section */
-
-/* Begin XCConfigurationList section */
-		140000000000000000000001 = {isa = XCConfigurationList; buildConfigurations = (190000000000000000000001, 190000000000000000000002, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		140000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (190000000000000000000003, 190000000000000000000004, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		140000000000000000000003 = {isa = XCConfigurationList; buildConfigurations = (190000000000000000000005, 190000000000000000000006, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		140000000000000000000004 = {isa = XCConfigurationList; buildConfigurations = (190000000000000000000007, 190000000000000000000008, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		140000000000000000000005 = {isa = XCConfigurationList; buildConfigurations = (190000000000000000000009, 19000000000000000000000A, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-/* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		180000000000000000000001 = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/weichsel/ZIPFoundation.git"; requirement = {kind = upToNextMajorVersion; minimumVersion = 0.9.20; }; };
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		C00000000000000000000001 = {isa = XCSwiftPackageProductDependency; package = 180000000000000000000001; productName = ZIPFoundation; };
-/* End XCSwiftPackageProductDependency section */
-	};
-	rootObject = E00000000000000000000001;
+ archiveVersion = 1;
+ classes = {};
+ objectVersion = 77;
+  objects = {
+  A50000000000000000000001 = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/weichsel/ZIPFoundation.git"; requirement = {kind = exactVersion; version = 0.9.20;};};
+  A50000000000000000000002 = {isa = XCSwiftPackageProductDependency; package = A50000000000000000000001; productName = ZIPFoundation;};
+  A50000000000000000000003 = {isa = PBXBuildFile; productRef = A50000000000000000000002;};
+  A00000000000000000000001 = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = YES; LastUpgradeCheck = 2700;}; packageReferences = (A50000000000000000000001); buildConfigurationList = A00000000000000000000002; compatibilityVersion = "Xcode 16.0"; developmentRegion = en; knownRegions = (en, Base); mainGroup = A00000000000000000000003; productRefGroup = A00000000000000000000004; projectDirPath = ""; projectRoot = ""; targets = (A10000000000000000000001, A20000000000000000000001, A30000000000000000000001, A40000000000000000000001);};
+  A00000000000000000000003 = {isa = PBXGroup; children = (A10000000000000000000003, A20000000000000000000003, A30000000000000000000003, A40000000000000000000003, A00000000000000000000004); sourceTree = "<group>";};
+  A00000000000000000000004 = {isa = PBXGroup; name = Products; children = (A10000000000000000000004, A20000000000000000000004, A30000000000000000000004, A40000000000000000000004); sourceTree = "<group>";};
+  A10000000000000000000003 = {isa = PBXFileSystemSynchronizedRootGroup; path = Cragfolio; sourceTree = "<group>";};
+  A20000000000000000000003 = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A20000000000000000000009); path = CragfolioShare; sourceTree = "<group>";};
+  A20000000000000000000009 = {isa = PBXFileSystemSynchronizedBuildFileExceptionSet; membershipExceptions = (Info.plist); target = A20000000000000000000001;};
+  A30000000000000000000003 = {isa = PBXFileSystemSynchronizedRootGroup; path = CragfolioTests; sourceTree = "<group>";};
+  A40000000000000000000003 = {isa = PBXFileSystemSynchronizedRootGroup; path = CragfolioUITests; sourceTree = "<group>";};
+  A10000000000000000000004 = {isa = PBXFileReference; explicitFileType = wrapper.application; path = Cragfolio.app; sourceTree = BUILT_PRODUCTS_DIR;};
+  A20000000000000000000004 = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; path = CragfolioShare.appex; sourceTree = BUILT_PRODUCTS_DIR;};
+  A30000000000000000000004 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = CragfolioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR;};
+  A40000000000000000000004 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = CragfolioUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR;};
+  A10000000000000000000001 = {isa = PBXNativeTarget; buildConfigurationList = A10000000000000000000002; buildPhases = (A10000000000000000000005, A10000000000000000000006, A10000000000000000000007, A10000000000000000000008); buildRules = (); dependencies = (A2000000000000000000000B); fileSystemSynchronizedGroups = (A10000000000000000000003); name = Cragfolio; productName = Cragfolio; productReference = A10000000000000000000004; productType = "com.apple.product-type.application";};
+  A20000000000000000000001 = {isa = PBXNativeTarget; buildConfigurationList = A20000000000000000000002; buildPhases = (A20000000000000000000005, A20000000000000000000006, A20000000000000000000007); buildRules = (); dependencies = (); fileSystemSynchronizedGroups = (A20000000000000000000003); name = CragfolioShare; productName = CragfolioShare; productReference = A20000000000000000000004; productType = "com.apple.product-type.app-extension";};
+  A30000000000000000000001 = {isa = PBXNativeTarget; packageProductDependencies = (A50000000000000000000002); buildConfigurationList = A30000000000000000000002; buildPhases = (A30000000000000000000005, A30000000000000000000006, A30000000000000000000007); buildRules = (); dependencies = (A1000000000000000000000B); fileSystemSynchronizedGroups = (A30000000000000000000003); name = CragfolioTests; productName = CragfolioTests; productReference = A30000000000000000000004; productType = "com.apple.product-type.bundle.unit-test";};
+  A40000000000000000000001 = {isa = PBXNativeTarget; buildConfigurationList = A40000000000000000000002; buildPhases = (A40000000000000000000005, A40000000000000000000006, A40000000000000000000007); buildRules = (); dependencies = (A1000000000000000000000B); fileSystemSynchronizedGroups = (A40000000000000000000003); name = CragfolioUITests; productName = CragfolioUITests; productReference = A40000000000000000000004; productType = "com.apple.product-type.bundle.ui-testing";};
+  A10000000000000000000005 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+  A10000000000000000000006 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+  A10000000000000000000007 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+  A20000000000000000000005 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+  A20000000000000000000006 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+  A20000000000000000000007 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+  A30000000000000000000005 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+  A30000000000000000000006 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A50000000000000000000003); runOnlyForDeploymentPostprocessing = 0;};
+  A30000000000000000000007 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+  A40000000000000000000005 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+  A40000000000000000000006 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+  A40000000000000000000007 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+  A10000000000000000000008 = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (A20000000000000000000008); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0;};
+  A20000000000000000000008 = {isa = PBXBuildFile; fileRef = A20000000000000000000004; settings = {ATTRIBUTES = (RemoveHeadersOnCopy);};};
+  A1000000000000000000000A = {isa = PBXContainerItemProxy; containerPortal = A00000000000000000000001; proxyType = 1; remoteGlobalIDString = A10000000000000000000001; remoteInfo = Cragfolio;};
+  A2000000000000000000000A = {isa = PBXContainerItemProxy; containerPortal = A00000000000000000000001; proxyType = 1; remoteGlobalIDString = A20000000000000000000001; remoteInfo = CragfolioShare;};
+  A1000000000000000000000B = {isa = PBXTargetDependency; target = A10000000000000000000001; targetProxy = A1000000000000000000000A;};
+  A2000000000000000000000B = {isa = PBXTargetDependency; target = A20000000000000000000001; targetProxy = A2000000000000000000000A;};
+  A00000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000011, A00000000000000000000012); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+  A10000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (A10000000000000000000011); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug;};
+  A20000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (A20000000000000000000011); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug;};
+  A30000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (A30000000000000000000011); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug;};
+  A40000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (A40000000000000000000011); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug;};
+  A00000000000000000000011 = {isa = XCBuildConfiguration; name = Debug; buildSettings = {SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 5.0; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; ENABLE_TESTABILITY = YES; DEBUG_INFORMATION_FORMAT = dwarf; CLANG_ENABLE_MODULES = YES;};};
+  A00000000000000000000012 = {isa = XCBuildConfiguration; name = Release; buildSettings = {SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 5.0;};};
+  A10000000000000000000011 = {isa = XCBuildConfiguration; name = Debug; buildSettings = {PRODUCT_NAME = "$(TARGET_NAME)"; PRODUCT_BUNDLE_IDENTIFIER = com.cragfolio.foundation; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_NSHumanReadableCopyright = "Built at Novacoast."; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES; TARGETED_DEVICE_FAMILY = "1,2"; CURRENT_PROJECT_VERSION = 1; MARKETING_VERSION = 0.1;};};
+  A20000000000000000000011 = {isa = XCBuildConfiguration; name = Debug; buildSettings = {PRODUCT_NAME = "$(TARGET_NAME)"; PRODUCT_BUNDLE_IDENTIFIER = com.cragfolio.foundation.share; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_FILE = CragfolioShare/Info.plist; APPLICATION_EXTENSION_API_ONLY = YES; SKIP_INSTALL = YES; TARGETED_DEVICE_FAMILY = "1,2"; CURRENT_PROJECT_VERSION = 1; MARKETING_VERSION = 0.1;};};
+  A30000000000000000000011 = {isa = XCBuildConfiguration; name = Debug; buildSettings = {PRODUCT_NAME = "$(TARGET_NAME)"; PRODUCT_BUNDLE_IDENTIFIER = com.cragfolio.foundation.tests; GENERATE_INFOPLIST_FILE = YES; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cragfolio.app/Cragfolio"; BUNDLE_LOADER = "$(TEST_HOST)"; TARGETED_DEVICE_FAMILY = "1,2";};};
+  A40000000000000000000011 = {isa = XCBuildConfiguration; name = Debug; buildSettings = {PRODUCT_NAME = "$(TARGET_NAME)"; PRODUCT_BUNDLE_IDENTIFIER = com.cragfolio.foundation.uitests; GENERATE_INFOPLIST_FILE = YES; TEST_TARGET_NAME = Cragfolio; TARGETED_DEVICE_FAMILY = "1,2";};};
+ };
+ rootObject = A00000000000000000000001;
 }

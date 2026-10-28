@@ -1,38 +1,32 @@
-name: iOS CI
-
+name: iOS Foundation
 on:
   pull_request:
   push:
-    branches:
-      - main
-
+    branches: [main]
 permissions:
   contents: read
-
 concurrency:
-  group: ios-ci-${{ github.workflow }}-${{ github.ref }}
+  group: ios-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
-  test:
-    runs-on: macos-26
-    timeout-minutes: 45
+  foundation:
+    runs-on: macos-15
+    timeout-minutes: 30
     steps:
-      - name: Check out source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Test on iOS Simulator
-        run: RESULT_BUNDLE_PATH="$GITHUB_WORKSPACE/.build/TestResults.xcresult" Scripts/test-ios.sh
-
-      - name: Enforce line coverage
-        if: always()
-        run: Scripts/check-coverage.sh "$GITHUB_WORKSPACE/.build/TestResults.xcresult"
-
-      - name: Upload test result
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: ios-test-results
-          path: .build/TestResults.xcresult
-          retention-days: 3
-          if-no-files-found: ignore
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, verified upstream
+      - name: Inspect native environment
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes
+      - name: Resolve reviewed dependency
+        run: xcodebuild -resolvePackageDependencies -project Cragfolio.xcodeproj -scheme Cragfolio -derivedDataPath .build/DerivedData -onlyUsePackageVersionsFromResolvedFile
+      - name: Test simulator foundation
+        run: |
+          SIMULATOR_ID="$(xcrun simctl list devices available -j | ruby -rjson -e 'devices = JSON.parse(STDIN.read)["devices"].values.flatten; device = devices.find { |d| d["name"].start_with?("iPhone") }; abort "No iPhone simulator installed" unless device; puts device["udid"]')"
+          export SIMULATOR_ID
+          export RESULT_BUNDLE_PATH=.build/CI.xcresult
+          bash Scripts/test-ios.sh -quiet -disableAutomaticPackageResolution
+      - name: Enforce first-party coverage
+        run: |
+          bash Scripts/check-coverage.sh --self-test
+          bash Scripts/check-coverage.sh .build/CI.xcresult

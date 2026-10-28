@@ -18,6 +18,7 @@ build/
 *.sqlite-wal
 *.log
 .env
+*.env
 .env.*
 !.env.example
 .devcontainer.env

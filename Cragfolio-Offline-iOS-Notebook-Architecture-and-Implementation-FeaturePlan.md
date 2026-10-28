@@ -1,6 +1,6 @@
 # Cragfolio Offline iOS Notebook: Architecture and Implementation Feature Plan
 
-**Status:** Owner-approved implementation plan; prepared for execution by `gpt-luna-latest`. This planning session must not write application code.
+**Status:** Owner-approved implementation plan.
 **Prepared:** 2026-10-27
 **Inputs:** `handoff.md` and the owner's clarification answers in this session.
 **Deliverable boundary:** Planning only. File names, contracts, and schemas below describe future work; this document creates no application scaffold.
@@ -34,7 +34,7 @@ The largest risks are data loss at database/file boundaries, destructive restore
 | Deployment target | iOS 17+ approved. Minimum/current runtime and device testing remain implementation verification tasks. |
 | Staffing/development | One volunteer developer using an existing MacBook Pro, VS Code, and GitHub. Weekly availability is not specified. |
 | Repository/CI | GitHub Free, public repository confirmed by owner. Use standard hosted macOS GitHub Actions; no GitLab pipeline or runner-tag requirement. |
-| Approval and execution | Owner approved the plan after the dependency recommendation and confirmed public GitHub publication. Implementing agent: `gpt-luna-latest`; |
+| Approval and execution | Owner approved the plan after the dependency recommendation and confirmed public GitHub publication. |
 | Dependency exceptions | Approved plan includes native Xcode/SPM resolution on local/hosted Macs, reviewed stable ZIPFoundation resolution with committed Package.resolved, and immutable third-party Action references with deliberate updates. |
 | Integrity limits/restore | Initial intake/archive/library limits and generation-based replace/revert behavior approved as measurable targets, subject to the stated validation spikes. |
 
@@ -587,7 +587,7 @@ App Store release requires a maintainable signing/release owner, support and pri
 4. **Confirmed:** public GitHub repository on GitHub Free, not GitLab. Use standard hosted macOS GitHub Actions with bounded artifacts/cache. Do not change visibility, billing or repository settings without authorization.
 5. **Approved:** proposed intake/archive/library limits and generation-based replace/revert behavior, with measurement/fault-injection verification as specified.
 
-The owner subsequently stated, `Plan is approved. GitHub branch has been published as public.` That resolves implementation authorization and item 3. The owner then instructed this session not to write code and requested instructions for `gpt-luna-latest`; section 21 defines that handoff. Do not treat this instruction document as permission to start visible sessions, commit, push or publish.
+The owner subsequently stated, `Plan is approved. GitHub branch has been published as public.` That resolves implementation authorization and item 3. Do not treat this instruction document as permission to commit, push or publish.
 
 ### Before Public Release
 
@@ -622,13 +622,13 @@ Consulted 2026-10-27. Official framework availability and dated submission rules
 
 ## 20. Plan Review Exit
 
-Plan approval is recorded. The next implementation assignment is the bounded M0/M1 handoff in section 21, to be executed by `gpt-luna-latest` when the owner starts or assigns that agent. This session remains planning-only. Record failed-spike evidence and any owner-approved architectural changes before dependent work proceeds. No commits, pushes, repository changes, signing changes, or App Store publication are authorized merely by plan approval.
+Plan approval is recorded. The next implementation assignment is the bounded M0/M1 handoff in section 21, to be executed when the owner starts or assigns the agent. No commits, pushes, repository changes, signing changes, or App Store publication are authorized merely by plan approval.
 
-## 21. GPT-Luna Implementation Handoff
+## 21. Implementation Handoff
 
 ### 21.1 Assignment and Scope
 
-**Intended implementing model:** `gpt-luna-latest`. These instructions are suitable as the opening assignment for an implementation session that also has access to this full plan. Do not create another Agent Manager session or worktree automatically. This document does not claim the implementing model has started or completed any work.
+These instructions are suitable as the opening assignment for an implementation session that also has access to this full plan. Do not create another Agent Manager session or worktree automatically. This document does not claim the implementing model has started or completed any work.
 
 Implement the approved Cragfolio plan, beginning with **M0/M1 only**. Read the full document before editing, particularly sections 6-9, 12-13, and 16. Deliver a buildable, tested foundation and measured feasibility findings, not an entire app in one unverified pass. Stop at the M1 handoff boundary; subsequent milestones can use section 21.5 when assigned. Do not ask again for already resolved iOS, dependency, public GitHub, restore, intake, or OCR decisions.
 

@@ -1,21 +1,27 @@
-# System Documentation Index
+# System Documentation
 
-**Updated:** 2026-10-27
+Updated: 2026-10-28
 
-## Current Project State
+## Start Here
 
-This repository now has the M0/M1 native build and feasibility foundation, not the planned climbing notebook. Its SwiftUI launch view, versioned SwiftData sample, share-extension target, and test-only WKWebView harness are real but do not implement the user's library, share mailbox, or production URL-copy protections. Do not infer unimplemented behavior from the approved design below.
+- [Approved implementation plan](Cragfolio-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md): scope, architecture, contracts and approval gates. Section 21 limits this assignment to M0/M1.
+- [README](README.md): actual local setup and verification commands.
+- [.kilo/AGENTS.md](.kilo/AGENTS.md): repository workflow and preservation rules.
 
-## Canonical References
+## Implementation Boundaries
 
-- [Approved architecture and implementation plan](Cragfolio-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md): approved product scope, proposed architecture/data contracts, integrity requirements, milestones, and the M0/M1 implementing-agent handoff. Treat prospective files and contracts as plans until source code verifies them.
-- [.kilo/AGENTS.md](.kilo/AGENTS.md): repository workflow, approval, preservation, and verification rules.
-- [README](README.md): actual foundation prerequisites, build/test commands, and current limitations.
-- [Third-party notices](THIRD_PARTY_NOTICES): resolved ZIPFoundation license notice.
+The foundation is being rebuilt after an owner-confirmed intentional deletion of the previous scaffold. The approved architecture is a native iOS 17+ SwiftUI app with app-private SwiftData persistence and managed originals. The share extension must never write the library database. Backup, generation recovery and URL-copy protections require measured feasibility evidence before dependent features proceed.
 
-## Routing
+This index does not establish completed product functionality. Consult source and test results, not the planned file map, for implemented behavior. No backend, account, OCR, synchronization or automatic extraction is authorized.
 
-- For implementation scope, platform choices, data model, intake, backup/restore, privacy, tests, and milestone boundaries, consult the approved plan's relevant sections before changing code.
-- `Cragfolio/Models/LibrarySchema.swift` and `Cragfolio/Services/LibraryStore.swift` describe only the implemented synthetic V1/V2 schema and disk-store helper. The full approved domain schema is not implemented.
-- `Cragfolio.xcodeproj` is the canonical app/share/test target and shared-scheme definition; `.github/workflows/ios-ci.yml` is the planned local-verifiable hosted CI workflow. Hosted execution remains unverified.
-- M1 evidence is currently local under ignored `.build/` result bundles. The recorded feasible results are migration/reopen, generation-directory switching, ZIP64 >4 GiB, and synthetic WebKit text/image selection. Production WebKit destination/subresource/DNS protections remain an unresolved gate; no real-site requests were made.
+## Foundation Routing
+
+- `Cragfolio/App/`: minimal foundation launch interface.
+- `Cragfolio/Models/`: versioned persistence schema.
+- `Cragfolio/Services/Persistence/`: explicit on-disk store operations.
+- `CragfolioShare/`: extension entry point; receiving remains unavailable until the mailbox is implemented.
+- `CragfolioTests/` and `CragfolioUITests/`: synthetic foundation verification.
+- `Scripts/test-ios.sh`, `Scripts/check-coverage.sh`, `Scripts/CoverageGate.swift`: local native tests and combined first-party coverage gate.
+- `.github/workflows/ios-ci.yml`: prepared simulator CI; hosted execution is unrun.
+
+Release-only identity, signing, license and distribution decisions remain unresolved. Simulator namespaces are provisional. No publication or signing changes are authorized.
