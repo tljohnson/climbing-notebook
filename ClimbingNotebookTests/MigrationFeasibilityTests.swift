@@ -1,8 +1,8 @@
 import XCTest
 import SwiftData
-@testable import Cragfolio
+@testable import ClimbingNotebook
 
-// Test-only schemas. Neither represents a released Cragfolio library format.
+// Test-only schemas. Neither represents a released Climbing Notebook library format.
 private enum Before: VersionedSchema {
     static var versionIdentifier = Schema.Version(0, 1, 0)
     static var models: [any PersistentModel.Type] { [Entry.self] }

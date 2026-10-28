@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct CragfolioApp: App {
+struct ClimbingNotebookApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationStack {
@@ -15,7 +15,7 @@ struct CragfolioApp: App {
                         .font(.footnote)
                 }
                 .padding()
-                .navigationTitle("Cragfolio")
+                .navigationTitle(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Climbing Notebook")
             }
         }
     }

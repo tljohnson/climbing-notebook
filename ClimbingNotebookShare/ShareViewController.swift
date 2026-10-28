@@ -20,7 +20,7 @@ final class ShareViewController: UIViewController {
 
     @objc private func close() {
         extensionContext?.cancelRequest(withError: NSError(
-            domain: "com.cragfolio.foundation", code: 1,
+            domain: "com.climbingnotebook.foundation", code: 1,
             userInfo: [NSLocalizedDescriptionKey: "Nothing was imported. Intake is not implemented."]
         ))
     }

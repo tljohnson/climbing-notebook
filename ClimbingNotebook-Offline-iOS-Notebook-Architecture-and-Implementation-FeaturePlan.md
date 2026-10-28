@@ -1,4 +1,4 @@
-# Cragfolio Offline iOS Notebook: Architecture and Implementation Feature Plan
+# Climbing Notebook Offline iOS Notebook: Architecture and Implementation Feature Plan
 
 **Status:** Owner-approved implementation plan.
 **Prepared:** 2026-10-27
@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary
 
-Cragfolio is a native, offline-first personal climbing notebook, not a guidebook service or a social network. A climber owns the local library, can consult all saved originals without connectivity, needs no account, and can export and replace-restore the library without a subscription.
+Climbing Notebook is a native, offline-first personal climbing notebook, not a guidebook service or a social network. A climber owns the local library, can consult all saved originals without connectivity, needs no account, and can export and replace-restore the library without a subscription.
 
 The first public release includes the full core notebook, images and PDF originals, plain-text and pasted-text intake, user-initiated single-page URL copying, a receiving share extension, editable import review, source attribution, and verified complete backup/restore. **OCR and automatic structured extraction are deferred.** An image or scanned PDF is useful as a viewable original in v1, without invented route fields. Digital PDF text may be offered as unstructured selectable text when PDFKit exposes it; it is not a requirement to recognize scanned text.
 
@@ -136,7 +136,7 @@ Show caption, tags, source, association, and original file type. A PDF can be at
 
 ### 4.6 Intake, Inbox, and Review
 
-1. Intake via PhotosPicker, Files, user-triggered Paste, user-supplied URL with explicit Copy Page action, or Share with Cragfolio. Receiving/pasting a URL alone saves a reference draft and does not make a network request.
+1. Intake via PhotosPicker, Files, user-triggered Paste, user-supplied URL with explicit Copy Page action, or Share with Climbing Notebook. Receiving/pasting a URL alone saves a reference draft and does not make a network request.
 2. Copy provider-owned files into durable managed intake storage before acknowledging receipt; original provider URLs are temporary, not persistent references.
 3. Display an Inbox draft with file list, previews, optional source URL/title/attribution, and any available raw text. Images and scanned PDFs explicitly say `Text recognition is not included in this version`.
 4. User selects New Route or Add to Existing Route. For New Route, manually enter name/area and optional fields. For Existing Route, default to adding attachments or a new imported/custom note, never replacing existing prose.
@@ -170,6 +170,8 @@ Restore displays archive version/date/counts, validation outcome, current-librar
 Presentation -> feature coordinators -> library persistence and managed-file services. Intake -> draft review -> the same library mutation path. Backup uses portable DTOs, not UI state or a raw database copy. The share extension writes only an App Group inbox; the main app alone owns and mutates its SwiftData library.
 
 Use a single Xcode project with app, share-extension, unit/integration-test, and UI-test targets. Small shared source files for inbox contracts and safe file transfer can have membership in both app and extension targets; no package split is necessary. Shared files must use extension-safe APIs only. Avoid a generic repository-per-entity hierarchy, dependency injection framework, networking stack, or hypothetical sync engine.
+
+Use `ClimbingNotebook` for project, scheme, module and source names, and `climbing-notebook` for the repository slug. The project-level `DEVELOPMENT_DISPLAY_NAME` build setting is the entry point for future display branding: it supplies the generated app `CFBundleDisplayName` and the extension display name, while the app reads `CFBundleDisplayName` for its title. Keep technical identifiers independent of future marketing names. Development bundle identifiers rooted at `com.climbingnotebook.foundation` are provisional pending permanent registration, not registered release identities. Artwork and colors remain placeholders until separately designed.
 
 ### 5.2 Framework Choices
 
@@ -276,7 +278,7 @@ Use a registered App Group shared by the app and extension. The app's main libra
 
 Each delivery has `envelopeVersion`, UUID `deliveryID`, receivedAt, optional host-supplied title and HTTP(S) URL, optional UTF-8 text, and ordered items containing local item UUID, detected UTType, sanitized display filename, payload-relative key, byteCount, and SHA-256. Host bundle identity is optional and not inferred through private APIs.
 
-Lifecycle: create `staging/<deliveryID>` -> stream/copy every supported selected payload -> write envelope -> atomically rename within the same container to `ready/<deliveryID>` -> report `Saved to Cragfolio Inbox. Open Cragfolio to review.` Never report `Route saved`. Never rely on launching the app from the extension. Failed or cancelled deliveries stay unpublished and show an error; mixed supported/unsupported items require an explicit supported-items-only choice rather than silent omission.
+Lifecycle: create `staging/<deliveryID>` -> stream/copy every supported selected payload -> write envelope -> atomically rename within the same container to `ready/<deliveryID>` -> report `Saved to Climbing Notebook Inbox. Open Climbing Notebook to review.` Never report `Route saved`. Never rely on launching the app from the extension. Failed or cancelled deliveries stay unpublished and show an error; mixed supported/unsupported items require an explicit supported-items-only choice rather than silent omission.
 
 The main app reads only ready envelopes, validates sizes/hashes/paths, copies into its managed draft store, persists InboxReceipt and draft in one save, then removes the shared delivery. If interrupted after save but before removal, receipt lookup prevents duplicate drafts. Retrying a share with a new deliveryID intentionally creates a new draft; no name-based deduplication. An atomic ready publication plus per-delivery file coordination prevents app/extension races; an actor alone cannot synchronize processes.
 
@@ -309,11 +311,11 @@ Thumbnails may fail independently of original preservation. Bound decode size an
 
 ### 9.1 Portable Format
 
-Proposed extension: `.cragfolio-backup`, declared as an exported UTType conforming to ZIP. A user may rename it to `.zip` to inspect it with standard desktop tools. Use standard ZIP entries with stored/deflate methods; do not call Apple Archive or raw Compression streams ZIP [S6]. No password/encryption support in archive v1. Warn that archive contents, EXIF location data, sources, and personal notes are readable to anyone with the file.
+Proposed extension: `.climbing-notebook-backup`, declared as an exported UTType conforming to ZIP. A user may rename it to `.zip` to inspect it with standard desktop tools. Use standard ZIP entries with stored/deflate methods; do not call Apple Archive or raw Compression streams ZIP [S6]. No password/encryption support in archive v1. Warn that archive contents, EXIF location data, sources, and personal notes are readable to anyone with the file.
 
 Archive root contains exactly:
 
-- `manifest.json`: UTF-8, format identifier `com.cragfolio.backup` (provisional namespace), integer formatVersion `1`, minReaderVersion, backupID, libraryID, createdAt, app version/build, entity counts, and portable entity arrays.
+- `manifest.json`: UTF-8, format identifier `com.climbingnotebook.backup` (provisional namespace), integer formatVersion `1`, minReaderVersion, backupID, libraryID, createdAt, app version/build, entity counts, and portable entity arrays.
 - `media/<assetUUID>/original.<validatedExtension>`: every referenced original, including draft-only/source-only assets. The manifest maps asset ID to path, byteCount, UTType, and SHA-256.
 
 Manifest arrays: areas, routes, pitches, noteSections, mediaAssets, mediaAttachments, sourceReferences, sourceAssets, contentOrigins, importDrafts, draftAssets. Each array uses stable IDs and explicit relationships per section 6. InboxReceipt is operational state and is not exported. Transient committed draft receipts are not content and can be omitted once their delivery cleanup finishes. Reviewed but uncommitted drafts and originals are included. Device preferences, thumbnails, caches, logs, operation journals, obsolete generations, and absolute paths are excluded.
@@ -398,29 +400,29 @@ The repository currently contains only the untracked `handoff.md`. Preserve it u
 
 | Planned path | Action / responsibility | Phase |
 | --- | --- | --- |
-| `Cragfolio.xcodeproj/project.pbxproj` and shared schemes | Create app, share, unit, UI targets; deployment/build settings and target membership | M0-M1 |
-| `Cragfolio/App/CragfolioApp.swift`, `AppDependencies.swift` | Compose views/services, recovery boot, active library binding | M1 |
-| `Cragfolio/Models/LibrarySchemaV1.swift`, `LibraryMigrationPlan.swift` | Persistent entities/inverses and schema versions | M1 |
-| `Cragfolio/Models/LibraryDTOs.swift`, `Validation.swift` | Portable value records, field/relationship constraints, revisions | M1 |
-| `Cragfolio/Features/Library/LibraryView.swift`, `AreaEditor.swift` | Browse, local search, area editing and moves | M2 |
-| `Cragfolio/Features/RouteDetail/RouteDetailView.swift`, `RouteEditor.swift`, `NoteSectionEditor.swift` | Route workspace and recoverable note editing | M2 |
-| `Cragfolio/Features/Pitches/PitchEditor.swift` | Pitch CRUD, protected drafts and reorder | M2 |
-| `Cragfolio/Features/Media/MediaGallery.swift`, `ImageViewer.swift`, `PDFViewer.swift` | Thumbnails, image zoom, offline PDF bridge | M3 |
-| `Cragfolio/Features/Import/ImportInboxView.swift`, `ImportReviewView.swift`, `IntakePicker.swift` | Manual draft review, destination and provenance controls | M4 |
-| `Cragfolio/Features/Import/URLCopyPreview.swift`, `Cragfolio/Services/Import/URLCopyService.swift` | Explicit WebKit page-copy flow, navigation/download limits, selected-asset capture and raw-text provenance | M1 spike/M4 |
-| `Cragfolio/Features/Settings/DataManagementView.swift`, `RestoreReviewView.swift` | Export/restore progress, warnings, privacy and storage | M3-M5 |
-| `Cragfolio/Services/Persistence/LibraryCoordinator.swift`, `LibraryGenerationManager.swift` | Serialized commands, revisions, generation switch and recovery | M1-M3 |
-| `Cragfolio/Services/Media/MediaStore.swift`, `ThumbnailService.swift`, `AssetReconciler.swift` | Immutable original writes, preview cache, safe GC | M3 |
-| `Cragfolio/Services/Import/IntakeService.swift`, `ImportCommitService.swift` | Decode/copy, drafts and idempotent commit | M4 |
-| `Cragfolio/Services/Backup/BackupManifest.swift`, `BackupService.swift`, `RestoreValidator.swift` | Versioned ZIP/JSON contract, bounded validation and export | M3 |
+| `ClimbingNotebook.xcodeproj/project.pbxproj` and shared schemes | Create app, share, unit, UI targets; deployment/build settings and target membership | M0-M1 |
+| `ClimbingNotebook/App/ClimbingNotebookApp.swift`, `AppDependencies.swift` | Compose views/services, recovery boot, active library binding | M1 |
+| `ClimbingNotebook/Models/LibrarySchemaV1.swift`, `LibraryMigrationPlan.swift` | Persistent entities/inverses and schema versions | M1 |
+| `ClimbingNotebook/Models/LibraryDTOs.swift`, `Validation.swift` | Portable value records, field/relationship constraints, revisions | M1 |
+| `ClimbingNotebook/Features/Library/LibraryView.swift`, `AreaEditor.swift` | Browse, local search, area editing and moves | M2 |
+| `ClimbingNotebook/Features/RouteDetail/RouteDetailView.swift`, `RouteEditor.swift`, `NoteSectionEditor.swift` | Route workspace and recoverable note editing | M2 |
+| `ClimbingNotebook/Features/Pitches/PitchEditor.swift` | Pitch CRUD, protected drafts and reorder | M2 |
+| `ClimbingNotebook/Features/Media/MediaGallery.swift`, `ImageViewer.swift`, `PDFViewer.swift` | Thumbnails, image zoom, offline PDF bridge | M3 |
+| `ClimbingNotebook/Features/Import/ImportInboxView.swift`, `ImportReviewView.swift`, `IntakePicker.swift` | Manual draft review, destination and provenance controls | M4 |
+| `ClimbingNotebook/Features/Import/URLCopyPreview.swift`, `ClimbingNotebook/Services/Import/URLCopyService.swift` | Explicit WebKit page-copy flow, navigation/download limits, selected-asset capture and raw-text provenance | M1 spike/M4 |
+| `ClimbingNotebook/Features/Settings/DataManagementView.swift`, `RestoreReviewView.swift` | Export/restore progress, warnings, privacy and storage | M3-M5 |
+| `ClimbingNotebook/Services/Persistence/LibraryCoordinator.swift`, `LibraryGenerationManager.swift` | Serialized commands, revisions, generation switch and recovery | M1-M3 |
+| `ClimbingNotebook/Services/Media/MediaStore.swift`, `ThumbnailService.swift`, `AssetReconciler.swift` | Immutable original writes, preview cache, safe GC | M3 |
+| `ClimbingNotebook/Services/Import/IntakeService.swift`, `ImportCommitService.swift` | Decode/copy, drafts and idempotent commit | M4 |
+| `ClimbingNotebook/Services/Backup/BackupManifest.swift`, `BackupService.swift`, `RestoreValidator.swift` | Versioned ZIP/JSON contract, bounded validation and export | M3 |
 | `SharedIntake/ShareEnvelope.swift`, `SharedIntake/InboxFileStore.swift`, `SharedIntake/IntakeLimits.swift` | Extension-safe versioned mailbox and coordinated file operations | M1/M4 |
-| `CragfolioShare/ShareViewController.swift`, `Info.plist`, `CragfolioShare.entitlements` | Provider intake UI, exact activation types/counts, App Group capability | M4 |
-| `Cragfolio/Resources/Assets.xcassets`, `Localizable.xcstrings`, `PrivacyInfo.xcprivacy` | Branding placeholder, strings, audited privacy declarations | M1-M6 |
-| `Cragfolio/Info.plist`, `Cragfolio/Cragfolio.entitlements`, extension privacy manifest if needed | UTTypes/document handling, attribution, App Group, no CloudKit | M1/M4 |
-| `CragfolioTests/ModelTests.swift`, `PersistenceRecoveryTests.swift`, `MigrationTests.swift` | Invariants, on-disk save/reopen and upgrade safety | Each phase |
-| `CragfolioTests/MediaTests.swift`, `IntakeTests.swift`, `ShareInboxTests.swift`, `BackupRestoreTests.swift` | File lifetime, inbox crashes, corruption and round trips | M3-M5 |
-| `CragfolioTests/Fixtures/` | Synthetic old-schema stores, safe/malicious archives, text/PDF/images | Each phase |
-| `CragfolioUITests/NotebookFlows.swift`, `ImportFlows.swift`, `AccessibilityFlows.swift` | Core scenario, review confirmation and accessible actions | M2-M5 |
+| `ClimbingNotebookShare/ShareViewController.swift`, `Info.plist`, `ClimbingNotebookShare.entitlements` | Provider intake UI, exact activation types/counts, App Group capability | M4 |
+| `ClimbingNotebook/Resources/Assets.xcassets`, `Localizable.xcstrings`, `PrivacyInfo.xcprivacy` | Branding placeholder, strings, audited privacy declarations | M1-M6 |
+| `ClimbingNotebook/Info.plist`, `ClimbingNotebook/ClimbingNotebook.entitlements`, extension privacy manifest if needed | UTTypes/document handling, attribution, App Group, no CloudKit | M1/M4 |
+| `ClimbingNotebookTests/ModelTests.swift`, `PersistenceRecoveryTests.swift`, `MigrationTests.swift` | Invariants, on-disk save/reopen and upgrade safety | Each phase |
+| `ClimbingNotebookTests/MediaTests.swift`, `IntakeTests.swift`, `ShareInboxTests.swift`, `BackupRestoreTests.swift` | File lifetime, inbox crashes, corruption and round trips | M3-M5 |
+| `ClimbingNotebookTests/Fixtures/` | Synthetic old-schema stores, safe/malicious archives, text/PDF/images | Each phase |
+| `ClimbingNotebookUITests/NotebookFlows.swift`, `ImportFlows.swift`, `AccessibilityFlows.swift` | Core scenario, review confirmation and accessible actions | M2-M5 |
 | `Scripts/test-ios.sh`, `Scripts/check-coverage.sh` | Standard xcodebuild test entry and real xcresult coverage gate | M1 |
 | `.github/workflows/ios-ci.yml` | Pull-request/main GitHub Actions jobs on standard hosted macOS for the public repository, bounded artifacts, >=70% coverage | M1; verify runner/toolchain availability |
 | Xcode project's shared SwiftPM `Package.resolved` | Commit reviewed dependency resolution for reproducible local/CI builds, only if exception approved | M1; ZIP policy gate |
@@ -538,7 +540,7 @@ Rationale: portable backup is a launch-critical data recovery feature; a mature 
 
 **CI decision, approved:** GitHub Free replaces GitLab and its `shared` runner tag. Use `.github/workflows/ios-ci.yml` on pull requests and pushes to main with standard GitHub-hosted macOS runners. Do not set up GitLab or install a persistent runner on the personal MBP.
 
-**Confirmed repository posture:** the owner reports the GitHub branch/repository is public. Previously observed remote: `https://github.com/tljohnson/cragfolio.git`; verify current metadata before relying on it. Standard hosted runners, including macOS, are free for public repositories [S13-S14], subject to platform usage limits. No paid/larger runner is permitted. Audit generated changes for secrets/content before any separately authorized publication. Do not change repository visibility.
+**Confirmed repository posture:** the owner reports the GitHub branch/repository is public. Verify current repository metadata before relying on it; the requested repository slug is `climbing-notebook`, not a verified remote destination. Standard hosted runners, including macOS, are free for public repositories [S13-S14], subject to platform usage limits. No paid/larger runner is permitted. Audit generated changes for secrets/content before any separately authorized publication. Do not change repository visibility.
 
 Private-repository allowances are not the selected CI model. If live metadata contradicts the owner's public-repository report, stop the hosted-CI assumption and report the discrepancy; do not change visibility or billing. Public free runner time does not authorize larger runners, excessive artifact/cache usage, or paid storage. Keep artifacts short-lived and bounded. A prepared workflow is not an executed CI result: until separately authorized changes are published, validate locally and report hosted execution as not yet run.
 
@@ -597,7 +599,7 @@ The owner subsequently stated, `Plan is approved. GitHub branch has been publish
 
 ### Before Public Release
 
-6. Final app name, bundle/UTType/App Group namespace, branding, and App Store seller/Novacoast attribution placement.
+6. Permanent registration of bundle/UTType/App Group identities, final display branding, and App Store seller/Novacoast attribution placement. Development identifiers rooted at `com.climbingnotebook.foundation` remain provisional; future marketing names should not drive technical-identifier changes.
 7. MIT is selected as the starting code license. Confirm copyright ownership and finalize license text/notices, contributor agreement/DCO if desired, issue/code review governance, and backup maintainer. The earlier GPLv3-only versus GPLv3-or-later question no longer applies.
 8. Leif Johnson is the confirmed signing/release/support/privacy owner. Confirm Apple team authority, review cadence and long-term membership continuity. Build support/privacy pages on owner-controlled leifdigital.com; final page URLs are not yet selected or live.
 9. Retention until explicit deletion is confirmed, with no automatic expiry of ready deliveries or saved drafts. Validate the detailed retention UX and user-visible warnings before release.
@@ -618,7 +620,7 @@ Consulted 2026-10-27. Official framework availability and dated submission rules
 | S5 | [Apple SDK requirements, April 28, 2026](https://developer.apple.com/news/upcoming-requirements/?id=04282026a), [Xcode requirements](https://developer.apple.com/xcode/system-requirements), [submission guidance](https://developer.apple.com/app-store/submitting/) | Build SDK requirement is distinct from app deployment target; future changes remain possible. |
 | S6 | [Apple Archive](https://developer.apple.com/documentation/applearchive), [Apple ZIP/Compression explanation](https://developer.apple.com/forums/thread/694893) | Compression algorithms/Apple Archive do not by themselves implement interoperable ZIP restore. |
 | S7 | [Mountain Project official Data API](https://www.mountainproject.com/data) | Public access deprecated; new requests declined. Direct page verified. |
-| S8 | [Adventure Projects Terms of Use](https://www.adventureprojects.net/ap-terms) | Current retrieved page dated August 4, 2023; sections 3, 7, 8(g), and 12 constrain use. Not a legal authorization for Cragfolio. |
+| S8 | [Adventure Projects Terms of Use](https://www.adventureprojects.net/ap-terms) | Current retrieved page dated August 4, 2023; sections 3, 7, 8(g), and 12 constrain use. Not a legal authorization for Climbing Notebook. |
 | S9 | [SuperTopo FAQ](https://www.supertopo.com/faq.html) | Search-indexed official material describes guides/eBooks. HTTPS terms retrieval failed; API and reuse permissions unverified. |
 | S10 | [Apple privacy details](https://developer.apple.com/app-store/app-privacy-details), [SDK requirements](https://developer.apple.com/support/third-party-SDK-requirements) | Review privacy disclosures and actual SDK inventory before submission. |
 | S11 | [ZIPFoundation project](https://github.com/weichsel/ZIPFoundation), [reviewed README](https://raw.githubusercontent.com/weichsel/ZIPFoundation/development/README.md) | Free MIT library, file/stream access, progress/cancellation; project claims are not proof of our security/ZIP64/performance requirements. |
@@ -636,9 +638,9 @@ Plan approval is recorded. The next implementation assignment is the bounded M0/
 
 These instructions are suitable as the opening assignment for an implementation session that also has access to this full plan. Do not create another Agent Manager session or worktree automatically. This document does not claim the implementing model has started or completed any work.
 
-Implement the approved Cragfolio plan, beginning with **M0/M1 only**. Read the full document before editing, particularly sections 6-9, 12-13, and 16. Deliver a buildable, tested foundation and measured feasibility findings, not an entire app in one unverified pass. Stop at the M1 handoff boundary; subsequent milestones can use section 21.5 when assigned. Do not ask again for already resolved iOS, dependency, public GitHub, restore, intake, or OCR decisions.
+Implement the approved Climbing Notebook plan, beginning with **M0/M1 only**. Read the full document before editing, particularly sections 6-9, 12-13, and 16. Deliver a buildable, tested foundation and measured feasibility findings, not an entire app in one unverified pass. Stop at the M1 handoff boundary; subsequent milestones can use section 21.5 when assigned. Do not ask again for already resolved iOS, dependency, public GitHub, restore, intake, or OCR decisions.
 
-The planning session has written no application code, resolved no dependencies, created no Xcode targets/workflows, and run no application tests. Earlier read-only checks reported a clean worktree, `Xcode 27.1 / Build version 27A9275`, and origin `https://github.com/tljohnson/cragfolio.git`. Treat those as historical observations: inspect the actual environment and repository, not assumptions. The original handoff may no longer exist in the current checkout; this approved plan is the implementation source of truth. Preserve any existing user/agent changes.
+Inspect the actual environment, repository and current feasibility evidence rather than assuming the planned files or gates are complete. The original handoff may no longer exist in the current checkout; this approved plan is the implementation source of truth. Preserve any existing user/agent changes.
 
 ### 21.2 Permissions and Guardrails
 

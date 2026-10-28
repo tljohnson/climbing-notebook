@@ -29,7 +29,7 @@ final class URLPolicyFeasibilityTests: XCTestCase, WKNavigationDelegate {
         let handler = ResourceHandler()
         let resourceConfiguration = WKWebViewConfiguration()
         resourceConfiguration.websiteDataStore = .nonPersistent()
-        resourceConfiguration.setURLSchemeHandler(handler, forURLScheme: "cragfolio-test")
+        resourceConfiguration.setURLSchemeHandler(handler, forURLScheme: "climbing-notebook-test")
         let preview = WKWebView(frame: .zero, configuration: resourceConfiguration)
         preview.navigationDelegate = self
         let resource = expectation(description: "Image subresource requested")
@@ -37,7 +37,7 @@ final class URLPolicyFeasibilityTests: XCTestCase, WKNavigationDelegate {
         loaded = expectation(description: "Explicit synthetic page load")
         preview.loadHTMLString("""
             <html><body><p>Synthetic climbing notes</p>
-            <img src="cragfolio-test://fixture/topo.png"></body></html>
+            <img src="climbing-notebook-test://fixture/topo.png"></body></html>
             """, baseURL: nil)
         await fulfillment(of: [loaded!, resource], timeout: 15)
         let text = try await preview.evaluateJavaScript("document.body.innerText") as? String

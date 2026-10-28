@@ -1,8 +1,8 @@
-# Cragfolio
+# Climbing Notebook
 
 Updated: 2026-10-28
 
-Cragfolio is planned as a native, offline-first personal climbing notebook for iPhone and iPad. The approved product and integrity requirements are in [the architecture and implementation plan](Cragfolio-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md).
+Climbing Notebook is planned as a native, offline-first personal climbing notebook for iPhone and iPad. The approved product and integrity requirements are in [the architecture and implementation plan](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md).
 
 This repository is at the M0/M1 foundation stage. The initial Xcode app, share-extension target, persistence proof, and tests are engineering foundation only; route editing, import review, share delivery, backup/restore, and other product flows are not yet implemented. Do not use this foundation as a finished notebook or store personal climbing data in it.
 
@@ -16,7 +16,7 @@ The approved deployment target is iOS 17. Local simulator verification requires 
 
 ## Build and Test
 
-Open `Cragfolio.xcodeproj` in Xcode, or run the signing-free simulator checks:
+Open `ClimbingNotebook.xcodeproj` in Xcode, or run the signing-free simulator checks:
 
 ```sh
 SIMULATOR_ID="installed-simulator-UUID" bash Scripts/test-ios.sh
@@ -25,12 +25,14 @@ SIMULATOR_ID="installed-simulator-UUID" bash Scripts/test-ios.sh
 Resolve the reviewed package dependency with native Xcode tooling:
 
 ```sh
-xcodebuild -resolvePackageDependencies -project Cragfolio.xcodeproj -scheme Cragfolio
+xcodebuild -resolvePackageDependencies -project ClimbingNotebook.xcodeproj -scheme ClimbingNotebook
 ```
 
 Set `SIMULATOR_ID` to an installed simulator UUID from `xcrun simctl list devices available`. The script runs the shared scheme's unit and UI tests into a uniquely named `.xcresult`, using the active simulator architecture consistently for package and app targets. Run `bash Scripts/check-coverage.sh <result.xcresult>` to enforce 70% combined app/extension Swift line coverage; dependencies, test targets and generated sources are excluded. The extension is included even though its entry point is not exercised.
 
 The extension is deliberately hidden from the share sheet until durable receiving exists. It never acknowledges an import as successful.
+
+The local repository folder is `climbing-notebook`; project, scheme, module, and source names use `ClimbingNotebook`. The project-level `DEVELOPMENT_DISPLAY_NAME` build setting is the entry point for future display branding. It supplies the generated app `CFBundleDisplayName` and the extension's display name; the app reads `CFBundleDisplayName` for its title. Keep technical identifiers independent of future marketing names. Development bundle identifiers rooted at `com.climbingnotebook.foundation` are provisional pending permanent registration, not registered release identities.
 
 ## Architecture and Data
 
@@ -47,6 +49,8 @@ ZIPFoundation 0.9.20 is resolved at `22787ffb59de99e5dc1fbfe80b19c97a904ad48d` i
 GitHub Actions is configured for pull requests/main using a standard `macos-15` runner, read-only permissions, a verified immutable checkout Action, cancellation of superseded runs, a 30-minute timeout and no uploaded artifacts/caches. It uses the runner's default Xcode and an installed iPhone simulator, printing the actual environment. Hosted CI has not been run from this local setup. No signing credentials, automatic publishing, paid services, or repository-setting changes are required or authorized.
 
 ## Feasibility Status
+
+The current development-identity check passes all 11 unit/UI tests on iPhone 16 Pro / iOS 27.0, including the working navigation title, from the `climbing-notebook` checkout folder. Evidence: ignored `.build/DevelopmentIdentityFinal.xcresult`. Combined app/extension coverage is 153/185 lines (82.70%); generated display names are `Climbing Notebook` and `Climbing Notebook Inbox`. Script syntax and the coverage rejection self-test pass.
 
 The local 11-test suite passed with zero failures/skips on Xcode 27.1 (27A9275) on both iPhone 17 Pro Max / iOS 26.4 (`AF2E99D6-1023-4682-9759-0D7CF4591CB8`) and iPhone 16 Pro / iOS 27.0 (`F914FD59-C008-4E73-B265-46380A22EA22`). Evidence is in ignored `.build/Feasibility-fixed-20261028.xcresult` and `.build/Current-20261028.xcresult`. Both report app coverage 153/162 and extension 0/22, combined 153/184 (83.15%). The coverage checker rejects a 6/11-line sample. Deployment remains iOS 17, but that runtime and physical-device checks are unavailable here; installed iOS 27.1 and iPad runtimes have not been exercised. Simulator reopen tests do not prove process-kill durability or production restore readiness. Xcode emitted SDK build-number parsing/debugger-version warnings, but the result bundles report passing tests.
 

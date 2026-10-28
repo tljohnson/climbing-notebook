@@ -16,7 +16,7 @@ struct Report: Decodable {
 func check(_ data: Data) throws -> Bool {
     let report = try JSONDecoder().decode(Report.self, from: data)
     var covered = 0, executable = 0
-    for name in ["Cragfolio.app", "CragfolioShare.appex"] {
+    for name in ["ClimbingNotebook.app", "ClimbingNotebookShare.appex"] {
         guard let target = report.targets.first(where: { $0.name == name }) else {
             throw NSError(domain: "CoverageGate", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "Missing first-party target: \(name)"])
@@ -45,8 +45,8 @@ do {
     if arguments.count == 2 && arguments[1] == "--self-test" {
         let below = Data("""
         {"targets":[
-          {"name":"Cragfolio.app","files":[{"path":"/src/App.swift","coveredLines":6,"executableLines":10}]},
-          {"name":"CragfolioShare.appex","files":[{"path":"/src/Share.swift","coveredLines":0,"executableLines":1}]}
+          {"name":"ClimbingNotebook.app","files":[{"path":"/src/App.swift","coveredLines":6,"executableLines":10}]},
+          {"name":"ClimbingNotebookShare.appex","files":[{"path":"/src/Share.swift","coveredLines":0,"executableLines":1}]}
         ]}
         """.utf8)
         guard try !check(below) else { fatalError("Below-threshold fixture was accepted") }

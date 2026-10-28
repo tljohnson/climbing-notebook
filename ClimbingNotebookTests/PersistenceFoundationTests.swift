@@ -1,6 +1,6 @@
 import XCTest
 import SwiftData
-@testable import Cragfolio
+@testable import ClimbingNotebook
 
 @MainActor
 final class PersistenceFoundationTests: XCTestCase {

@@ -19,7 +19,7 @@ jobs:
           xcodebuild -version
           xcrun simctl list runtimes
       - name: Resolve reviewed dependency
-        run: xcodebuild -resolvePackageDependencies -project Cragfolio.xcodeproj -scheme Cragfolio -derivedDataPath .build/DerivedData -onlyUsePackageVersionsFromResolvedFile
+        run: xcodebuild -resolvePackageDependencies -project ClimbingNotebook.xcodeproj -scheme ClimbingNotebook -derivedDataPath .build/DerivedData -onlyUsePackageVersionsFromResolvedFile
       - name: Test simulator foundation
         run: |
           SIMULATOR_ID="$(xcrun simctl list devices available -j | ruby -rjson -e 'devices = JSON.parse(STDIN.read)["devices"].values.flatten; device = devices.find { |d| d["name"].start_with?("iPhone") }; abort "No iPhone simulator installed" unless device; puts device["udid"]')"
