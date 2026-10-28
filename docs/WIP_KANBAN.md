@@ -15,6 +15,14 @@
 
 ## Review
 
+- [ ] `CF-05A` Measure bounded ZIP64 and independent-tool interoperability
+  - Priority: P0
+  - Owner: Kilo/local
+  - Depends on: CF-03 archive feasibility baseline; independent of blocked CF-04B
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §§9.1–9.4, §21.3 F3
+  - Done when: Executable test-only streaming harness measures real >4 GiB entry/archive/offset boundaries and bidirectional independent interoperability; minimum/current focused/full tests, coverage and known failures are recorded with cleanup and remaining gates.
+  - Evidence: `../README.md` CF-05A; `Scripts/test-archive-boundaries.sh`, `.build/CF05A-boundaries-final-20261028.log`; focused 2/2 each, full 18/20 each (only known CF-04B failures), coverage 167/194 (86.08%); owned scratch removed.
+
 ## Done
 
 - [x] `CF-04A` Harden the generation recovery feasibility matrix
