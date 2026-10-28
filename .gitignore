@@ -22,3 +22,5 @@ build/
 .env.*
 !.env.example
 .devcontainer.env
+xcuserdata/
+*.xcuserstate

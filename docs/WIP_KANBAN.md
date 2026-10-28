@@ -6,6 +6,13 @@
 
 ## Blocked
 
+- [ ] `CF-04B` Prove bounded on-disk migration preservation and recovery
+  - Priority: P0
+  - Owner: Kilo/local
+  - Blocked by: Owner review of reproducible SwiftData teardown failure; see `../README.md` CF-04B evidence and proposed test-only process-boundary investigation.
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §6.4, §9.5, §21.3 F2
+  - Done when: Test-only synthetic migration preserves IDs, Unicode and relationships after explicit save/reopen; deterministic failure preserves an independent closed generation including sidecars, supports recovery/retry without empty-library fallback, and full minimum/current simulator suites and coverage pass with documented limits.
+
 ## Review
 
 ## Done
