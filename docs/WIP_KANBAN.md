@@ -6,6 +6,13 @@
 
 ## Blocked
 
+- [ ] `CF-05B` Bound hostile-entry/header rejection feasibility
+  - Priority: P0
+  - Owner: Kilo/local
+  - Blocked by: Owner review of strict preflight capability for silent enumeration/header-observability gaps; bounded matrix awaits independent verification. See `../README.md` CF-05B and `ClimbingNotebookTests/ArchiveHostileFeasibilityTests.swift`.
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §§9.1–9.4, §21.3 F3
+  - Done when: Small synthetic hostile fixtures distinguish library behavior from whole-archive policy rejection, expose observability gaps, and record minimum/current focused/full tests, coverage and remaining owner-review gates without production validation claims.
+
 - [ ] `CF-04B` Prove bounded on-disk migration preservation and recovery
   - Priority: P0
   - Owner: Kilo/local

@@ -325,7 +325,10 @@
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				INFOPLIST_KEY_CFBundleDisplayName = "$(DEVELOPMENT_DISPLAY_NAME)";
+				INFOPLIST_KEY_CFBundleDisplayName = "Climbing Notebook";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Built at Novacoast.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				PRODUCT_NAME = ClimbingNotebook;
 			};
 			name = Release;
@@ -362,7 +365,7 @@
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_DISPLAY_NAME = "Climbing Notebook"; // Branding placeholder.
+				DEVELOPMENT_DISPLAY_NAME = "Climbing Notebook";
 				ENABLE_TESTABILITY = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				SDKROOT = iphoneos;
@@ -374,7 +377,7 @@
 		A00000000000000000000012 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEVELOPMENT_DISPLAY_NAME = "Climbing Notebook"; // Branding placeholder.
+				DEVELOPMENT_DISPLAY_NAME = "Climbing Notebook";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
@@ -386,7 +389,7 @@
 			buildSettings = {
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "$(DEVELOPMENT_DISPLAY_NAME)";
+				INFOPLIST_KEY_CFBundleDisplayName = "Climbing Notebook";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Built at Novacoast.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
