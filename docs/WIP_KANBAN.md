@@ -2,13 +2,6 @@
 
 ## Ready
 
-- [ ] `CF-07A` Build disposable native notebook interaction prototype
-  - Priority: P0
-  - Owner: Unassigned
-  - Depends on: Owner-approved prototype-first sequencing exception; no archive or durable storage dependency
-  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.4
-  - Done when: Synthetic library/area-to-route flow supports five pitches, note edits and accessible reorder with a visible reset-on-relaunch notice; simulator/test/coverage evidence and Leif's usability review are recorded without durable-save claims.
-
 ## In Progress
 
 ## Blocked
@@ -42,6 +35,14 @@
   - Done when: Test-only synthetic migration preserves IDs, Unicode and relationships after explicit save/reopen; deterministic failure preserves an independent closed generation including sidecars, supports recovery/retry without empty-library fallback, and full minimum/current simulator suites and coverage pass with documented limits.
 
 ## Review
+
+- [ ] `CF-07A` Build disposable native notebook interaction prototype
+  - Priority: P0
+  - Owner: Kilo/local
+  - Depends on: Owner-approved prototype-first sequencing exception; no archive or durable storage dependency
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.4
+  - Done when: Synthetic library/area-to-route flow supports five pitches, note edits and accessible reorder with a visible reset-on-relaunch notice; simulator/test/coverage evidence and Leif's usability review are recorded without durable-save claims.
+  - Evidence: `../README.md` CF-07A workflows; read-only Previous/Next and explicit editing; full 42/44 each (CF-04B only), coverage 865/895, iPad UI6/6; mismatch clarified as navigation confusion, revised usability review pending.
 
 - [ ] `CF-05F` Choose strict extraction and ZIP64 reconciliation implementation boundary
   - Priority: P0
