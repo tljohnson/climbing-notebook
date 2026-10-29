@@ -1,6 +1,6 @@
 # Climbing Notebook System Documentation Index
 
-Updated: 2026-10-28
+Updated: 2026-10-29
 
 ## Reading Workflow
 
@@ -10,7 +10,7 @@ Read this index first, then task-relevant references and cross-cutting contracts
 
 Climbing Notebook is an offline-first personal climbing notebook, iPhone-primary with minimal iPad support, targeting iOS 17+ with SwiftUI. The approved architecture routes presentation through feature coordinators to app-private SwiftData persistence and managed-file services. The main app alone owns library mutations and managed originals; the share extension delivers only to an App Group mailbox for main-app intake and draft review. Portable backup uses explicit data-transfer models plus originals, not a raw database copy. These are approved architectural contracts, not claims that all components exist. See [architecture](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#5-architecture-and-technology-decisions).
 
-The implementation is foundation-only: the launch UI does not open a library, persistence and recovery have feasibility harnesses, and the extension does not receive deliveries. Product editing, intake and backup/restore flows are not implemented. Consult source and the [current feasibility evidence and gaps](README.md#feasibility-status), not the plan's proposed file map, for implemented behavior.
+The launch UI is a disposable synthetic notebook: browsing is read-only, note/order editing uses explicit workflows, and all edits reset on relaunch. It does not open a library store. Persistence/recovery remain feasibility harnesses; durable product editing, intake and backup/restore are not implemented. Consult source, [current capabilities](README.md#current-capabilities) and task-relevant evidence below, not the plan's prospective file map.
 
 ## Cross-Cutting Invariants
 
@@ -29,7 +29,7 @@ The [plan's confirmed owner decisions](ClimbingNotebook-Offline-iOS-Notebook-Arc
 - Leif Johnson owns signing, releases, support and privacy URLs. App pages are planned on owner-controlled `leifdigital.com` without additional hosting costs; pages and final URLs still need to be established.
 - Development bundle identifiers rooted at `com.climbingnotebook.foundation` are provisional pending permanent registration. Permanent bundle, backup-type and App Group identifiers remain undecided; technical identities stay independent of future marketing names. Use the project-level `DEVELOPMENT_DISPLAY_NAME` setting for future display branding; the app title reads the generated `CFBundleDisplayName`.
 
-See [open release decisions](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#18-open-owner-decisions) before changing licensing, signing or distribution. Owner-reported simulator downloads are not proof of installed-runtime coverage; consult the [verification evidence](README.md#feasibility-status) for checks actually executed.
+See [open release decisions](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#18-open-owner-decisions) before changing licensing, signing or distribution. Owner-reported simulator downloads are not proof of installed-runtime coverage; consult the [verification references](README.md#verification-references) for checks actually executed.
 
 ## Task Routing
 
@@ -37,17 +37,17 @@ Plan links below define approved requirements and contracts, not completed funct
 
 | Task | Read first |
 |---|---|
-| UI / navigation / editing | [screen specifications](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#4-screen-and-interaction-specifications), [architecture](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#5-architecture-and-technology-decisions) |
+| UI / navigation / editing | [screen specifications](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#4-screen-and-interaction-specifications), [prototype scope](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2144-owner-approved-prototype-first-reset), [prototype evidence](docs/verification/NotebookPrototype.md) |
 | Persistence / schema / migrations / managed files | [architecture](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#5-architecture-and-technology-decisions), [data model](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#6-logical-data-model), [service contracts](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#7-contracts-and-api-boundaries), [data integrity](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#8-media-storage-and-data-integrity) |
-| Archives / backup / replace-restore / generation recovery | [data integrity](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#8-media-storage-and-data-integrity), [backup and restore contract](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#9-complete-backup-and-replace-restore-contract), [feasibility evidence](README.md#feasibility-status) |
-| Intake / share extension / URL copying | [intake and review](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#46-intake-inbox-and-review), [mailbox contract](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#72-share-extension-mailbox-contract), [privacy and safety](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#11-privacy-accessibility-and-safety), [URL-policy findings](README.md#feasibility-status) |
+| Archives / backup / replace-restore / generation recovery | [data integrity](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#8-media-storage-and-data-integrity), [backup and restore contract](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#9-complete-backup-and-replace-restore-contract), [archive evidence](docs/verification/Archives.md), [persistence evidence](docs/verification/Persistence.md) |
+| Intake / share extension / URL copying | [intake and review](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#46-intake-inbox-and-review), [mailbox contract](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#72-share-extension-mailbox-contract), [privacy and safety](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#11-privacy-accessibility-and-safety), [URL-policy finding](docs/verification/Persistence.md#url-policy-finding) |
 | Build / tests / coverage / CI | [local commands](README.md#build-and-test), [test strategy](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#13-test-strategy-and-release-acceptance), [native policy exceptions](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#161-applicable-standards-and-exceptions), [CI configuration and limits](README.md#ci-and-distribution) |
-| Work scope / approval / milestone gates | [implementation handoff](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#21-implementation-handoff), [current evidence and remaining gaps](README.md#feasibility-status) |
+| Work scope / approval / milestone gates | [implementation handoff](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#21-implementation-handoff), [Kanban](docs/WIP_KANBAN.md), [verification references](README.md#verification-references) |
 | Licensing / ownership / signing / release prerequisites | [owner decisions](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2-decisions-assumptions-and-approval), [policy and distribution](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#16-policy-costs-ci-and-distribution), [open release decisions](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#18-open-owner-decisions) |
 
 ## Source Navigation
 
-- `ClimbingNotebook/App/`: minimal foundation launch interface.
+- `ClimbingNotebook/App/` and `Features/NotebookPrototype/`: transient notebook entry and UI.
 - `ClimbingNotebook/Models/`: versioned persistence schema.
 - `ClimbingNotebook/Services/Persistence/`: explicit on-disk store operations.
 - `ClimbingNotebookShare/`: extension entry point.
@@ -61,6 +61,6 @@ Discover current files with search rather than expanding this index into an exha
 
 The [approved plan](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md) owns delivery contracts, owner decisions and approval scope; its [section 21 handoff](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#21-implementation-handoff) defines the bounded M0/M1 assignment and gates for later work. This index does not expand that authorization. Plan approval does not authorize commits, pushes, publication, website deployment, signing changes or developer-portal registration.
 
-The [README](README.md) owns actual setup and verification commands; its [feasibility status](README.md#feasibility-status) is the current home for milestone status, evidence and remaining gaps. Source and test results establish implemented behavior. Implementation references must describe what exists, not present planned features as live.
+The [README](README.md) owns current capabilities, setup and reusable verification commands. [Kanban](docs/WIP_KANBAN.md) owns task status. Topic references under `docs/verification/` own consolidated conclusions, decisive measurements, reproducible checks and remaining limits; read only the relevant topic. Source and test results establish implemented behavior, not planned features presented as live. Raw ignored `.build/` artifacts are local diagnostics, not required context for every task.
 
-Update this index only for navigation, architecture or cross-cutting invariants. Keep implementation detail in canonical references, extracting focused leaf documents when implemented subsystems warrant them rather than duplicating the plan. Keep task status out of this index and approval decisions out of status reports. Release history belongs in `CHANGELOG.md` and Git, not an accumulating index history; maintain one updated date.
+Update this index only for navigation, architecture or cross-cutting invariants. Update topic documents in place; retain earlier failures only when they explain a current limitation or decision. Do not append per-turn worklogs, repeated test tables, superseded instructions or transient worktree observations to README, plans or this index. Do not create one report per agent/packet when an existing topic fits. Keep contracts/owner decisions in plans and release history in `CHANGELOG.md`/Git; maintain one updated date.
