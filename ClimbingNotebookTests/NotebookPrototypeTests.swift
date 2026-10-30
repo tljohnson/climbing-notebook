@@ -50,4 +50,53 @@ final class NotebookPrototypeTests: XCTestCase {
         route.notes = ""
         XCTAssertTrue(route.notes.isEmpty)
     }
+
+    @MainActor
+    func testWorkingCopyIsSeparateFromAcknowledgedStateAndFailureCanRetry() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("CF07B-state-\(UUID().uuidString)")
+        let state = NotebookState(root: root)
+        state.load()
+        XCTAssertNil(state.loadError)
+        let original = try XCTUnwrap(state.areas.first?.routes.first)
+        var working = original
+        working.notes = "Working 雪 e\u{301}"
+        XCTAssertEqual(state.areas.first?.routes.first, original)
+        state.store?.beforeSave = { throw CocoaError(.fileWriteOutOfSpace) }
+        XCTAssertThrowsError(try state.save(working, pitchID: nil, order: false))
+        XCTAssertEqual(state.areas.first?.routes.first, original)
+        XCTAssertTrue(state.acknowledgedRoutes.isEmpty)
+        XCTAssertEqual(working.notes, "Working 雪 e\u{301}")
+        state.store?.beforeSave = nil
+        try state.save(working, pitchID: nil, order: false)
+        XCTAssertEqual(state.areas.first?.routes.first?.notes, working.notes)
+        XCTAssertTrue(state.acknowledgedRoutes.contains(working.id))
+        state.load()
+        XCTAssertTrue(state.acknowledgedRoutes.isEmpty)
+        XCTAssertEqual(state.areas.first?.routes.first?.notes, working.notes)
+    }
+
+    @MainActor
+    func testLoadFailureDoesNotPublishEmptySuccess() throws {
+        let parent = FileManager.default.temporaryDirectory.appendingPathComponent("CF07B-invalid-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: false)
+        let state = NotebookState(root: parent)
+        state.load()
+        XCTAssertNotNil(state.loadError)
+        XCTAssertNil(state.store)
+        XCTAssertTrue(state.areas.isEmpty)
+        state.load()
+        XCTAssertNotNil(state.loadError)
+    }
+
+    @MainActor
+    func testNoOpDoesNotInventSavedAcknowledgment() throws {
+        let state = NotebookState(root: FileManager.default.temporaryDirectory.appendingPathComponent("CF07B-noop-\(UUID().uuidString)"))
+        state.load()
+        let original = try XCTUnwrap(state.areas.first?.routes.first)
+        state.store?.beforeSave = { XCTFail("No-op must not save") }
+        try state.save(original, pitchID: nil, order: false)
+        try state.save(original, pitchID: "slab", order: false)
+        try state.save(original, pitchID: nil, order: true)
+        XCTAssertTrue(state.acknowledgedRoutes.isEmpty)
+    }
 }

@@ -10,7 +10,7 @@ Read this index first, then task-relevant references and cross-cutting contracts
 
 Climbing Notebook is an offline-first personal climbing notebook, iPhone-primary with minimal iPad support, targeting iOS 17+ with SwiftUI. The approved architecture routes presentation through feature coordinators to app-private SwiftData persistence and managed-file services. The main app alone owns library mutations and managed originals; the share extension delivers only to an App Group mailbox for main-app intake and draft review. Portable backup uses explicit data-transfer models plus originals, not a raw database copy. These are approved architectural contracts, not claims that all components exist. See [architecture](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#5-architecture-and-technology-decisions).
 
-The launch UI is a disposable synthetic notebook: browsing is read-only, note/order editing uses explicit workflows, and all edits reset on relaunch. It does not open a library store. Persistence/recovery remain feasibility harnesses; durable product editing, intake and backup/restore are not implemented. Consult source, [current capabilities](README.md#current-capabilities) and task-relevant evidence below, not the plan's prospective file map.
+The launch UI is a synthetic notebook: browsing is read-only and note/order editing uses explicit workflows. CF-07B adds an isolated versioned SwiftData fixture store and buffered explicit save/relaunch for route notes, pitch notes and whole pitch order. It is not the full product schema. The separate diagnostic LibraryStore/generation harnesses remain unchanged; intake, migration/replacement acceptance and backup/restore remain incomplete. Consult source, [current capabilities](README.md#current-capabilities) and task-relevant evidence below, not the plan's prospective file map.
 
 ## Cross-Cutting Invariants
 
@@ -18,6 +18,7 @@ The launch UI is a disposable synthetic notebook: browsing is read-only, note/or
 - Never report saved/local success before originals and metadata are durably acknowledged. Preserve explicit save/recovery and file-ownership rules in the [data-integrity contract](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#8-media-storage-and-data-integrity).
 - Backup, generation recovery and URL-copy protections require measured feasibility evidence before dependent features proceed. Do not weaken guarantees or treat a harness as production readiness; follow the [handoff gates](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#21-implementation-handoff).
 - The owner-approved [prototype-first exception](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2144-owner-approved-prototype-first-reset) permits a disposable synthetic notebook UI before M1 acceptance. Archive research is paused; its capability gaps gate restore, not the prototype. This does not authorize durable storage claims or relax release requirements.
+- Leif approved the bounded [durable fixture slice](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2145-cf-07b-approved-ordinary-durable-saverelaunch-slice), including explicit completion saves instead of eventual autosave, isolated schema/store adoption, and retained incomplete initialization without automatic repair. Unacknowledged edits may be lost; only successful explicit saves are presented as saved. Valuable data remains out of scope. Its acceptance is separate from CF-07A and M1.
 - No backend, account, OCR, synchronization, analytics, LLM calls or automatic route-field extraction is authorized by the current implementation scope. Use synthetic fixtures, not personal route libraries or copyrighted guidebooks; see [scope and guardrails](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#212-permissions-and-guardrails).
 - Use an English-first UI while preserving Unicode user content. Retain originals/raw text until explicit deletion; ready deliveries and saved drafts do not automatically expire. These owner-confirmed defaults are recorded in the [owner decisions](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#21-confirmed-owner-decisions).
 
@@ -47,7 +48,7 @@ Plan links below define approved requirements and contracts, not completed funct
 
 ## Source Navigation
 
-- `ClimbingNotebook/App/` and `Features/NotebookPrototype/`: transient notebook entry and UI.
+- `ClimbingNotebook/App/` and `Features/NotebookPrototype/`: shared snapshot state, buffered editors and native notebook UI.
 - `ClimbingNotebook/Models/`: versioned persistence schema.
 - `ClimbingNotebook/Services/Persistence/`: explicit on-disk store operations.
 - `ClimbingNotebookShare/`: extension entry point.

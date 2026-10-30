@@ -6,9 +6,9 @@ Native, iPhone-primary climbing notebook for iOS 17+ with minimal iPad support. 
 
 ## Current Capabilities
 
-The disposable synthetic-data notebook prototype is implemented and owner-tested. Browse areas, routes and five ordered pitches; use Previous/Next for pitch navigation. Edit Notes and Edit Pitch Order open separate editing workflows. All edits reset on relaunch, as the persistent prototype notice states. Do not enter personal climbing data.
+The native synthetic-data notebook preserves CF-07A's owner-accepted browsing and explicit editing workflows. Browse areas, routes and five ordered pitches; Previous/Next navigates without reordering. CF-07B adds explicit durable saves for route notes, pitch notes and pitch order, pending owner testing. Do not enter personal climbing data.
 
-Durable notebook editing, media intake, share delivery, URL copying and backup/restore are not implemented. M1 remains incomplete. The next recommended reviewed packet is ordinary durable save/relaunch; archive research is paused, not a prerequisite for that packet. See the [Kanban](docs/WIP_KANBAN.md) for task status and [verification references](#verification-references) for measured results and feature-specific blockers.
+Finish Editing and Done save on this device before closing. Cancel confirms discard when changed. Unsaved edits can be lost if the app closes; failures retain the editor for retry. Creation/deletion, full notebook schema coverage, media intake, share delivery, URL copying and backup/restore are not implemented. M1 remains incomplete; archive research is paused, not a prerequisite for ordinary notebook increments. See the [Kanban](docs/WIP_KANBAN.md) and [verification references](#verification-references) for actual status and remaining gaps.
 
 ## Prerequisites
 
@@ -21,15 +21,15 @@ Durable notebook editing, media intake, share delivery, URL copying and backup/r
 Open `ClimbingNotebook.xcodeproj`, select the ClimbingNotebook scheme and a simulator, then Run. For signing-free unit/UI tests and combined first-party coverage:
 
 ```sh
-SIMULATOR_ID="installed-simulator-UUID" bash Scripts/test-ios.sh -quiet -test-timeouts-enabled YES -maximum-test-execution-time-allowance 120 -collect-test-diagnostics never
+SIMULATOR_ID="installed-simulator-UUID" bash Scripts/test-ios.sh -quiet -test-timeouts-enabled YES -maximum-test-execution-time-allowance 300 -collect-test-diagnostics never
 bash Scripts/check-coverage.sh <result.xcresult>
 bash Scripts/check-coverage.sh --self-test
 git diff --check
 ```
 
-The test script prints a unique result path by default. To choose one, set `RESULT_BUNDLE_PATH` to a new `.xcresult` path. Reverify destinations and run full suites on iOS 17 and the newest installed runtime. The >=70% coverage gate combines app and extension Swift lines, excluding dependencies, tests and generated sources. Coverage does not override failing behavior tests. Current suites have two unresolved migration failures; do not skip them or weaken their assertions.
+The test script prints a unique result path by default. To choose one, set `RESULT_BUNDLE_PATH` to a new `.xcresult` path. During development, run only affected focused tests on iPhone 18 Pro. At final phase acceptance, run the full unit/UI suite once on iPhone 15 and once on iPhone 18 Pro; a completed full run supersedes a separate focused run on unchanged code. After fixes, rerun affected checks and invalidate only acceptance results affected by the changes. Reserve iterative iPad checks for layout-related changes. The selected Device Hub matrix is iPhone 15 / iOS 17.0 (`FB17E53E-C6B7-419C-8D52-6205AD037B52`), iPhone 18 Pro / iOS 27.0 (`087CDB20-DD15-43C5-8CBB-69D32A5A7478`), and iPad (10th generation) / iOS 26.4 (`A6DB0B3A-AD70-435D-AC6C-46B370A06BA7`), verified 2026-10-30. Reverify availability before execution; iPhone Duo is excluded from future suites. Do not create destinations or change simulator settings implicitly. The >=70% coverage gate combines app and extension Swift lines, excluding dependencies, tests and generated sources. Coverage does not override failing behavior tests. Current suites have two unresolved migration failures; do not skip them or weaken their assertions.
 
-Focus prototype checks by adding `-only-testing:ClimbingNotebookTests/NotebookPrototypeTests -only-testing:ClimbingNotebookUITests`. Resolve the approved dependency with native tooling when needed:
+Focus durable-slice checks by adding `-only-testing:ClimbingNotebookTests/NotebookPersistenceTests -only-testing:ClimbingNotebookTests/NotebookPrototypeTests -only-testing:ClimbingNotebookUITests`. UI relaunch checks use a generated test-store UUID retained across launches, not a launch-time reset. Resolve the approved dependency with native tooling when needed:
 
 ```sh
 xcodebuild -resolvePackageDependencies -project ClimbingNotebook.xcodeproj -scheme ClimbingNotebook
@@ -41,11 +41,11 @@ xcodebuild -resolvePackageDependencies -project ClimbingNotebook.xcodeproj -sche
 2. Open a pitch; Previous/Next changes selection without changing order.
 3. Choose Edit Notes, enter synthetic text, Hide Keyboard, then Finish Editing.
 4. From the route, choose Edit Pitch Order; move a pitch or use its drag handle, then Done. Names and notes stay attached.
-5. Visit Example Meadow and Unwritten Line for empty cases. Terminate/relaunch to confirm edits reset.
+5. Visit Example Meadow and Unwritten Line for empty cases. Terminate/relaunch to confirm acknowledged text and order return unchanged. Changes not explicitly saved do not survive termination.
 
 ## Architecture and Data
 
-The app entry opens transient SwiftUI state under `Features/NotebookPrototype/`; it does not open a library store. Separate two-entity SwiftData and generation descriptor/journal harnesses exercise persistence/recovery feasibility, not a production schema or restore service. The share extension is hidden from the share sheet and does not accept or acknowledge deliveries. No hosted API, telemetry, analytics, OCR, cloud sync or AI calls exist in this scope.
+The app opens a small versioned SwiftData fixture store under app-private `Application Support/NotebookFixtureSlice/`, with stable UUID relationships and explicit saves. Editors buffer plain values separately from acknowledged snapshots; autosave is disabled. Existing invalid/incomplete stores fail visibly without reset, reseeding or empty-library fallback. This format is limited to the synthetic fixtures, not the complete product schema. Separate two-entity `LibraryStore` and generation descriptor/journal harnesses remain unchanged and isolated. The hidden share extension does not accept deliveries. No hosted API, telemetry, analytics, OCR, cloud sync or AI calls exist in this scope.
 
 Technical project/scheme/module names use `ClimbingNotebook`. `DEVELOPMENT_DISPLAY_NAME` supplies generated display branding. Bundle identifiers rooted at `com.climbingnotebook.foundation` are provisional, not registered release identities.
 

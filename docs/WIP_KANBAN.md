@@ -36,6 +36,14 @@
 
 ## Review
 
+- [ ] `CF-07B` Plan and deliver bounded durable fixture notes and pitch order
+  - Priority: P0
+  - Owner: Kilo/local
+  - Depends on: Accepted CF-07A; Leif approved §21.4.5 implementation on 2026-10-29
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.5
+  - Done when: After explicit implementation approval, fixture route/pitch notes and whole pitch order survive acknowledged saves and relaunch with stable ownership, truthful recoverable failures, required tests/coverage and separate review, then Leif accepts; no broader L2 or migration acceptance.
+  - Evidence: [Notebook verification](verification/NotebookPrototype.md); selected phones 65/67 each (only known CF-04B), coverage 97.68% each, iPad26.4 UI 10/10 with orientation warnings; separate final review complete; awaiting Leif's testing.
+
 - [ ] `CF-05F` Choose strict extraction and ZIP64 reconciliation implementation boundary
   - Priority: P0
   - Owner: Kilo/local

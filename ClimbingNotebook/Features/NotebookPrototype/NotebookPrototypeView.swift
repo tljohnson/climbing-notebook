@@ -1,20 +1,24 @@
 import SwiftUI
 
 struct NotebookPrototypeView: View {
-    @State private var areas = PrototypeArea.fixtures
+    @Bindable var notebook: NotebookState
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("Prototype - changes reset on relaunch")
+            Text("Synthetic notebook - explicit saves stay on this device. Not for personal data; backup/restore unavailable.")
                 .font(.footnote.weight(.semibold))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal).padding(.vertical, 8)
                 .background(.regularMaterial)
                 .accessibilityIdentifier("prototypeNotice")
-            NavigationStack {
+            if let error = notebook.loadError {
+                ContentUnavailableView {
+                    Label("Notebook unavailable", systemImage: "exclamationmark.triangle")
+                } description: { Text(error) } actions: { Button("Retry Loading") { notebook.load() } }
+            } else { NavigationStack {
                 List {
                     Section {
-                        ForEach($areas) { $area in
+                        ForEach($notebook.areas) { $area in
                             NavigationLink {
                                 PrototypeAreaView(area: $area)
                             } label: {
@@ -31,8 +35,9 @@ struct NotebookPrototypeView: View {
                     Text("Built at Novacoast.").font(.footnote).foregroundStyle(.secondary)
                 }
                 .navigationTitle(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Climbing Notebook")
-            }
+            }.environment(notebook) }
         }
+        .task { if notebook.store == nil { notebook.load() } }
     }
 }
 
@@ -46,7 +51,7 @@ private struct PrototypeAreaView: View {
             }
             ForEach($area.routes) { $route in
                 NavigationLink {
-                    PrototypeRouteView(route: $route)
+                            PrototypeRouteView(routeID: route.id)
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(route.name).font(.headline)
@@ -61,7 +66,9 @@ private struct PrototypeAreaView: View {
 }
 
 private struct PrototypeRouteView: View {
-    @Binding var route: PrototypeRoute
+    @Environment(NotebookState.self) private var notebook
+    let routeID: String
+    private var route: PrototypeRoute { notebook.areas.flatMap(\.routes).first { $0.id == routeID }! }
     @State private var reordering = false
 
     var body: some View {
@@ -69,7 +76,7 @@ private struct PrototypeRouteView: View {
             Section {
                 if !route.grade.isEmpty { Text("\(route.grade) · \(route.style)").font(.headline) }
                 NavigationLink {
-                    PrototypeNotesView(title: "Route notes", notes: $route.notes)
+                    PrototypeNotesView(title: "Route notes", routeID: route.id, pitchID: nil)
                 } label: {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Route notes").font(.headline)
@@ -79,13 +86,15 @@ private struct PrototypeRouteView: View {
                 }
             }
             Section {
+                Text(notebook.acknowledgedRoutes.contains(route.id) ? "Saved on this device" : "Loaded from this device")
+                    .accessibilityIdentifier("saveAcknowledgment")
                 if route.pitches.isEmpty {
                     Text("No pitches entered. This example has room for notes without a pitch list.")
                         .foregroundStyle(.secondary)
                 }
                 ForEach(Array(route.pitches.enumerated()), id: \.element.id) { index, pitch in
                     NavigationLink {
-                        PrototypePitchView(route: $route, pitchID: pitch.id)
+                            PrototypePitchView(routeID: route.id, pitchID: pitch.id)
                             .id(pitch.id)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
@@ -108,27 +117,26 @@ private struct PrototypeRouteView: View {
                 Button("Edit Pitch Order") { reordering = true }
             }
         }
-        .fullScreenCover(isPresented: $reordering) { PrototypePitchOrderEditor(route: $route) }
+        .fullScreenCover(isPresented: $reordering) { PrototypeEditingView(route: route, pitchID: nil, order: true) }
     }
 }
 
 private struct PrototypePitchView: View {
-    @Binding var route: PrototypeRoute
+    @Environment(NotebookState.self) private var notebook
+    let routeID: String
+    private var route: PrototypeRoute { notebook.areas.flatMap(\.routes).first { $0.id == routeID }! }
     @State private var pitchID: String
 
-    init(route: Binding<PrototypeRoute>, pitchID: String) {
-        self._route = route
+    init(routeID: String, pitchID: String) {
+        self.routeID = routeID
         self._pitchID = State(initialValue: pitchID)
     }
 
     private var index: Int { route.pitches.firstIndex { $0.id == pitchID }! }
     private var pitch: PrototypePitch { route.pitches[index] }
-    private var notes: Binding<String> {
-        Binding(get: { route.pitches[index].notes }, set: { route.pitches[index].notes = $0 })
-    }
 
     var body: some View {
-        PrototypeNotesView(title: pitch.name, notes: notes) {
+        PrototypeNotesView(title: pitch.name, routeID: route.id, pitchID: pitchID) {
             Section {
                 Text("Pitch \(index + 1) of \(route.pitches.count) · \(pitch.grade)")
                 Button("Previous Pitch", systemImage: "chevron.left") { pitchID = route.pitches[index - 1].id }
@@ -141,137 +149,181 @@ private struct PrototypePitchView: View {
     }
 }
 
-private struct PrototypePitchOrderEditor: View {
-    @Binding var route: PrototypeRoute
+private struct PrototypeEditingView: View {
+    @Environment(NotebookState.self) private var notebook
     @Environment(\.dismiss) private var dismiss
+    @State private var working: PrototypeRoute
+    @State private var original: PrototypeRoute
+    let pitchID: String?
+    let order: Bool
+    @State private var error: String?
+    @State private var saving = false
+    @State private var confirmingDiscard = false
+    @State private var confirmingReload = false
+    @FocusState private var focused: Bool
+
+    init(route: PrototypeRoute, pitchID: String?, order: Bool) {
+        _working = State(initialValue: route)
+        _original = State(initialValue: route)
+        self.pitchID = pitchID
+        self.order = order
+    }
+
+    private var dirty: Bool {
+        if order { return working.pitches.map(\.id) != original.pitches.map(\.id) }
+        if let pitchID {
+            return !working.pitches.first { $0.id == pitchID }!.notes.utf8.elementsEqual(original.pitches.first { $0.id == pitchID }!.notes.utf8)
+        }
+        return !working.notes.utf8.elementsEqual(original.notes.utf8)
+    }
+    private var title: String { order ? "Edit Pitch Order" : pitchID.flatMap { id in working.pitches.first { $0.id == id }?.name } ?? "Route notes" }
+    private var text: Binding<String> {
+        Binding(get: {
+            if let pitchID { return working.pitches.first { $0.id == pitchID }!.notes }
+            return working.notes
+        }, set: { value in
+            if let pitchID, let index = working.pitches.firstIndex(where: { $0.id == pitchID }) { working.pitches[index].notes = value }
+            else { working.notes = value }
+        })
+    }
+
+    private func finish() {
+        guard dirty else { dismiss(); return }
+        saving = true
+        error = nil
+        Task { @MainActor in
+            do {
+                try notebook.save(working, pitchID: pitchID, order: order)
+                saving = false
+                dismiss()
+            } catch {
+                self.error = error.localizedDescription
+                saving = false
+            }
+        }
+    }
 
     var body: some View {
-        VStack(spacing: 0) {
-            PrototypeEditingNotice()
-            NavigationStack {
-                List {
-                    ForEach(Array(route.pitches.enumerated()), id: \.element.id) { index, pitch in
+        NavigationStack {
+            VStack(spacing: 0) {
+            Text(title).font(.headline).padding(.horizontal)
+            if !order {
+                Button("Hide Keyboard") {
+                    focused = false
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                }
+                    .accessibilityLabel("Dismiss keyboard")
+                    .padding(8)
+            }
+            Form {
+                Section {
+                    Text("Unsaved changes are lost if the app closes. \(order ? "Done" : "Finish Editing") saves on this device.")
+                        .font(.footnote)
+                    Text(saving ? "Saving" : error != nil ? "Not saved - retry" : dirty ? "Unsaved changes" : "No unsaved changes")
+                        .accessibilityIdentifier("editorSaveState")
+                    if let error {
+                        Label(error, systemImage: "exclamationmark.triangle")
+                        Button("Retry") { finish() }
+                        Button("Reload Saved Version") { confirmingReload = true }
+                    }
+                    Button(order ? "Done" : "Finish Editing") { finish() }
+                    Button("Cancel", role: .cancel) {
+                        if dirty { confirmingDiscard = true } else { dismiss() }
+                    }
+                }.disabled(saving)
+                if order {
+                    ForEach(Array(working.pitches.enumerated()), id: \.element.id) { index, pitch in
                         VStack(alignment: .leading, spacing: 8) {
                             Text("\(index + 1). \(pitch.name)").font(.headline)
                             VStack(alignment: .leading) {
-                                Button("Move Up") { route.movePitch(id: pitch.id, by: -1) }
+                                Button("Move Up") { working.movePitch(id: pitch.id, by: -1) }
                                     .fixedSize(horizontal: false, vertical: true)
                                     .disabled(index == 0)
                                     .accessibilityIdentifier("move-up-\(pitch.id)")
-                                Button("Move Down") { route.movePitch(id: pitch.id, by: 1) }
+                                Button("Move Down") { working.movePitch(id: pitch.id, by: 1) }
                                     .fixedSize(horizontal: false, vertical: true)
-                                    .disabled(index == route.pitches.count - 1)
+                                    .disabled(index == working.pitches.count - 1)
                                     .accessibilityIdentifier("move-down-\(pitch.id)")
                             }
                             .buttonStyle(.bordered)
                         }
-                        .accessibilityAction(named: "Move Up") { route.movePitch(id: pitch.id, by: -1) }
-                        .accessibilityAction(named: "Move Down") { route.movePitch(id: pitch.id, by: 1) }
+                        .accessibilityAction(named: "Move Up") { working.movePitch(id: pitch.id, by: -1) }
+                        .accessibilityAction(named: "Move Down") { working.movePitch(id: pitch.id, by: 1) }
                     }
-                    .onMove { route.movePitches(from: $0, to: $1) }
+                    .onMove { working.movePitches(from: $0, to: $1) }
+                } else {
+                    Section {
+                        TextEditor(text: text)
+                            .frame(height: 300)
+                            .focused($focused)
+                            .accessibilityLabel("\(title) notes")
+                            .accessibilityIdentifier("noteEditor")
+                    } header: { Text("Plain-text notes") }
                 }
-                .environment(\.editMode, .constant(.active))
-                .navigationTitle("Edit Pitch Order")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar { Button("Done") { dismiss() } }
+            }
+            .disabled(saving)
+            .scrollDismissesKeyboard(.interactively)
+            .environment(\.editMode, order ? .constant(.active) : nil)
+            }
+            .navigationBarHidden(true)
+        }
+        .interactiveDismissDisabled(dirty || saving)
+        .alert("Discard unsaved changes?", isPresented: $confirmingDiscard) {
+            Button("Discard Changes", role: .destructive) { dismiss() }
+            Button("Keep Editing", role: .cancel) { }
+        }
+        .alert("Discard changes and reload saved version?", isPresented: $confirmingReload) {
+            Button("Reload and Discard Changes", role: .destructive) {
+                do {
+                    let latest = try notebook.reloadRoute(id: working.id)
+                    working = latest
+                    original = latest
+                    error = nil
+                } catch { self.error = error.localizedDescription }
             }
         }
     }
 }
 
-private struct PrototypeEditingNotice: View {
-    var body: some View {
-        Text("Prototype - changes reset on relaunch")
-            .font(.footnote.weight(.semibold))
-            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-    }
-}
-
 private struct PrototypeNotesView<Header: View>: View {
+    @Environment(NotebookState.self) private var notebook
     let title: String
-    @Binding var notes: String
+    let routeID: String
+    private var route: PrototypeRoute { notebook.areas.flatMap(\.routes).first { $0.id == routeID }! }
+    let pitchID: String?
     @ViewBuilder var header: () -> Header
     @State private var editing = false
+    private var notes: String {
+        if let pitchID, let pitch = route.pitches.first(where: { $0.id == pitchID }) { return pitch.notes }
+        return route.notes
+    }
 
     var body: some View {
-        List {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
             header()
-            Section("Notes") {
+            Text("Notes").font(.headline)
                 Text(notes.isEmpty ? "No notes entered" : notes)
                     .textSelection(.enabled)
                     .accessibilityIdentifier("noteText")
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { Button("Edit Notes") { editing = true } }
         .fullScreenCover(isPresented: $editing) {
-            VStack(spacing: 0) {
-                PrototypeEditingNotice()
-                Text(title).font(.headline).padding(.horizontal)
-                Button("Finish Editing") { editing = false }.padding(.horizontal)
-                PrototypeNoteEditor(title: title, text: $notes)
-            }
+            PrototypeEditingView(route: route, pitchID: pitchID, order: false)
         }
     }
 }
 
 private extension PrototypeNotesView where Header == EmptyView {
-    init(title: String, notes: Binding<String>) {
+    init(title: String, routeID: String, pitchID: String?) {
         self.title = title
-        self._notes = notes
+        self.routeID = routeID
+        self.pitchID = pitchID
         self.header = { EmptyView() }
-    }
-}
-
-private struct PrototypeNoteEditor<Header: View>: View {
-    let title: String
-    @Binding var text: String
-    @ViewBuilder var header: () -> Header
-    @State private var buffer: String
-    @FocusState private var editing: Bool
-
-    init(title: String, text: Binding<String>, @ViewBuilder header: @escaping () -> Header) {
-        self.title = title
-        self._text = text
-        self.header = header
-        self._buffer = State(initialValue: text.wrappedValue)
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Spacer()
-                Button("Hide Keyboard") { editing = false }
-                    .accessibilityLabel("Dismiss keyboard")
-                    .padding(.horizontal).padding(.vertical, 8)
-                    .disabled(!editing)
-            }
-            Form {
-                header()
-                Section {
-                    TextEditor(text: $buffer)
-                        .frame(minHeight: 240)
-                        .focused($editing)
-                        .accessibilityLabel("\(title) notes")
-                        .accessibilityIdentifier("noteEditor")
-                } header: { Text("Plain-text notes") } footer: {
-                    Text("Edits apply while you type and remain only until relaunch. Finish Editing returns to reading; it does not save to storage.")
-                }
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .onChange(of: buffer) { _, value in text = value }
-        }
-        .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-private extension PrototypeNoteEditor where Header == EmptyView {
-    init(title: String, text: Binding<String>) {
-        self.init(title: title, text: text) { EmptyView() }
     }
 }
