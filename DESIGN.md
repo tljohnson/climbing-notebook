@@ -1,6 +1,6 @@
 # Climbing Notebook Design Baseline
 
-Updated: 2026-10-29
+Updated: 2026-10-30
 
 Status: Draft for owner review. Not approved for implementation.
 
@@ -135,7 +135,7 @@ These workflows are part of the complete v1 mockup coverage, even where not yet 
 
 ## 7. Visual Direction and Tokens
 
-Working direction: **Alpine Technical Notebook**. Quiet neutral surfaces, dark text, slate-blue actions, forest-green success, and restrained rust warning accents. This is a candidate visual baseline, not a claim of tested outdoor readability.
+Working direction: **Alpine Technical Notebook**. Quiet neutral surfaces, charcoal text, forest-green actions, and restrained burnt-orange accents, reflecting the owner's palette preference. This is a candidate visual baseline, not a claim of tested outdoor readability.
 
 Use the following table as the single proposed palette. Do not combine it with conflicting generated Stitch palettes. Colors are semantic roles, not instructions to encode states using color alone.
 
@@ -146,9 +146,10 @@ Use the following table as the single proposed palette. Do not combine it with c
 | Surface secondary | `#E7EDF1` | `#273239` | Secondary grouping |
 | Text primary | `#1C2429` | `#F2F5F7` | Main reading content |
 | Text secondary | `#46545E` | `#BDCAD2` | Supporting information |
-| Action | `#3A5A6D` | `#B8D7EA` | Actions and selection |
-| On action | `#FFFFFF` | `#142A37` | Text on filled action |
-| Success | `#2D5A43` | `#A5D6B7` | Acknowledged local save |
+| Action | `#2D5A43` | `#A5D6B7` | Actions and selection |
+| On action | `#FFFFFF` | `#12181C` | Text on filled action |
+| Accent | `#9B4A28` | `#F3B99B` | Restrained decorative emphasis; not a safety rating |
+| Success | `#244B37` | `#8DC4A2` | Acknowledged local save; separate semantic token from Action |
 | Warning | `#9B4A28` | `#F3B99B` | Attention with icon and text |
 | Error | `#B3261E` | `#FFB4AB` | Failed operation and destructive action |
 | Control boundary | `#71808A` | `#84949F` | Boundaries needed to identify controls |
@@ -208,6 +209,35 @@ Use one quiet local-availability indication where useful, not repeated privacy b
 - Provide captions and source context for images without claiming that a topo's geometry becomes accessible through its caption.
 
 ## 10. Next Mockup Round and Review Gate
+
+### Reviewed Core Reference Index
+
+Project: [Climbing Notebook in Stitch](https://stitch.withgoogle.com/projects/8970725447177276768). The following exact screen IDs identify the reviewed core visual references as of 2026-10-30. Use these IDs rather than titles: the project contains older duplicate and broken screens. A later edit requires renewed screenshot review; these are not immutable snapshots.
+
+| Screen | Screen ID |
+| --- | --- |
+| Library | `3a77417ce44348eb97eae43da0fdd647` |
+| Area Routes | `4145ce3c8439444488de353d355cee3d` |
+| Route Detail, light | `316294727ae74db1b2bfde9e50abdf0c` |
+| Pitch Detail | `a937d0f895f74b34a8d85b6d37a25286` |
+| Note Editor | `959a7308f7d04879b6adbcb7020efc6e` |
+| Note Editor, save failure | `2017664d56744303924fc1590e81e462` |
+| Pitch Order Editor | `cf236651af9e4ac7a890dc3ebc1c9bcd` |
+| Route Detail, dark | `e2e807d9f9f34e49ac65cb37e06ac191` |
+
+For tools, use `projects/8970725447177276768/screens/<screen-id>`. Fetch current screen details for screenshot/HTML resource names. Review the rendered screenshot, not just generated markup or an edit's success message: one DOM-only caption edit reported success without appearing in either downloaded artifact.
+
+These screens are usable layout references, not approval of every generated detail or an implementation specification. Apply these interpretation rules:
+
+- This document and the approved functional plan take precedence over generated copy, fields, theme guidance, and handlers. The reference index does not change this document's draft status.
+- Older Pitch IDs `39bea4bfddf04a6cae885dc9643e58ba` and `73ea2082930d46449dd17131da9b89a0`, Area ID `93fe84625ac34052aa7fa03ec9a104d3`, and dark Route ID `31d35bf581304fddb49e7f61ec7f83bc` are superseded. Do not use them to recover missing UI.
+- Generated HTML is disposable presentation scaffolding. Placeholder links, history navigation, simulated save timers, alerts, and clipboard actions do not establish native navigation, persistence, recovery, or safe dismissal. Back, Done, and gestures must all obey section 5; copying text is not saving it.
+- Some light references retain slate-blue action definitions and use the success token for green buttons. Normalize to section 7 rather than reproducing that inconsistency. Multiple generated design assets exist; none overrides this document. Ignore generated send-verification badges, gear counters, and untested sunlight/glove guarantees.
+- Pitch media is intentionally a text-only illustrative placeholder with a fully visible non-guidance caption. Media elsewhere, generated anchor/bail claims, crux badges, and protection metadata are sample content, not verified climbing guidance or approval for new structured fields. Do not infer a crux by comparing grades.
+- The explicit Save Pitch Order screen is a staged ordering reference: preserve the whole-sequence commit boundary and show pending/failure states. It is not a reason to give automatically saved existing-field editors a misleading Cancel action.
+- Visual inspection covered ordinary rendered layouts, including the keyboard editor, save-failure state, and dark Route. Dynamic Type, VoiceOver, contrast compliance, actual hit areas, long-name layouts, native keyboard avoidance, and interactive behavior still require implementation validation. Remaining companion states and ancillary workflows below are not complete or reviewed.
+
+### Remaining Design Coverage
 
 Cover the full planned product, using this document plus a short generation prompt for each batch. Start with the core hierarchy to establish consistent components, then extend the same system across all v1 flows and optional variants. Batching is a generation strategy, not a reduction of design scope.
 
