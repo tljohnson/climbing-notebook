@@ -6,6 +6,8 @@ Native, iPhone-primary climbing notebook for iOS 17+ with minimal iPad support. 
 
 ## Current Capabilities
 
+The owner-approved complete text-notebook milestone (§21.6) is **blocked, not implementation-complete or acceptance-ready**. Working-tree code adds an initially empty ordered notebook with area/route/pitch creation, rename, reorder and confirmed deletion, General/pitch text notes, isolated examples and retained read-only prototype access. The [blocked handoff](docs/verification/NotebookPrototype.md#cf-07e-blocked-handoff) records iOS17 fresh-container relationship-insertion failures, additional UI failures, failed interim coverage and outstanding acceptance checks. The older accepted baseline is not acceptance of this milestone. Use only replaceable content; backup/recovery remain unavailable.
+
 The native synthetic-data notebook preserves CF-07A's owner-accepted browsing and explicit editing workflows. Browse areas, routes and five ordered pitches; Previous/Next navigates without reordering. CF-07B adds explicit durable saves for route notes, pitch notes and pitch order, pending owner testing. Do not enter personal climbing data.
 
 Owner-accepted CF-07C shows full General notes in the route workspace, adds Jump to Pitches, keeps adjacent-pitch navigation above scrolling notes, and identifies the route/field in note editors. CF-07D adds a name-only Add/Cancel route draft in either existing area, with duplicate names allowed, blank metadata, zero pitches and explicit General-note editing. CF-07D verification is paused at owner direction with automated tests retained and owner acceptance pending; see [current results](docs/verification/NotebookPrototype.md#cf-07d-current-results). This is not full-product creation or automatic saving.

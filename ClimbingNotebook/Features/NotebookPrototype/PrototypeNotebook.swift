@@ -81,10 +81,12 @@ final class NotebookState {
     var acknowledgedRoutes: Set<UUID> = []
     private(set) var store: NotebookStore?
     private let root: URL
+    private let createIfAbsent: Bool
     private var failNextSave = false
     private var failNextLoad = false
 
-    init(root: URL? = nil) {
+    init(root: URL? = nil, createIfAbsent: Bool = true) {
+        self.createIfAbsent = createIfAbsent
         var selected = root ?? NotebookStore.defaultRoot
         let environment = ProcessInfo.processInfo.environment
         if _isDebugAssertConfiguration(), root == nil, let token = environment["NOTEBOOK_TEST_STORE"], let uuid = UUID(uuidString: token) {
@@ -101,7 +103,7 @@ final class NotebookState {
                 failNextLoad = false
                 throw NSError(domain: "NotebookTest", code: 1, userInfo: [NSLocalizedDescriptionKey: "Synthetic load failure. Retained data has not been reset."])
             }
-            let opened = try store ?? NotebookStore(root: root)
+            let opened = try store ?? NotebookStore(root: root, createIfAbsent: createIfAbsent)
             let loaded = try opened.load()
             store = opened
             areas = loaded

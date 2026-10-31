@@ -42,6 +42,17 @@ final class NotebookPersistenceTests: XCTestCase {
         }
     }
 
+    func testReadOnlyRetainedOpenNeverInitializesAbsentNamespace() throws {
+        let absent = root()
+        XCTAssertThrowsError(try NotebookStore(root: absent, createIfAbsent: false))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: absent.path))
+        let state = NotebookState(root: absent, createIfAbsent: false)
+        state.load()
+        XCTAssertNotNil(state.loadError)
+        XCTAssertTrue(state.areas.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: absent.path))
+    }
+
     func testStoredUUIDsAndRelationshipsAreExactAndStable() throws {
         let store = try NotebookStore(root: root())
         let areas = try store.context.fetch(FetchDescriptor<NotebookSchemaV1.Area>())
@@ -549,6 +560,37 @@ final class NotebookPersistenceTests: XCTestCase {
             XCTAssertEqual(try reopened.context.fetch(FetchDescriptor<NotebookSchemaV1.Route>()).count, 3)
             XCTAssertEqual(try reopened.context.fetch(FetchDescriptor<NotebookSchemaV1.NoteSection>()).count, 3)
             XCTAssertEqual(try reopened.context.fetch(FetchDescriptor<NotebookSchemaV1.Pitch>()).count, 5)
+        }
+    }
+
+    func testSeparateTextNotebookAndExamplesPreserveIndependentPredecessorGraph() throws {
+        let legacyRoot = root()
+        let predecessor = try writePredecessor(at: legacyRoot)
+        defer { withExtendedLifetime(predecessor) {} }
+        let legacy = try NotebookStore(root: legacyRoot)
+        let added = try legacy.createRoute(areaID: PrototypeArea.fixtures[1].id, routeID: UUID(),
+                                            generalNoteID: UUID(), name: "Retained authored name")
+        _ = try legacy.saveRouteNotes(routeID: added.id, expectedRevision: added.revision,
+                                      text: "Retained exact bytes\n\u{5CA9} e\u{301}\n")
+        let before = try legacy.load()
+        let notebookRoot = root()
+        let notebook = try TextNotebookStore(root: notebookRoot)
+        let empty = try notebook.load()
+        XCTAssertTrue(empty.areas.isEmpty)
+        let areaID = UUID()
+        let created = try notebook.execute(.createArea(id: areaID, name: "Separate area"),
+                                           sourceToken: empty.sourceToken, expectedRevision: empty.revision)
+        let saved = try notebook.execute(.createRoute(areaID: areaID, id: UUID(), generalNoteID: UUID(), name: "Separate route"),
+                                         sourceToken: created.sourceToken, expectedRevision: created.revision)
+        let exampleRoot = root()
+        let examples = try TextNotebookStore(root: exampleRoot, mode: .examples)
+        let exampleSnapshot = try examples.load()
+        XCTAssertEqual(exampleSnapshot.areas.count, 2)
+        XCTAssertNotEqual(exampleSnapshot.sourceToken, saved.sourceToken)
+        for _ in 0..<3 {
+            XCTAssertEqual(try NotebookStore(root: legacyRoot).load(), before)
+            XCTAssertEqual(try TextNotebookStore(root: notebookRoot).load(), saved)
+            XCTAssertEqual(try TextNotebookStore(root: exampleRoot, mode: .examples).load(), exampleSnapshot)
         }
     }
 

@@ -1,5 +1,16 @@
 import SwiftUI
 
+private struct RetainedNotebookReadOnlyKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+private extension EnvironmentValues {
+    var retainedNotebookReadOnly: Bool {
+        get { self[RetainedNotebookReadOnlyKey.self] }
+        set { self[RetainedNotebookReadOnlyKey.self] = newValue }
+    }
+}
+
 private enum NotebookAppearance {
     static let action = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
@@ -18,6 +29,7 @@ private func pitchAlias(_ id: UUID) -> String {
 
 struct NotebookPrototypeView: View {
     @Bindable var notebook: NotebookState
+    var readOnly = false
     private var testColorScheme: ColorScheme? {
         let environment = ProcessInfo.processInfo.environment
         guard _isDebugAssertConfiguration(),
@@ -28,12 +40,12 @@ struct NotebookPrototypeView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("Synthetic notebook - not for personal data.")
+            Text(readOnly ? "Retained Prototype (Legacy, Read-Only)" : "Synthetic notebook - not for personal data.")
                 .font(.footnote.weight(.semibold))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal).padding(.vertical, 8)
                 .background(.regularMaterial)
-                .accessibilityLabel("Synthetic notebook - explicit saves stay on this device. Not for personal data; backup/restore unavailable.")
+                .accessibilityLabel(readOnly ? "Retained Prototype. Legacy, read-only. Original examples and any saved edits are retained; their importance is unknown." : "Synthetic notebook - explicit saves stay on this device. Not for personal data; backup/restore unavailable.")
                 .accessibilityIdentifier("prototypeNotice")
             if let error = notebook.loadError {
                 ContentUnavailableView {
@@ -54,12 +66,12 @@ struct NotebookPrototypeView: View {
                             .accessibilityIdentifier(fixtureAccessibilityID(area.id, prefix: "area"))
                         }
                     } header: { Text("Areas") } footer: {
-                        Text("Synthetic examples only. Not climbing guidance. Explicit saves stay on this device; backup/restore unavailable. Do not enter personal data.")
+                        Text(readOnly ? "Original examples and any saved edits are retained here. Their importance is unknown. This view cannot change them; transfer and backup are unavailable." : "Synthetic examples only. Not climbing guidance. Explicit saves stay on this device; backup/restore unavailable. Do not enter personal data.")
                     }
                     Text("Built at Novacoast.").font(.footnote).foregroundStyle(.secondary)
                 }
                 .navigationTitle(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Climbing Notebook")
-            }.environment(notebook) }
+            }.environment(notebook).environment(\.retainedNotebookReadOnly, readOnly) }
         }
         .preferredColorScheme(testColorScheme)
         .task { if notebook.store == nil { notebook.load() } }
@@ -67,6 +79,7 @@ struct NotebookPrototypeView: View {
 }
 
 private struct PrototypeAreaView: View {
+    @Environment(\.retainedNotebookReadOnly) private var readOnly
     @Binding var area: PrototypeArea
     @State private var draft: RouteDraft?
 
@@ -89,7 +102,7 @@ private struct PrototypeAreaView: View {
             }
         }
         .navigationTitle(area.name)
-        .toolbar { Button("Add Route", systemImage: "plus") { draft = RouteDraft(areaID: area.id) } }
+        .toolbar { if !readOnly { Button("Add Route", systemImage: "plus") { draft = RouteDraft(areaID: area.id) } } }
         .tint(NotebookAppearance.action)
         .fullScreenCover(item: $draft) { draft in
             PrototypeAddRouteView(draft: draft, areaName: area.name)
@@ -168,6 +181,7 @@ private struct PrototypeAddRouteView: View {
 }
 
 private struct PrototypeRouteView: View {
+    @Environment(\.retainedNotebookReadOnly) private var readOnly
     @Environment(NotebookState.self) private var notebook
     let routeID: UUID
     private var route: PrototypeRoute { notebook.areas.flatMap(\.routes).first { $0.id == routeID }! }
@@ -228,7 +242,7 @@ private struct PrototypeRouteView: View {
         .navigationTitle(route.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if !route.pitches.isEmpty {
+            if !readOnly && !route.pitches.isEmpty {
                 Button("Edit Pitch Order") { reordering = true }
             }
         }
@@ -414,6 +428,7 @@ private struct PrototypeEditingView: View {
 }
 
 private struct PrototypeNotesView<Header: View>: View {
+    @Environment(\.retainedNotebookReadOnly) private var readOnly
     @Environment(NotebookState.self) private var notebook
     let title: String
     let routeID: UUID
@@ -445,7 +460,7 @@ private struct PrototypeNotesView<Header: View>: View {
         .tint(NotebookAppearance.action)
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { Button("Edit Notes") { editing = true } }
+        .toolbar { if !readOnly { Button("Edit Notes") { editing = true } } }
         .fullScreenCover(isPresented: $editing) {
             PrototypeEditingView(route: route, pitchID: pitchID, order: false)
         }

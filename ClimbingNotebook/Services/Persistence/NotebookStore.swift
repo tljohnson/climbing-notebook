@@ -48,7 +48,7 @@ final class NotebookStore {
         PrototypeIdentity.uuid(for: alias)
     }
 
-    init(root: URL, beforeSave: (() throws -> Void)? = nil) throws {
+    init(root: URL, beforeSave: (() throws -> Void)? = nil, createIfAbsent: Bool = true) throws {
         self.root = root
         self.beforeSave = beforeSave
         storeURL = root.appendingPathComponent("Libraries", isDirectory: true)
@@ -58,6 +58,9 @@ final class NotebookStore {
         var info = stat()
         let exists = root.withUnsafeFileSystemRepresentation { path in
             path.map { lstat($0, &info) == 0 } ?? false
+        }
+        guard exists || createIfAbsent else {
+            throw Failure.store("The retained prototype is absent. No replacement has been created.")
         }
         do {
             if exists {

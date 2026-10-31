@@ -6,6 +6,13 @@
 
 ## Blocked
 
+- [ ] `CF-07E` Deliver the complete text-first notebook milestone
+  - Priority: P0
+  - Owner: Kilo/local
+  - Blocked by: iOS17 fresh-container coexistence breaks subsequent relationship insertion; requires bounded model-identity diagnostic decision. See [milestone status](verification/NotebookPrototype.md#cf-07e-blocked-handoff).
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.6
+  - Done when: TN-01 through TN-10 verified with honest baseline/unrun limits, coherent implementation review and device handoff complete, then owner accepts.
+
 - [ ] `CF-07D` Add routes with explicit drafts and retained General notes
   - Priority: P0
   - Owner: Kilo/local

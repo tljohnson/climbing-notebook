@@ -12,6 +12,8 @@ Climbing Notebook is an offline-first personal climbing notebook, iPhone-primary
 
 The launch UI is a synthetic notebook: browsing is read-only and note/order editing uses explicit workflows. CF-07B adds an isolated versioned SwiftData fixture store and buffered explicit save/relaunch for route notes, pitch notes and whole pitch order. It is not the full product schema. The separate diagnostic LibraryStore/generation harnesses remain unchanged; intake, migration/replacement acceptance and backup/restore remain incomplete. Consult source, [current capabilities](README.md#current-capabilities) and task-relevant evidence below, not the plan's prospective file map.
 
+The owner-approved [consolidated text milestone](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#216-consolidated-text-notebook-milestone-approved) is blocked, not implementation-complete/accepted. Its working-tree entry opens a separate initially empty `TextNotebook` format with persisted sibling order and explicit saves. Examples and unchanged-format retained content are separate sources; legacy reading cannot initialize an absent root. Source-bound drafts prevent retargeting. The [blocked handoff](docs/verification/NotebookPrototype.md#cf-07e-blocked-handoff) distinguishes iOS17 fresh-container insertion failures, UI/coverage gaps and the migration baseline. The preceding paragraph describes the historical fixture baseline, not this entry point.
+
 ## Cross-Cutting Invariants
 
 - The main app alone mutates the library database. The extension must use the [mailbox contract](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#72-share-extension-mailbox-contract), never direct library access.
