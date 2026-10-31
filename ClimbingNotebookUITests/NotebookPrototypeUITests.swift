@@ -28,13 +28,13 @@ final class NotebookPrototypeUITests: XCTestCase {
         let towardTop = !element.exists
             || (element.frame != .zero && element.frame.midY < app.frame.midY)
         for down in [towardTop, !towardTop] {
-            for _ in 0..<10 {
+            for _ in 0..<20 {
                 let list = (app.collectionViews.allElementsBoundByIndex + app.scrollViews.allElementsBoundByIndex).last {
                     $0.isHittable || $0.cells.allElementsBoundByIndex.contains { $0.isHittable }
                 }
                 guard let list else { break }
                 let bounds = list.frame.intersection(viewport(app)).insetBy(dx: 12, dy: 12)
-                guard bounds.height > 80 else { break }
+                guard bounds.height > 40 else { break }
                 let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
                     dx: bounds.maxX - 4, dy: bounds.minY + bounds.height * (down ? 0.25 : 0.75)))
                 let end = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
@@ -47,8 +47,19 @@ final class NotebookPrototypeUITests: XCTestCase {
     }
 
     private func reachable(_ element: XCUIElement, in app: XCUIApplication) -> Bool {
-        element.exists && element.isHittable && (element.frame.intersection(viewport(app)).height > 30
+        element.exists && element.isHittable && (element.frame.intersection(visibleBounds(element, in: app)).height > 30
             || app.navigationBars.allElementsBoundByIndex.contains { $0.isHittable && $0.frame.contains(element.frame) })
+    }
+
+    private func visibleBounds(_ element: XCUIElement, in app: XCUIApplication) -> CGRect {
+        var bounds = viewport(app)
+        let match = NSPredicate(format: "identifier == %@ AND label == %@", element.identifier, element.label)
+        for container in app.collectionViews.allElementsBoundByIndex + app.scrollViews.allElementsBoundByIndex {
+            if container.isHittable && container.descendants(matching: element.elementType).matching(match).firstMatch.exists {
+                bounds = bounds.intersection(container.frame)
+            }
+        }
+        return bounds
     }
 
     private func viewport(_ app: XCUIApplication) -> CGRect {
@@ -60,8 +71,9 @@ final class NotebookPrototypeUITests: XCTestCase {
 
     private func tap(_ element: XCUIElement, in app: XCUIApplication) {
         reveal(element, in: app)
-        let visible = element.frame.intersection(viewport(app))
-        if viewport(app).contains(element.frame)
+        let bounds = visibleBounds(element, in: app)
+        let visible = element.frame.intersection(bounds)
+        if bounds.contains(element.frame)
             || app.navigationBars.allElementsBoundByIndex.contains(where: { $0.isHittable && $0.frame.contains(element.frame) }) {
             element.tap()
         } else {
@@ -98,6 +110,7 @@ final class NotebookPrototypeUITests: XCTestCase {
     }
 
     private func assertAcknowledgment(_ app: XCUIApplication, _ text: String) {
+        if app.buttons["Jump to Pitches"].isHittable { app.buttons["Jump to Pitches"].tap() }
         let acknowledgment = app.staticTexts["saveAcknowledgment"]
         reveal(acknowledgment, in: app)
         XCTAssertEqual(acknowledgment.label, text)
@@ -145,12 +158,20 @@ final class NotebookPrototypeUITests: XCTestCase {
 
     private func assertOrder(_ app: XCUIApplication, _ order: [String]) {
         XCTAssertEqual(order.count, 5)
-        for (index, id) in order.enumerated() {
-            let pitch = app.buttons["pitch-\(id)"]
-            reveal(pitch, in: app)
-            let title = "\(index + 1). \(pitchNames[id]!)"
-            XCTAssertTrue(pitch.label.contains(title), pitch.label)
+        app.buttons["Jump to Pitches"].tap()
+        var verified = Set<String>()
+        for _ in 0..<12 {
+            for (index, id) in order.enumerated() {
+                let pitch = app.buttons["pitch-\(id)"]
+                if pitch.exists {
+                    XCTAssertTrue(pitch.label.contains("\(index + 1). \(pitchNames[id]!)"), pitch.label)
+                    verified.insert(id)
+                }
+            }
+            if verified.count == order.count { return }
+            app.collectionViews.firstMatch.swipeUp()
         }
+        XCTAssertEqual(verified, Set(order), "Every numbered stable-ID row must be observed")
     }
 
     func testRouteAndDistinctPitchNotesAndWholeOrderSurviveRepeatedProcessLaunches() {
@@ -440,6 +461,62 @@ final class NotebookPrototypeUITests: XCTestCase {
         tap(app.buttons["Done"], in: app)
         assertEditorClosed(app)
         assertOrder(app, ["corner", "slab", "traverse", "crack", "ridge"])
+    }
+
+    func testLongNotesReadingQuickJumpAndPinnedPitchNavigation() {
+        checkLongNotesReading(accessibility: false)
+    }
+
+    func testLongNotesReadingAndPinnedNavigationAtLargestText() {
+        checkLongNotesReading(accessibility: true)
+    }
+
+    private func checkLongNotesReading(accessibility: Bool) {
+        let app = application(accessibility: accessibility)
+        app.launch()
+        openRoute(app)
+        tap(routeNotes(app), in: app)
+        let longText = (1...12).map { "\nSynthetic reading line \($0): retain notes with their owner." }.joined()
+        let routeText = saveNotes(app, append: longText)
+        goBack(app)
+        XCTAssertEqual(app.staticTexts["routeNoteText"].label, routeText)
+        XCTAssertTrue(app.buttons["Jump to Pitches"].isHittable)
+        app.buttons["Jump to Pitches"].tap()
+        XCTAssertTrue(app.buttons["pitch-slab"].isHittable)
+        tap(app.buttons["pitch-slab"], in: app)
+        let pitchText = saveNotes(app, append: longText)
+        app.scrollViews.firstMatch.swipeUp()
+        XCTAssertTrue(app.buttons["Next Pitch"].isHittable)
+        XCTAssertFalse(app.buttons["Previous Pitch"].isEnabled)
+        let note = app.staticTexts["noteText"]
+        for _ in 0..<12 {
+            if note.frame.maxY <= app.frame.maxY - 34 { break }
+            app.scrollViews.firstMatch.swipeUp()
+        }
+        XCTAssertLessThanOrEqual(note.frame.maxY, app.frame.maxY - 34, "Final note lines must remain reachable below pinned controls")
+        capture(app, name: "Long pitch notes with pinned navigation")
+        app.buttons["Next Pitch"].tap()
+        XCTAssertTrue(app.navigationBars["Quiet corner"].exists)
+        XCTAssertTrue(app.buttons["Previous Pitch"].isHittable)
+        XCTAssertTrue(app.buttons["Next Pitch"].isHittable)
+        app.buttons["Previous Pitch"].tap()
+        XCTAssertEqual(app.staticTexts["noteText"].label, pitchText)
+        app.buttons["Edit Notes"].tap()
+        XCTAssertEqual(app.staticTexts["editorContext"].label, "Paper Skyline / Pitch notes")
+        tap(app.buttons["Cancel"], in: app)
+        assertEditorClosed(app)
+        relaunchRoute(app)
+        goBack(app)
+        tap(routeLink(app), in: app)
+        tap(routeNotes(app), in: app)
+        XCTAssertEqual(app.staticTexts["noteText"].label, routeText)
+        goBack(app)
+        app.buttons["Jump to Pitches"].tap()
+        assertOrder(app, fixtureOrder)
+        tap(app.buttons["pitch-slab"], in: app)
+        XCTAssertEqual(app.staticTexts["noteText"].label, pitchText)
+        goBack(app)
+        assertAcknowledgment(app, "Loaded from this device")
     }
 
     private func capture(_ app: XCUIApplication, name: String) {

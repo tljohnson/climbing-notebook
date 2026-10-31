@@ -2,7 +2,7 @@
 
 Updated: 2026-10-30
 
-Status: Draft for owner review. Not approved for implementation.
+Status: Owner-approved design baseline (2026-10-30). Implementation remains bounded by the approved feature plan and separately assigned packets.
 
 ## 1. Purpose and Authority
 
@@ -12,7 +12,7 @@ The existing MVP was developed to validate functionality, not visual design. Its
 
 - The [approved feature plan](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md) remains authoritative for scope, data models, persistence, and owner decisions, especially sections 4, 8, 9, 11, and 21.4.5.
 - The [README](README.md) describes implemented capabilities. A proposed screen does not establish that a feature exists.
-- This draft introduces no APIs, schema changes, dependencies, security guarantees, or implementation authorization. Design approval does not itself authorize changing functional contracts.
+- This baseline introduces no APIs, schema changes, dependencies, security guarantees, or independent functional implementation authorization. Design approval does not itself authorize changing functional contracts.
 - Earlier Stitch screens are visual references only. Do not inherit their invented parsing, synchronization, safety, encryption, or backup claims.
 
 ### Design Horizon and Release Profiles
@@ -135,9 +135,9 @@ These workflows are part of the complete v1 mockup coverage, even where not yet 
 
 ## 7. Visual Direction and Tokens
 
-Working direction: **Alpine Technical Notebook**. Quiet neutral surfaces, charcoal text, forest-green actions, and restrained burnt-orange accents, reflecting the owner's palette preference. This is a candidate visual baseline, not a claim of tested outdoor readability.
+Approved direction: **Alpine Technical Notebook**. Quiet neutral surfaces, charcoal text, forest-green actions, and restrained burnt-orange accents, reflecting the owner's palette preference. Approval is not a claim of tested outdoor readability.
 
-Use the following table as the single proposed palette. Do not combine it with conflicting generated Stitch palettes. Colors are semantic roles, not instructions to encode states using color alone.
+Use the following table as the single baseline palette. Do not combine it with conflicting generated Stitch palettes. Colors are semantic roles, not instructions to encode states using color alone.
 
 | Role | Light | Dark | Use |
 | --- | --- | --- | --- |
@@ -158,7 +158,7 @@ Use success/warning/error colors as foregrounds on the appropriate neutral surfa
 
 ### Typography
 
-Candidate pairing: Hanken Grotesk for headings and Source Sans 3 for prose. Native system typography is the fallback and comparison baseline. Custom fonts require later licensing, bundled offline availability, and accessibility validation; this draft adds no font dependency.
+Candidate pairing: Hanken Grotesk for headings and Source Sans 3 for prose. Native system typography is the fallback and comparison baseline. Custom fonts require later licensing, bundled offline availability, and accessibility validation; baseline approval adds no font dependency or custom-font selection.
 
 | Semantic role | Default reference size | Weight |
 | --- | --- | --- |
@@ -229,7 +229,7 @@ For tools, use `projects/8970725447177276768/screens/<screen-id>`. Fetch current
 
 These screens are usable layout references, not approval of every generated detail or an implementation specification. Apply these interpretation rules:
 
-- This document and the approved functional plan take precedence over generated copy, fields, theme guidance, and handlers. The reference index does not change this document's draft status.
+- This document and the approved functional plan take precedence over generated copy, fields, theme guidance, and handlers. Baseline approval does not approve every generated detail or expand an implementation packet.
 - Older Pitch IDs `39bea4bfddf04a6cae885dc9643e58ba` and `73ea2082930d46449dd17131da9b89a0`, Area ID `93fe84625ac34052aa7fa03ec9a104d3`, and dark Route ID `31d35bf581304fddb49e7f61ec7f83bc` are superseded. Do not use them to recover missing UI.
 - Generated HTML is disposable presentation scaffolding. Placeholder links, history navigation, simulated save timers, alerts, and clipboard actions do not establish native navigation, persistence, recovery, or safe dismissal. Back, Done, and gestures must all obey section 5; copying text is not saving it.
 - Some light references retain slate-blue action definitions and use the success token for green buttons. Normalize to section 7 rather than reproducing that inconsistency. Multiple generated design assets exist; none overrides this document. Ignore generated send-verification badges, gear counters, and untested sunlight/glove guarantees.
@@ -261,4 +261,4 @@ Before calling the baseline approved, review:
 - Does every success, availability, privacy, and safety statement describe only what the app actually knows?
 - Does the mockup cover all committed v1 workflows, including those not yet programmed, and remain complete with every optional module removed?
 
-Owner decisions still required: approve this baseline, select custom versus system typography, and accept or revise the candidate visual tokens after mockup review. The v1 mockups follow the approved automatic-save contract; alternatives need an explicit decision. Optional-module interactions remain proposals requiring review before implementation. No UI implementation or feature-plan override is authorized by drafting this document.
+Owner approved this baseline on 2026-10-30 and directed continuation into the next feature-plan phase. Use the semantic visual tokens as the approved direction within assigned UI scope; validate rendered contrast and accessibility rather than treating approval as measurement. Use system typography until custom-font selection, licensing and bundling are separately resolved. The v1 mockups follow the approved automatic-save contract; the existing CF-07B explicit-save exception remains in force until a separate behavioral packet changes it. Optional-module interactions remain proposals requiring review before implementation. Baseline approval does not accept CF-07B, complete the remaining mockup coverage, authorize optional features, or override the feature plan's data-adoption and implementation gates.

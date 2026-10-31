@@ -1,12 +1,14 @@
 # Climbing Notebook
 
-Updated: 2026-10-29
+Updated: 2026-10-30
 
 Native, iPhone-primary climbing notebook for iOS 17+ with minimal iPad support. Product requirements and integrity contracts are in the [approved plan](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md).
 
 ## Current Capabilities
 
 The native synthetic-data notebook preserves CF-07A's owner-accepted browsing and explicit editing workflows. Browse areas, routes and five ordered pitches; Previous/Next navigates without reordering. CF-07B adds explicit durable saves for route notes, pitch notes and pitch order, pending owner testing. Do not enter personal climbing data.
+
+CF-07C shows full General notes in the route workspace, adds Jump to Pitches, keeps adjacent-pitch navigation above scrolling notes, and identifies the route/field in note editors. These bounded design-aligned changes preserve the existing fixture format and explicit-save contract; they do not add full-product creation or automatic saving.
 
 Finish Editing and Done save on this device before closing. Cancel confirms discard when changed. Unsaved edits can be lost if the app closes; failures retain the editor for retry. Creation/deletion, full notebook schema coverage, media intake, share delivery, URL copying and backup/restore are not implemented. M1 remains incomplete; archive research is paused, not a prerequisite for ordinary notebook increments. See the [Kanban](docs/WIP_KANBAN.md) and [verification references](#verification-references) for actual status and remaining gaps.
 

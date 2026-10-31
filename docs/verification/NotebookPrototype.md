@@ -1,6 +1,6 @@
 # Notebook Prototype Verification
 
-Updated: 2026-10-29
+Updated: 2026-10-30
 
 ## Conclusion
 
@@ -41,6 +41,26 @@ Final default-size and accessibility XXXL browsing/reorder/editor/error/retry co
 
 Native drag execution, VoiceOver spoken focus/custom actions, IME/caret stress, physical-device keyboards, landscape, split view, real multi-window interaction and dark mode were not verified. Long Unicode is state-tested, not stress-typed through the UI. Leif's CF-07B usability acceptance remains pending; automated tests and static review do not imply unrun checks passed.
 
-## Next Boundary
+## CF-07C Reading and Navigation
+
+Owner approved DESIGN.md and the bounded §21.4.6 packet on 2026-10-30. Route detail now displays full General prose plus Jump to Pitches; adjacent pitch selection stays above scrolling notes, with wrapping position/grade and horizontal Previous/Next controls. Note editors identify route and field. System typography and scoped semantic action tint preserve native controls; no schema, persistence, fixture, archive or dependency changes. A concise persistent synthetic/not-personal-data notice preserves reading space at XXXL; the complete original disclosure remains its accessibility label and visible Library footer. Explicit saves, failure buffers and whole-order commits are unchanged.
+
+Final evidence under `.build/`, all dated `20261030`, with matching `.log` basenames:
+
+| Result Bundle | Results and Disposition |
+| --- | --- |
+| `CF07C-final-iOS27-20261030.xcresult` | iPhone 18 Pro/27.0 full 65/69; two known CF-04B ModelContext assertions and two UI reachability failures, subsequently corrected/revalidated below. |
+| `CF07C-final-iOS17-20261030.xcresult` | iPhone 15/17.0 full 66/69; two known CF-04B ModelContainer assertions and stale full-notice-label assertion, subsequently corrected/revalidated below. All notebook UI tests passed. |
+| `CF07C-final-ui-iOS27-20261030.xcresult` | Final all-UI 12/12; covers the two corrected XXXL cases plus existing save/relaunch, ownership, order, discard/error/retry/reload and launch checks. |
+| `CF07C-final-ui-iPad-20261030.xcresult` | Selected iPad/26.4 changed-layout checks 3/3; three existing orientation-support warnings. |
+| `CF07C-launch-final-iOS17-20261030.xcresult` | Corrected launch/disclosure assertion 1/1. |
+
+The full bundles remain failed; targeted reruns do not constitute a newly executed green full suite. Final changes are presentation/test-helper corrections, not migration fixes. Full-run combined coverage: iOS17 1742/1779 (97.92%), earlier iOS27 1717/1754 (97.89%). Final-source all-UI iOS27 coverage is 1613/1781 (90.57%); changed-UI iPad 1580/1781 (88.71%). Launch-only iOS17 is 477/1781 (26.78%), not a full-suite coverage gate. Percentages are per bundle, not merged or falsely attributed to unchanged code. Coverage rejection self-test passes.
+
+Independent review corrected globally scoped tint, truncated XXXL pitch metadata, and insufficient long-note coverage. Screenshot/activity evidence distinguished UI crowding from test-helper problems: helpers now intersect target/container visibility and verify pitch order with a bounded forward traversal rather than repeated wrong-direction drags. Final independent review inspected 12 phone and 7 tablet screenshots with no new material defect. Exports are `.build/CF07C-independent-final-v8-screens-20261030/` and the final reviewer exports in the approved temporary directory. Long-note tests verify bottom-line reachability, stable ownership after relaunch, boundary disabling and adjacent navigation; no test timeouts were raised or migration assertions weakened.
+
+Limits: final captures are light portrait; attempted dark launch arguments did not establish dark rendering and were removed. Dark-mode tint, live VoiceOver, arbitrary long-name layouts, landscape, physical devices and keyboard-open screenshots remain unverified. Typing/keyboard dismissal is exercised, but final editor captures occur after dismissal. Native navigation titles can ellipsize at XXXL. CF-07C is ready for owner review, not accepted/Done; CF-07B's acceptance remains separate.
+
+## Retained Data Boundary
 
 CF-07B remains limited to existing synthetic fixtures and three durable mutations. Do not accept valuable data, adopt this limited format into a complete library without a reviewed migration, connect diagnostic stores, add creation/deletion or resume archive research under this packet. Generation-replacement, restore and URL-copy gaps gate their dependent features; M1 and release integrity requirements remain unchanged. Incomplete first initialization fails closed with retained files and no repair UI. Physical-device protection/backup, actual full-disk behavior and crash/power-loss durability are not proven by simulator relaunch/fault injection.

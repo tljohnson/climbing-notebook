@@ -36,6 +36,14 @@
 
 ## Review
 
+- [ ] `CF-07C` Align fixture reading and navigation with approved design
+  - Priority: P0
+  - Owner: Kilo/local
+  - Depends on: Owner approved DESIGN.md and §21.4.6 on 2026-10-30; CF-07B acceptance remains separate
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.6
+  - Done when: Full General notes, pitch quick access, persistent adjacent-pitch controls and contextual editors preserve existing identities/save contracts, required simulator/accessibility/coverage checks and separate review pass, then owner accepts.
+  - Evidence: [Notebook verification](verification/NotebookPrototype.md) CF-07C; full phones 65/69 and 66/69 with targeted UI fixes revalidated (27.0 all-UI 12/12, 17.0 launch 1/1), iPad 3/3; final current-phone UI coverage 90.57%; separate final review complete, dark/VoiceOver/device checks remain unverified.
+
 - [ ] `CF-07B` Plan and deliver bounded durable fixture notes and pitch order
   - Priority: P0
   - Owner: Kilo/local

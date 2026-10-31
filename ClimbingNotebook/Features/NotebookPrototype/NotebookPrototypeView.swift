@@ -1,15 +1,24 @@
 import SwiftUI
 
+private enum NotebookAppearance {
+    static let action = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 165/255, green: 214/255, blue: 183/255, alpha: 1)
+            : UIColor(red: 45/255, green: 90/255, blue: 67/255, alpha: 1)
+    })
+}
+
 struct NotebookPrototypeView: View {
     @Bindable var notebook: NotebookState
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("Synthetic notebook - explicit saves stay on this device. Not for personal data; backup/restore unavailable.")
+            Text("Synthetic notebook - not for personal data.")
                 .font(.footnote.weight(.semibold))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal).padding(.vertical, 8)
                 .background(.regularMaterial)
+                .accessibilityLabel("Synthetic notebook - explicit saves stay on this device. Not for personal data; backup/restore unavailable.")
                 .accessibilityIdentifier("prototypeNotice")
             if let error = notebook.loadError {
                 ContentUnavailableView {
@@ -30,7 +39,7 @@ struct NotebookPrototypeView: View {
                             .accessibilityIdentifier("area-\(area.id)")
                         }
                     } header: { Text("Areas") } footer: {
-                        Text("Synthetic examples only. Not climbing guidance. Do not enter personal data.")
+                        Text("Synthetic examples only. Not climbing guidance. Explicit saves stay on this device; backup/restore unavailable. Do not enter personal data.")
                     }
                     Text("Built at Novacoast.").font(.footnote).foregroundStyle(.secondary)
                 }
@@ -72,6 +81,14 @@ private struct PrototypeRouteView: View {
     @State private var reordering = false
 
     var body: some View {
+        ScrollViewReader { proxy in
+        VStack(spacing: 0) {
+        if !route.pitches.isEmpty {
+            Button("Jump to Pitches", systemImage: "list.number") {
+                proxy.scrollTo("pitch-list", anchor: .top)
+            }
+            .frame(minHeight: 48)
+        }
         List {
             Section {
                 if !route.grade.isEmpty { Text("\(route.grade) · \(route.style)").font(.headline) }
@@ -80,14 +97,16 @@ private struct PrototypeRouteView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Route notes").font(.headline)
-                        Text(route.notes.isEmpty ? "No notes entered" : route.notes)
-                            .lineLimit(3).foregroundStyle(.secondary)
                     }
                 }
+                Text(route.notes.isEmpty ? "No notes entered" : route.notes)
+                    .textSelection(.enabled)
+                    .accessibilityIdentifier("routeNoteText")
             }
             Section {
                 Text(notebook.acknowledgedRoutes.contains(route.id) ? "Saved on this device" : "Loaded from this device")
                     .accessibilityIdentifier("saveAcknowledgment")
+                    .id("pitch-list")
                 if route.pitches.isEmpty {
                     Text("No pitches entered. This example has room for notes without a pitch list.")
                         .foregroundStyle(.secondary)
@@ -110,6 +129,9 @@ private struct PrototypeRouteView: View {
                 if !route.pitches.isEmpty { Text("Tap a pitch to read its notes. Use Edit Pitch Order to reorder the route.") }
             }
         }
+        }
+        }
+        .tint(NotebookAppearance.action)
         .navigationTitle(route.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -137,12 +159,20 @@ private struct PrototypePitchView: View {
 
     var body: some View {
         PrototypeNotesView(title: pitch.name, routeID: route.id, pitchID: pitchID) {
-            Section {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Pitch \(index + 1) of \(route.pitches.count) · \(pitch.grade)")
-                Button("Previous Pitch", systemImage: "chevron.left") { pitchID = route.pitches[index - 1].id }
-                    .disabled(index == 0)
-                Button("Next Pitch", systemImage: "chevron.right") { pitchID = route.pitches[index + 1].id }
-                    .disabled(index == route.pitches.count - 1)
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    Button("Previous") { pitchID = route.pitches[index - 1].id }
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .accessibilityLabel("Previous Pitch")
+                        .disabled(index == 0)
+                    Button("Next") { pitchID = route.pitches[index + 1].id }
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .accessibilityLabel("Next Pitch")
+                        .disabled(index == route.pitches.count - 1)
+                }
             }
         }
         .id(pitchID)
@@ -207,6 +237,10 @@ private struct PrototypeEditingView: View {
         NavigationStack {
             VStack(spacing: 0) {
             Text(title).font(.headline).padding(.horizontal)
+            Text(order ? working.name : "\(working.name) / \(pitchID == nil ? "General notes" : "Pitch notes")")
+                .font(.subheadline)
+                .padding(.horizontal)
+                .accessibilityIdentifier("editorContext")
             if !order {
                 Button("Hide Keyboard") {
                     focused = false
@@ -267,6 +301,7 @@ private struct PrototypeEditingView: View {
             }
             .navigationBarHidden(true)
         }
+        .tint(order ? nil : NotebookAppearance.action)
         .interactiveDismissDisabled(dirty || saving)
         .alert("Discard unsaved changes?", isPresented: $confirmingDiscard) {
             Button("Discard Changes", role: .destructive) { dismiss() }
@@ -299,10 +334,13 @@ private struct PrototypeNotesView<Header: View>: View {
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            header()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-            header()
-            Text("Notes").font(.headline)
+            Text("Notes").font(.headline).accessibilityAddTraits(.isHeader)
                 Text(notes.isEmpty ? "No notes entered" : notes)
                     .textSelection(.enabled)
                     .accessibilityIdentifier("noteText")
@@ -310,6 +348,8 @@ private struct PrototypeNotesView<Header: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
         }
+        }
+        .tint(NotebookAppearance.action)
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { Button("Edit Notes") { editing = true } }
