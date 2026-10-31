@@ -1,6 +1,6 @@
 # Climbing Notebook System Documentation Index
 
-Updated: 2026-10-30
+Updated: 2026-10-31
 
 ## Reading Workflow
 
@@ -19,6 +19,7 @@ The launch UI is a synthetic notebook: browsing is read-only and note/order edit
 - Backup, generation recovery and URL-copy protections require measured feasibility evidence before dependent features proceed. Do not weaken guarantees or treat a harness as production readiness; follow the [handoff gates](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#21-implementation-handoff).
 - The owner-approved [prototype-first exception](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2144-owner-approved-prototype-first-reset) permits a disposable synthetic notebook UI before M1 acceptance. Archive research is paused; its capability gaps gate restore, not the prototype. This does not authorize durable storage claims or relax release requirements.
 - Leif approved the bounded [durable fixture slice](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2145-cf-07b-approved-ordinary-durable-saverelaunch-slice), including explicit completion saves instead of eventual autosave, isolated schema/store adoption, and retained incomplete initialization without automatic repair. Unacknowledged edits may be lost; only successful explicit saves are presented as saved. Valuable data remains out of scope. Its acceptance is separate from CF-07A and M1.
+- The owner-approved [CF-07D creation slice](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2151-cf-07d-approved-first-core-notebook-creation-slice) extends this same store for name-only Add/Cancel route drafts in existing areas, not complete-library adoption. Preserve fixture checks and saved content; no migration, reseeding, personal data or autosave is authorized. CF-07C acceptance does not accept CF-07B or CF-07D.
 - No backend, account, OCR, synchronization, analytics, LLM calls or automatic route-field extraction is authorized by the current implementation scope. Use synthetic fixtures, not personal route libraries or copyrighted guidebooks; see [scope and guardrails](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#212-permissions-and-guardrails).
 - Use an English-first UI while preserving Unicode user content. Retain originals/raw text until explicit deletion; ready deliveries and saved drafts do not automatically expire. These owner-confirmed defaults are recorded in the [owner decisions](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#21-confirmed-owner-decisions).
 

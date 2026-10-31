@@ -1,6 +1,6 @@
 # Climbing Notebook
 
-Updated: 2026-10-30
+Updated: 2026-10-31
 
 Native, iPhone-primary climbing notebook for iOS 17+ with minimal iPad support. Product requirements and integrity contracts are in the [approved plan](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md).
 
@@ -8,9 +8,9 @@ Native, iPhone-primary climbing notebook for iOS 17+ with minimal iPad support. 
 
 The native synthetic-data notebook preserves CF-07A's owner-accepted browsing and explicit editing workflows. Browse areas, routes and five ordered pitches; Previous/Next navigates without reordering. CF-07B adds explicit durable saves for route notes, pitch notes and pitch order, pending owner testing. Do not enter personal climbing data.
 
-CF-07C shows full General notes in the route workspace, adds Jump to Pitches, keeps adjacent-pitch navigation above scrolling notes, and identifies the route/field in note editors. These bounded design-aligned changes preserve the existing fixture format and explicit-save contract; they do not add full-product creation or automatic saving.
+Owner-accepted CF-07C shows full General notes in the route workspace, adds Jump to Pitches, keeps adjacent-pitch navigation above scrolling notes, and identifies the route/field in note editors. CF-07D adds a name-only Add/Cancel route draft in either existing area, with duplicate names allowed, blank metadata, zero pitches and explicit General-note editing. CF-07D verification is paused at owner direction with automated tests retained and owner acceptance pending; see [current results](docs/verification/NotebookPrototype.md#cf-07d-current-results). This is not full-product creation or automatic saving.
 
-Finish Editing and Done save on this device before closing. Cancel confirms discard when changed. Unsaved edits can be lost if the app closes; failures retain the editor for retry. Creation/deletion, full notebook schema coverage, media intake, share delivery, URL copying and backup/restore are not implemented. M1 remains incomplete; archive research is paused, not a prerequisite for ordinary notebook increments. See the [Kanban](docs/WIP_KANBAN.md) and [verification references](#verification-references) for actual status and remaining gaps.
+Add, Finish Editing and Done save on this device before closing. Cancel confirms discard when changed. Unsaved drafts/edits can be lost if the app closes; failures retain the editor for retry. Area/pitch creation, deletion, full notebook schema coverage, media intake, share delivery, URL copying and backup/restore are not implemented. M1 remains incomplete; archive research is paused, not a prerequisite for ordinary notebook increments. See the [Kanban](docs/WIP_KANBAN.md) and [verification references](#verification-references) for actual status and remaining gaps.
 
 ## Prerequisites
 
@@ -43,11 +43,12 @@ xcodebuild -resolvePackageDependencies -project ClimbingNotebook.xcodeproj -sche
 2. Open a pitch; Previous/Next changes selection without changing order.
 3. Choose Edit Notes, enter synthetic text, Hide Keyboard, then Finish Editing.
 4. From the route, choose Edit Pitch Order; move a pitch or use its drag handle, then Done. Names and notes stay attached.
-5. Visit Example Meadow and Unwritten Line for empty cases. Terminate/relaunch to confirm acknowledged text and order return unchanged. Changes not explicitly saved do not survive termination.
+5. Visit Example Meadow and Unwritten Line for empty cases. In either area, choose Add Route, enter a synthetic name and Add; open the new route and edit its General notes. Cancel discards a draft without creating a route.
+6. Terminate/relaunch to confirm acknowledged routes, text and order return unchanged. Changes not explicitly saved do not survive termination.
 
 ## Architecture and Data
 
-The app opens a small versioned SwiftData fixture store under app-private `Application Support/NotebookFixtureSlice/`, with stable UUID relationships and explicit saves. Editors buffer plain values separately from acknowledged snapshots; autosave is disabled. Existing invalid/incomplete stores fail visibly without reset, reseeding or empty-library fallback. This format is limited to the synthetic fixtures, not the complete product schema. Separate two-entity `LibraryStore` and generation descriptor/journal harnesses remain unchanged and isolated. The hidden share extension does not accept deliveries. No hosted API, telemetry, analytics, OCR, cloud sync or AI calls exist in this scope.
+The app opens a small versioned SwiftData fixture store under app-private `Application Support/NotebookFixtureSlice/`, with stable UUID relationships and explicit saves. Editors buffer plain values separately from acknowledged snapshots; autosave is disabled. Existing invalid/incomplete stores fail visibly without reset, reseeding or empty-library fallback. CF-07D extends validation in place for additional synthetic zero-pitch routes with one General section while preserving fixed fixture checks; schema, marker and namespace are unchanged. Older fixture-only binaries reject added routes; this is not a complete product schema or valuable-data library. Separate two-entity `LibraryStore` and generation descriptor/journal harnesses remain unchanged and isolated. The hidden share extension does not accept deliveries. No hosted API, telemetry, analytics, OCR, cloud sync or AI calls exist in this scope.
 
 Technical project/scheme/module names use `ClimbingNotebook`. `DEVELOPMENT_DISPLAY_NAME` supplies generated display branding. Bundle identifiers rooted at `com.climbingnotebook.foundation` are provisional, not registered release identities.
 

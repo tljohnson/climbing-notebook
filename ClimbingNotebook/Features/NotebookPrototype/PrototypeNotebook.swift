@@ -1,14 +1,38 @@
 import SwiftUI
 
+enum PrototypeIdentity {
+    nonisolated static let aliases = ["state", "area:granite", "area:meadow", "route:skyline", "route:unwritten",
+                                     "note:skyline", "note:unwritten", "pitch:slab", "pitch:corner",
+                                     "pitch:traverse", "pitch:crack", "pitch:ridge"]
+
+    nonisolated static func uuid(for alias: String) -> UUID? {
+        guard let index = aliases.firstIndex(of: alias) else { return nil }
+        return UUID(uuidString: "CF070B00-0000-4000-8000-\(String(format: "%012d", index + 100))")
+    }
+
+    nonisolated static func alias(for id: UUID) -> String? {
+        aliases.first { uuid(for: $0) == id }
+    }
+}
+
+struct RouteDraft: Identifiable {
+    let id: UUID = UUID()
+    let generalNoteID: UUID = UUID()
+    let areaID: UUID
+    var name: String = ""
+}
+
 struct PrototypePitch: Identifiable, Equatable {
-    let id: String
+    let id: UUID
     let name: String
     let grade: String
     var notes: String
 }
 
 struct PrototypeRoute: Identifiable, Equatable {
-    let id: String
+    let id: UUID
+    let areaID: UUID
+    let generalNoteID: UUID
     let name: String
     let grade: String
     let style: String
@@ -20,7 +44,7 @@ struct PrototypeRoute: Identifiable, Equatable {
         pitches.move(fromOffsets: offsets, toOffset: destination)
     }
 
-    mutating func movePitch(id: String, by distance: Int) {
+    mutating func movePitch(id: UUID, by distance: Int) {
         guard let index = pitches.firstIndex(where: { $0.id == id }),
               pitches.indices.contains(index + distance) else { return }
         movePitches(from: IndexSet(integer: index), to: distance > 0 ? index + distance + 1 : index + distance)
@@ -28,22 +52,24 @@ struct PrototypeRoute: Identifiable, Equatable {
 }
 
 struct PrototypeArea: Identifiable, Equatable {
-    let id: String
+    let id: UUID
     let name: String
     var routes: [PrototypeRoute]
 
     static var fixtures: [Self] {
-        [Self(id: "granite", name: "Example Granite", routes: [
-            PrototypeRoute(id: "skyline", name: "Paper Skyline", grade: "5.8", style: "Trad", notes:
+        let granite = PrototypeIdentity.uuid(for: "area:granite")!
+        func id(_ alias: String) -> UUID { PrototypeIdentity.uuid(for: alias)! }
+        return [Self(id: granite, name: "Example Granite", routes: [
+            PrototypeRoute(id: id("route:skyline"), areaID: granite, generalNoteID: id("note:skyline"), name: "Paper Skyline", grade: "5.8", style: "Trad", notes:
                 "A fictional five-pitch outing for trying the notebook.\n\nApproach: follow the imaginary ridge.\nDescent: return by the fictional walking path.\nGear: add your synthetic planning notes here.\n\nNot climbing guidance.", pitches: [
-                    PrototypePitch(id: "slab", name: "Opening slab", grade: "5.6", notes: "Start below the imaginary rounded slab. A short pitch to settle into the day."),
-                    PrototypePitch(id: "corner", name: "Quiet corner", grade: "5.8", notes: "Follow the fictional corner.\nKeep notes in your own words: arête, 岩, café."),
-                    PrototypePitch(id: "traverse", name: "High traverse", grade: "5.7", notes: "Traverse across the imaginary ledge.\n\nThis longer example is here to test reading and scrolling, not to describe a real climb.\n\nAdd reminders, alternate plans or questions below. Plain text keeps line breaks and Unicode as entered."),
-                    PrototypePitch(id: "crack", name: "Upper crack", grade: "5.8", notes: "An invented crack above the ledge. Try moving this pitch and checking its notes."),
-                    PrototypePitch(id: "ridge", name: "Summit ridge", grade: "5.5", notes: "Finish on the fictional ridge. This is the fifth entered pitch.")
+                    PrototypePitch(id: id("pitch:slab"), name: "Opening slab", grade: "5.6", notes: "Start below the imaginary rounded slab. A short pitch to settle into the day."),
+                    PrototypePitch(id: id("pitch:corner"), name: "Quiet corner", grade: "5.8", notes: "Follow the fictional corner.\nKeep notes in your own words: arête, 岩, café."),
+                    PrototypePitch(id: id("pitch:traverse"), name: "High traverse", grade: "5.7", notes: "Traverse across the imaginary ledge.\n\nThis longer example is here to test reading and scrolling, not to describe a real climb.\n\nAdd reminders, alternate plans or questions below. Plain text keeps line breaks and Unicode as entered."),
+                    PrototypePitch(id: id("pitch:crack"), name: "Upper crack", grade: "5.8", notes: "An invented crack above the ledge. Try moving this pitch and checking its notes."),
+                    PrototypePitch(id: id("pitch:ridge"), name: "Summit ridge", grade: "5.5", notes: "Finish on the fictional ridge. This is the fifth entered pitch.")
                 ]),
-            PrototypeRoute(id: "unwritten", name: "Unwritten Line", grade: "", style: "", notes: "", pitches: [])
-        ]), Self(id: "meadow", name: "Example Meadow", routes: [])]
+            PrototypeRoute(id: id("route:unwritten"), areaID: granite, generalNoteID: id("note:unwritten"), name: "Unwritten Line", grade: "", style: "", notes: "", pitches: [])
+        ]), Self(id: id("area:meadow"), name: "Example Meadow", routes: [])]
     }
 }
 
@@ -52,7 +78,7 @@ struct PrototypeArea: Identifiable, Equatable {
 final class NotebookState {
     var areas: [PrototypeArea] = []
     var loadError: String?
-    var acknowledgedRoutes: Set<String> = []
+    var acknowledgedRoutes: Set<UUID> = []
     private(set) var store: NotebookStore?
     private let root: URL
     private var failNextSave = false
@@ -84,7 +110,7 @@ final class NotebookState {
         } catch { loadError = error.localizedDescription }
     }
 
-    func reloadRoute(id: String) throws -> PrototypeRoute {
+    func reloadRoute(id: UUID) throws -> PrototypeRoute {
         guard let store else { throw CocoaError(.fileReadUnknown) }
         let loaded = try store.load()
         guard let route = loaded.flatMap(\.routes).first(where: { $0.id == id }) else { throw CocoaError(.fileReadCorruptFile) }
@@ -93,7 +119,27 @@ final class NotebookState {
         return route
     }
 
-    func save(_ working: PrototypeRoute, pitchID: String?, order: Bool) throws {
+    @discardableResult
+    func create(_ draft: RouteDraft) throws -> PrototypeRoute {
+        guard let store else { throw NotebookStore.Failure.store("Retry loading before adding a route.") }
+        if _isDebugAssertConfiguration(), failNextSave {
+            store.beforeSave = { throw NSError(domain: "NotebookTest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Synthetic save failure. Your draft remains in this editor."]) }
+        }
+        defer { store.beforeSave = nil; failNextSave = false }
+        let saved = try store.createRoute(areaID: draft.areaID, routeID: draft.id,
+                                          generalNoteID: draft.generalNoteID, name: draft.name)
+        if let index = areas.firstIndex(where: { $0.id == saved.areaID }) {
+            areas[index].routes.removeAll { $0.id == saved.id }
+            areas[index].routes.append(saved)
+            areas[index].routes.sort {
+                $0.name == $1.name ? $0.id.uuidString < $1.id.uuidString : $0.name < $1.name
+            }
+        }
+        acknowledgedRoutes.insert(saved.id)
+        return saved
+    }
+
+    func save(_ working: PrototypeRoute, pitchID: UUID?, order: Bool) throws {
         guard let store else { throw NSError(domain: "Notebook", code: 1, userInfo: [NSLocalizedDescriptionKey: "Store unavailable. Retry loading before editing."]) }
         if _isDebugAssertConfiguration(), failNextSave {
             store.beforeSave = {
@@ -104,7 +150,8 @@ final class NotebookState {
         let saved: PrototypeRoute
         if order {
             saved = try store.savePitchOrder(routeID: working.id, expectedRevision: working.revision, orderedPitchIDs: working.pitches.map(\.id))
-        } else if let pitchID, let pitch = working.pitches.first(where: { $0.id == pitchID }) {
+        } else if let pitchID {
+            guard let pitch = working.pitches.first(where: { $0.id == pitchID }) else { throw NotebookStore.Failure.invalid }
             saved = try store.savePitchNotes(routeID: working.id, pitchID: pitchID, expectedRevision: working.revision, text: pitch.notes)
         } else {
             saved = try store.saveRouteNotes(routeID: working.id, expectedRevision: working.revision, text: working.notes)

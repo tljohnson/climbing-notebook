@@ -6,6 +6,13 @@
 
 ## Blocked
 
+- [ ] `CF-07D` Add routes with explicit drafts and retained General notes
+  - Priority: P0
+  - Owner: Kilo/local
+  - Blocked by: Owner ended further verification on 2026-10-31; retain tests and resume remaining checks/acceptance only when reprioritized. See [current results](verification/NotebookPrototype.md#cf-07d-current-results).
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.5.1
+  - Done when: Existing-area Add/Cancel creates validated UUID routes, explicit General saves survive process relaunch, fixture data/order remains unchanged, required integrity/UI/coverage checks and separate implementation review pass, then owner accepts.
+
 - [ ] `CF-05G` Implement bounded local strict extraction and ZIP64 candidate
   - Priority: P2
   - Owner: Kilo/local
@@ -35,14 +42,6 @@
   - Done when: Test-only synthetic migration preserves IDs, Unicode and relationships after explicit save/reopen; deterministic failure preserves an independent closed generation including sidecars, supports recovery/retry without empty-library fallback, and full minimum/current simulator suites and coverage pass with documented limits.
 
 ## Review
-
-- [ ] `CF-07C` Align fixture reading and navigation with approved design
-  - Priority: P0
-  - Owner: Kilo/local
-  - Depends on: Owner approved DESIGN.md and §21.4.6 on 2026-10-30; CF-07B acceptance remains separate
-  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.6
-  - Done when: Full General notes, pitch quick access, persistent adjacent-pitch controls and contextual editors preserve existing identities/save contracts, required simulator/accessibility/coverage checks and separate review pass, then owner accepts.
-  - Evidence: [Notebook verification](verification/NotebookPrototype.md) CF-07C; full phones 65/69 and 66/69 with targeted UI fixes revalidated (27.0 all-UI 12/12, 17.0 launch 1/1), iPad 3/3; final current-phone UI coverage 90.57%; separate final review complete, dark/VoiceOver/device checks remain unverified.
 
 - [ ] `CF-07B` Plan and deliver bounded durable fixture notes and pitch order
   - Priority: P0
@@ -85,6 +84,15 @@
   - Evidence: [Archive evidence](verification/Archives.md) CF-05A; `Scripts/test-archive-boundaries.sh`, `.build/CF05A-boundaries-final-20261028.log`; focused 2/2 each, full 18/20 each (only known CF-04B failures), coverage 167/194 (86.08%); owned scratch removed.
 
 ## Done
+
+- [x] `CF-07C` Align fixture reading and navigation with approved design
+  - Priority: P0
+  - Owner: Kilo/local
+  - Depends on: Owner approved DESIGN.md and §21.4.6 on 2026-10-30; CF-07B acceptance remains separate
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.4.6
+  - Done when: Full General notes, pitch quick access, persistent adjacent-pitch controls and contextual editors preserve existing identities/save contracts, required simulator/accessibility/coverage checks and separate review pass, then owner accepts.
+  - Completed: 2026-10-31
+  - Evidence: Owner handoff reports human testing passed; accepted commit `423685d`; [Notebook verification](verification/NotebookPrototype.md) CF-07C retains exact automated results and unverified limits. CF-07B acceptance remains separate.
 
 - [x] `CF-07A` Build disposable native notebook interaction prototype
   - Priority: P0

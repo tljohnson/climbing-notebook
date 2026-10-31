@@ -8,6 +8,8 @@ final class NotebookStore {
         case stale
         case limit
         case invalid
+        case name
+        case conflict
         case store(String)
 
         var errorDescription: String? {
@@ -18,6 +20,10 @@ final class NotebookStore {
                 return "Not saved. Notes must be at most 1 MiB (1,048,576 UTF-8 bytes). Shorten the text and try again."
             case .invalid:
                 return "The notebook data or pitch selection is invalid. Reload the notebook before trying again. Retained store files have not been deleted."
+            case .name:
+                return "Not saved. Enter a route name with non-whitespace text and at most 500 characters."
+            case .conflict:
+                return "Not saved. These draft identities conflict with retained data. Cancel and inspect or reload the area before starting a new draft."
             case .store(let detail):
                 return "The notebook could not be loaded or saved. Keep your changes and retry. Retained store files have not been reset or deleted. \(detail)"
             }
@@ -39,11 +45,7 @@ final class NotebookStore {
 
     /// Readable UI aliases are not stored identities. Unknown aliases never acquire a new UUID.
     static func fixtureUUID(for alias: String) -> UUID? {
-        let aliases = ["state", "area:granite", "area:meadow", "route:skyline", "route:unwritten",
-                       "note:skyline", "note:unwritten", "pitch:slab", "pitch:corner",
-                       "pitch:traverse", "pitch:crack", "pitch:ridge"]
-        guard let index = aliases.firstIndex(of: alias) else { return nil }
-        return UUID(uuidString: "CF070B00-0000-4000-8000-\(String(format: "%012d", index + 100))")
+        PrototypeIdentity.uuid(for: alias)
     }
 
     init(root: URL, beforeSave: (() throws -> Void)? = nil) throws {
@@ -130,18 +132,18 @@ final class NotebookStore {
 
     private func seed() {
         for area in PrototypeArea.fixtures {
-            let record = NotebookSchemaV1.Area(id: Self.fixtureUUID(for: "area:\(area.id)")!, name: area.name)
+            let record = NotebookSchemaV1.Area(id: area.id, name: area.name)
             context.insert(record)
             for route in area.routes {
-                let stored = NotebookSchemaV1.Route(id: Self.fixtureUUID(for: "route:\(route.id)")!,
+                let stored = NotebookSchemaV1.Route(id: route.id,
                                                      name: route.name, grade: route.grade, style: route.style)
                 context.insert(stored)
                 stored.area = record
-                let note = NotebookSchemaV1.NoteSection(id: Self.fixtureUUID(for: "note:\(route.id)")!, body: route.notes)
+                let note = NotebookSchemaV1.NoteSection(id: route.generalNoteID, body: route.notes)
                 context.insert(note)
                 note.route = stored
                 for (order, pitch) in route.pitches.enumerated() {
-                    let value = NotebookSchemaV1.Pitch(id: Self.fixtureUUID(for: "pitch:\(pitch.id)")!,
+                    let value = NotebookSchemaV1.Pitch(id: pitch.id,
                                                           name: pitch.name, grade: pitch.grade, notes: pitch.notes,
                                                           order: order)
                     context.insert(value)
@@ -163,38 +165,53 @@ final class NotebookStore {
             func exact(_ actual: [UUID], _ expected: [UUID]) -> Bool {
                 actual.count == expected.count && Set(actual).count == actual.count && Set(actual) == Set(expected)
             }
-            guard markers.count == 1, markers[0].id == Self.fixtureUUID(for: "state"),
-                  markers[0].format == Self.fixtureFormat,
-                  exact(areas.map(\.id), fixtures.compactMap { Self.fixtureUUID(for: "area:\($0.id)") }),
-                  exact(routes.map(\.id), fixtures.flatMap(\.routes).compactMap { Self.fixtureUUID(for: "route:\($0.id)") }),
-                  exact(notes.map(\.id), fixtures.flatMap(\.routes).compactMap { Self.fixtureUUID(for: "note:\($0.id)") }),
-                  exact(pitches.map(\.id), fixtures.flatMap(\.routes).flatMap(\.pitches).compactMap { Self.fixtureUUID(for: "pitch:\($0.id)") }) else {
+            let allIDs = areas.map(\.id) + routes.map(\.id) + pitches.map(\.id) + notes.map(\.id) + markers.map(\.id)
+            let originalRoutes = fixtures.flatMap(\.routes)
+            guard Set(allIDs).count == allIDs.count, !allIDs.contains(Self.sliceID),
+                   markers.count == 1, markers[0].id == Self.fixtureUUID(for: "state"),
+                   markers[0].format == Self.fixtureFormat,
+                   exact(areas.map(\.id), fixtures.map(\.id)),
+                   Set(originalRoutes.map(\.id)).isSubset(of: Set(routes.map(\.id))),
+                   Set(originalRoutes.map(\.generalNoteID)).isSubset(of: Set(notes.map(\.id))),
+                   exact(pitches.map(\.id), originalRoutes.flatMap(\.pitches).map(\.id)),
+                   exact(areas.flatMap(\.routes).map(\.id), routes.map(\.id)),
+                   exact(routes.flatMap(\.notes).map(\.id), notes.map(\.id)),
+                   exact(routes.flatMap(\.pitches).map(\.id), pitches.map(\.id)) else {
                 throw Failure.invalid
             }
             return try fixtures.map { fixture in
-                guard let area = areas.first(where: { $0.id == Self.fixtureUUID(for: "area:\(fixture.id)") }),
-                      area.name == fixture.name,
-                      exact(area.routes.map(\.id), fixture.routes.compactMap { Self.fixtureUUID(for: "route:\($0.id)") }) else {
+                guard let area = areas.first(where: { $0.id == fixture.id }),
+                       area.name == fixture.name,
+                       exact(area.routes.map(\.id), routes.filter { $0.area?.id == area.id }.map(\.id)) else {
                     throw Failure.invalid
                 }
                 var result = fixture
-                result.routes = try fixture.routes.map { original in
-                    guard let route = routes.first(where: { $0.id == Self.fixtureUUID(for: "route:\(original.id)") }),
-                          route.area?.id == area.id, route.name == original.name, route.grade == original.grade,
-                          route.style == original.style, route.revision >= 0,
-                          route.notes.count == 1, let note = route.notes.first,
-                          note.id == Self.fixtureUUID(for: "note:\(original.id)"), note.route?.id == route.id,
-                          note.kind == "general", note.title == "General", note.order == 0,
-                          note.body.utf8.count <= Self.textByteLimit,
-                          exact(route.pitches.map(\.id), original.pitches.compactMap { Self.fixtureUUID(for: "pitch:\($0.id)") }),
-                          route.pitches.map(\.order).sorted() == Array(0..<original.pitches.count) else {
+                result.routes = try area.routes.map { route in
+                    let original = originalRoutes.first { $0.id == route.id }
+                    guard route.area?.id == area.id, route.revision >= 0,
+                           route.notes.count == 1, let note = route.notes.first,
+                           notes.contains(where: { $0.id == note.id }), note.route?.id == route.id,
+                           note.kind == "general", note.title == "General", note.order == 0,
+                           note.body.utf8.count <= Self.textByteLimit,
+                           exact(route.pitches.map(\.id), pitches.filter { $0.route?.id == route.id }.map(\.id)),
+                           exact(route.notes.map(\.id), notes.filter { $0.route?.id == route.id }.map(\.id)),
+                           route.pitches.map(\.order).sorted() == Array(0..<route.pitches.count) else {
                         throw Failure.invalid
                     }
-                    var snapshot = original
-                    snapshot.notes = note.body
-                    snapshot.revision = route.revision
+                    if let original {
+                        guard route.area?.id == original.areaID, route.name.utf8.elementsEqual(original.name.utf8),
+                              route.grade == original.grade, route.style == original.style,
+                              note.id == original.generalNoteID,
+                              exact(route.pitches.map(\.id), original.pitches.map(\.id)) else { throw Failure.invalid }
+                    } else {
+                        guard Self.validName(route.name), route.grade.isEmpty, route.style.isEmpty,
+                              route.pitches.isEmpty else { throw Failure.invalid }
+                    }
+                    var snapshot = PrototypeRoute(id: route.id, areaID: area.id, generalNoteID: note.id,
+                                                  name: route.name, grade: route.grade, style: route.style,
+                                                  notes: note.body, pitches: [], revision: route.revision)
                     snapshot.pitches = try route.pitches.sorted { $0.order < $1.order }.map { pitch in
-                        guard let source = original.pitches.first(where: { Self.fixtureUUID(for: "pitch:\($0.id)") == pitch.id }),
+                        guard let source = original?.pitches.first(where: { $0.id == pitch.id }),
                               pitch.route?.id == route.id, pitch.name == source.name, pitch.grade == source.grade,
                               pitch.notes.utf8.count <= Self.textByteLimit else { throw Failure.invalid }
                         var value = source
@@ -203,6 +220,7 @@ final class NotebookStore {
                     }
                     return snapshot
                 }
+                result.routes.sort { $0.name == $1.name ? $0.id.uuidString < $1.id.uuidString : $0.name < $1.name }
                 return result
             }
         } catch {
@@ -210,7 +228,50 @@ final class NotebookStore {
         }
     }
 
-    func saveRouteNotes(routeID: String, expectedRevision: Int, text: String) throws -> PrototypeRoute {
+    static func validName(_ name: String) -> Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && name.count <= 500
+    }
+
+    func createRoute(areaID: UUID, routeID: UUID, generalNoteID: UUID, name: String) throws -> PrototypeRoute {
+        do {
+            let loaded = try load()
+            guard loaded.contains(where: { $0.id == areaID }) else { throw Failure.invalid }
+            guard Self.validName(name) else { throw Failure.name }
+            let reserved = Set(PrototypeIdentity.aliases.compactMap { PrototypeIdentity.uuid(for: $0) } + [Self.sliceID])
+            guard routeID != generalNoteID, !reserved.contains(routeID), !reserved.contains(generalNoteID) else {
+                throw Failure.conflict
+            }
+            let routes = loaded.flatMap(\.routes)
+            let usedIDs = Set(loaded.map(\.id) + routes.map(\.id) + routes.map(\.generalNoteID) + routes.flatMap(\.pitches).map(\.id))
+            if usedIDs.contains(routeID) || usedIDs.contains(generalNoteID) {
+                guard let saved = routes.first(where: { $0.id == routeID }), saved.generalNoteID == generalNoteID,
+                      saved.areaID == areaID, saved.name.utf8.elementsEqual(name.utf8), saved.grade.isEmpty,
+                      saved.style.isEmpty, saved.revision == 0, saved.notes.isEmpty, saved.pitches.isEmpty else {
+                    throw Failure.conflict
+                }
+                return saved
+            }
+            guard let area = try context.fetch(FetchDescriptor<NotebookSchemaV1.Area>()).first(where: { $0.id == areaID }) else {
+                throw Failure.invalid
+            }
+            let route = NotebookSchemaV1.Route(id: routeID, name: name, grade: "", style: "")
+            let note = NotebookSchemaV1.NoteSection(id: generalNoteID, body: "")
+            context.insert(route)
+            context.insert(note)
+            route.area = area
+            note.route = route
+            context.processPendingChanges()
+            guard let snapshot = try load().flatMap(\.routes).first(where: { $0.id == routeID }) else { throw Failure.invalid }
+            try beforeSave?()
+            try context.save()
+            return snapshot
+        } catch {
+            rollback()
+            throw (error as? Failure) ?? Failure.store(error.localizedDescription)
+        }
+    }
+
+    func saveRouteNotes(routeID: UUID, expectedRevision: Int, text: String) throws -> PrototypeRoute {
         guard text.utf8.count <= Self.textByteLimit else { throw Failure.limit }
         return try update(routeID: routeID, expectedRevision: expectedRevision) { route, snapshot in
             guard !snapshot.notes.utf8.elementsEqual(text.utf8) else { return false }
@@ -220,11 +281,11 @@ final class NotebookStore {
         }
     }
 
-    func savePitchNotes(routeID: String, pitchID: String, expectedRevision: Int, text: String) throws -> PrototypeRoute {
+    func savePitchNotes(routeID: UUID, pitchID: UUID, expectedRevision: Int, text: String) throws -> PrototypeRoute {
         guard text.utf8.count <= Self.textByteLimit else { throw Failure.limit }
         return try update(routeID: routeID, expectedRevision: expectedRevision) { route, snapshot in
             guard let index = snapshot.pitches.firstIndex(where: { $0.id == pitchID }),
-                  let pitch = route.pitches.first(where: { $0.id == Self.fixtureUUID(for: "pitch:\(pitchID)") }) else {
+                   let pitch = route.pitches.first(where: { $0.id == pitchID }) else {
                 throw Failure.invalid
             }
             guard !snapshot.pitches[index].notes.utf8.elementsEqual(text.utf8) else { return false }
@@ -234,14 +295,14 @@ final class NotebookStore {
         }
     }
 
-    func savePitchOrder(routeID: String, expectedRevision: Int, orderedPitchIDs: [String]) throws -> PrototypeRoute {
+    func savePitchOrder(routeID: UUID, expectedRevision: Int, orderedPitchIDs: [UUID]) throws -> PrototypeRoute {
         try update(routeID: routeID, expectedRevision: expectedRevision) { route, snapshot in
             guard orderedPitchIDs.count == snapshot.pitches.count,
                   Set(orderedPitchIDs).count == orderedPitchIDs.count,
                   Set(orderedPitchIDs) == Set(snapshot.pitches.map(\.id)) else { throw Failure.invalid }
             guard orderedPitchIDs != snapshot.pitches.map(\.id) else { return false }
             snapshot.pitches = try orderedPitchIDs.enumerated().map { index, id in
-                guard let pitch = route.pitches.first(where: { $0.id == Self.fixtureUUID(for: "pitch:\(id)") }),
+                guard let pitch = route.pitches.first(where: { $0.id == id }),
                       let value = snapshot.pitches.first(where: { $0.id == id }) else { throw Failure.invalid }
                 pitch.order = index
                 return value
@@ -250,12 +311,12 @@ final class NotebookStore {
         }
     }
 
-    private func update(routeID: String, expectedRevision: Int,
+    private func update(routeID: UUID, expectedRevision: Int,
                         change: (NotebookSchemaV1.Route, inout PrototypeRoute) throws -> Bool) throws -> PrototypeRoute {
         do {
             guard var snapshot = try load().flatMap(\.routes).first(where: { $0.id == routeID }),
                   let route = try context.fetch(FetchDescriptor<NotebookSchemaV1.Route>()).first(where: {
-                      $0.id == Self.fixtureUUID(for: "route:\(routeID)")
+                      $0.id == routeID
                   }) else { throw Failure.invalid }
             guard route.revision == expectedRevision else { throw Failure.stale }
             guard try change(route, &snapshot) else { return snapshot }
@@ -266,12 +327,16 @@ final class NotebookStore {
             try context.save()
             return snapshot
         } catch {
-            context.processPendingChanges()
-            context.rollback()
-            // Discard registered models as well as pending changes before retrying.
-            context = ModelContext(container)
-            context.autosaveEnabled = false
+            rollback()
             throw (error as? Failure) ?? Failure.store(error.localizedDescription)
         }
+    }
+
+    private func rollback() {
+        context.processPendingChanges()
+        context.rollback()
+        // iOS 17 may retain staged registered values; reread acknowledged data on the same container.
+        context = ModelContext(container)
+        context.autosaveEnabled = false
     }
 }

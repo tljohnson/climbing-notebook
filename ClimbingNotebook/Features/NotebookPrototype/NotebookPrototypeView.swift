@@ -8,8 +8,23 @@ private enum NotebookAppearance {
     })
 }
 
+private func fixtureAccessibilityID(_ id: UUID, prefix: String) -> String {
+    PrototypeIdentity.alias(for: id)?.replacingOccurrences(of: ":", with: "-") ?? "\(prefix)-\(id.uuidString)"
+}
+
+private func pitchAlias(_ id: UUID) -> String {
+    PrototypeIdentity.alias(for: id)?.replacingOccurrences(of: "pitch:", with: "") ?? id.uuidString
+}
+
 struct NotebookPrototypeView: View {
     @Bindable var notebook: NotebookState
+    private var testColorScheme: ColorScheme? {
+        let environment = ProcessInfo.processInfo.environment
+        guard _isDebugAssertConfiguration(),
+              let token = environment["NOTEBOOK_TEST_STORE"], UUID(uuidString: token) != nil,
+              environment["NOTEBOOK_TEST_DARK"] == "1" else { return nil }
+        return .dark
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -36,7 +51,7 @@ struct NotebookPrototypeView: View {
                                     Text("\(area.routes.count) routes").font(.subheadline).foregroundStyle(.secondary)
                                 }
                             }
-                            .accessibilityIdentifier("area-\(area.id)")
+                            .accessibilityIdentifier(fixtureAccessibilityID(area.id, prefix: "area"))
                         }
                     } header: { Text("Areas") } footer: {
                         Text("Synthetic examples only. Not climbing guidance. Explicit saves stay on this device; backup/restore unavailable. Do not enter personal data.")
@@ -46,17 +61,19 @@ struct NotebookPrototypeView: View {
                 .navigationTitle(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Climbing Notebook")
             }.environment(notebook) }
         }
+        .preferredColorScheme(testColorScheme)
         .task { if notebook.store == nil { notebook.load() } }
     }
 }
 
 private struct PrototypeAreaView: View {
     @Binding var area: PrototypeArea
+    @State private var draft: RouteDraft?
 
     var body: some View {
         List {
             if area.routes.isEmpty {
-                ContentUnavailableView("No routes entered", systemImage: "mountain.2", description: Text("This example area is empty. Return to Example Granite to try a route."))
+                ContentUnavailableView("No routes entered", systemImage: "mountain.2", description: Text("Add a synthetic route to this area to start taking notes."))
             }
             ForEach($area.routes) { $route in
                 NavigationLink {
@@ -68,15 +85,91 @@ private struct PrototypeAreaView: View {
                         Text("\(route.pitches.count) pitches entered").font(.subheadline).foregroundStyle(.secondary)
                     }
                 }
+                .accessibilityIdentifier("route-\(route.id.uuidString)")
             }
         }
         .navigationTitle(area.name)
+        .toolbar { Button("Add Route", systemImage: "plus") { draft = RouteDraft(areaID: area.id) } }
+        .tint(NotebookAppearance.action)
+        .fullScreenCover(item: $draft) { draft in
+            PrototypeAddRouteView(draft: draft, areaName: area.name)
+        }
+    }
+}
+
+private struct PrototypeAddRouteView: View {
+    @Environment(NotebookState.self) private var notebook
+    @Environment(\.dismiss) private var dismiss
+    @State var draft: RouteDraft
+    let areaName: String
+    @State private var error: String?
+    @State private var saving = false
+    @State private var confirmingDiscard = false
+    @FocusState private var focused: Bool
+
+    private func add() {
+        guard !saving else { return }
+        saving = true
+        error = nil
+        Task { @MainActor in
+            do {
+                _ = try notebook.create(draft)
+                saving = false
+                dismiss()
+            } catch {
+                self.error = error.localizedDescription
+                saving = false
+            }
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Text(areaName).font(.headline).accessibilityIdentifier("draftArea")
+                    TextField("Route name", text: $draft.name, axis: .vertical)
+                        .focused($focused)
+                        .accessibilityIdentifier("routeNameEditor")
+                    Button("Hide Keyboard") {
+                        focused = false
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }.accessibilityLabel("Dismiss keyboard")
+                } header: { Text("Name in this area") } footer: {
+                    Text("A name is required. Duplicate names are allowed. Metadata stays blank and the route starts with 0 pitches entered.")
+                }
+                Section {
+                    Text(saving ? "Saving" : error != nil ? "Not saved - retry" : "Not added yet")
+                        .accessibilityIdentifier("creationSaveState")
+                    if let error {
+                        Label(error, systemImage: "exclamationmark.triangle")
+                        Button("Retry") { add() }
+                    }
+                    Button("Add") { add() }.frame(minHeight: 48)
+                    Button("Cancel", role: .cancel) {
+                        if draft.name.isEmpty { dismiss() } else { confirmingDiscard = true }
+                    }.frame(minHeight: 44)
+                } footer: {
+                    Text("Add saves on this device. Cancel discards this draft. Unsaved drafts are lost if the app closes. Synthetic content only; not for personal data.")
+                }
+            }
+            .disabled(saving)
+            .scrollDismissesKeyboard(.interactively)
+            .navigationTitle("Add Route")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .tint(NotebookAppearance.action)
+        .interactiveDismissDisabled(!draft.name.isEmpty || saving)
+        .alert("Discard unsaved route?", isPresented: $confirmingDiscard) {
+            Button("Discard Changes", role: .destructive) { dismiss() }
+            Button("Keep Editing", role: .cancel) { }
+        }
     }
 }
 
 private struct PrototypeRouteView: View {
     @Environment(NotebookState.self) private var notebook
-    let routeID: String
+    let routeID: UUID
     private var route: PrototypeRoute { notebook.areas.flatMap(\.routes).first { $0.id == routeID }! }
     @State private var reordering = false
 
@@ -108,7 +201,7 @@ private struct PrototypeRouteView: View {
                     .accessibilityIdentifier("saveAcknowledgment")
                     .id("pitch-list")
                 if route.pitches.isEmpty {
-                    Text("No pitches entered. This example has room for notes without a pitch list.")
+                    Text("0 pitches entered. General notes can be used without a pitch list.")
                         .foregroundStyle(.secondary)
                 }
                 ForEach(Array(route.pitches.enumerated()), id: \.element.id) { index, pitch in
@@ -121,7 +214,7 @@ private struct PrototypeRouteView: View {
                             Text(pitch.grade).font(.subheadline).foregroundStyle(.secondary)
                         }
                     }
-                    .accessibilityIdentifier("pitch-\(pitch.id)")
+                    .accessibilityIdentifier(fixtureAccessibilityID(pitch.id, prefix: "pitch"))
                 }
             } header: {
                 Text("\(route.pitches.count) pitches entered")
@@ -145,11 +238,11 @@ private struct PrototypeRouteView: View {
 
 private struct PrototypePitchView: View {
     @Environment(NotebookState.self) private var notebook
-    let routeID: String
+    let routeID: UUID
     private var route: PrototypeRoute { notebook.areas.flatMap(\.routes).first { $0.id == routeID }! }
-    @State private var pitchID: String
+    @State private var pitchID: UUID
 
-    init(routeID: String, pitchID: String) {
+    init(routeID: UUID, pitchID: UUID) {
         self.routeID = routeID
         self._pitchID = State(initialValue: pitchID)
     }
@@ -184,7 +277,7 @@ private struct PrototypeEditingView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var working: PrototypeRoute
     @State private var original: PrototypeRoute
-    let pitchID: String?
+    let pitchID: UUID?
     let order: Bool
     @State private var error: String?
     @State private var saving = false
@@ -192,7 +285,7 @@ private struct PrototypeEditingView: View {
     @State private var confirmingReload = false
     @FocusState private var focused: Bool
 
-    init(route: PrototypeRoute, pitchID: String?, order: Bool) {
+    init(route: PrototypeRoute, pitchID: UUID?, order: Bool) {
         _working = State(initialValue: route)
         _original = State(initialValue: route)
         self.pitchID = pitchID
@@ -273,11 +366,11 @@ private struct PrototypeEditingView: View {
                                 Button("Move Up") { working.movePitch(id: pitch.id, by: -1) }
                                     .fixedSize(horizontal: false, vertical: true)
                                     .disabled(index == 0)
-                                    .accessibilityIdentifier("move-up-\(pitch.id)")
+                                    .accessibilityIdentifier("move-up-\(pitchAlias(pitch.id))")
                                 Button("Move Down") { working.movePitch(id: pitch.id, by: 1) }
                                     .fixedSize(horizontal: false, vertical: true)
                                     .disabled(index == working.pitches.count - 1)
-                                    .accessibilityIdentifier("move-down-\(pitch.id)")
+                                    .accessibilityIdentifier("move-down-\(pitchAlias(pitch.id))")
                             }
                             .buttonStyle(.bordered)
                         }
@@ -323,9 +416,9 @@ private struct PrototypeEditingView: View {
 private struct PrototypeNotesView<Header: View>: View {
     @Environment(NotebookState.self) private var notebook
     let title: String
-    let routeID: String
+    let routeID: UUID
     private var route: PrototypeRoute { notebook.areas.flatMap(\.routes).first { $0.id == routeID }! }
-    let pitchID: String?
+    let pitchID: UUID?
     @ViewBuilder var header: () -> Header
     @State private var editing = false
     private var notes: String {
@@ -360,7 +453,7 @@ private struct PrototypeNotesView<Header: View>: View {
 }
 
 private extension PrototypeNotesView where Header == EmptyView {
-    init(title: String, routeID: String, pitchID: String?) {
+    init(title: String, routeID: UUID, pitchID: UUID?) {
         self.title = title
         self.routeID = routeID
         self.pitchID = pitchID

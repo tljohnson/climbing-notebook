@@ -1,6 +1,6 @@
 # Persistence and URL Policy Verification
 
-Updated: 2026-10-29
+Updated: 2026-10-31
 
 ## Conclusion
 
@@ -13,6 +13,14 @@ The diagnostic `LibraryStore`/generation components remain feasibility harnesses
 Commands validate ownership, route revision, exact sibling-ID permutation and 1 MiB UTF-8 note limits before explicit save. Exact byte changes increment revision; unchanged commands do not save or invent acknowledgment. View editors hold plain snapshots, not persistent models. Errors retain their buffers and the last acknowledged snapshots. iOS 17 required insert-before-link initialization and a fresh autosave-disabled ModelContext on the same container after processPendingChanges/rollback; the focused rollback/retry assertions remain active and pass. This does not close/release a container or alter the CF-04B boundaries.
 
 Focused on-disk/state checks include UUID ownership/order round trips, repeated loading, empty/Unicode/byte-limit cases, invalid orders/graphs, stale revisions, staged rollback/retry, missing/corrupt stores, initialization failure and namespace isolation. Actual process terminate/relaunch proof and consolidated runtime results are in [NotebookPrototype.md](NotebookPrototype.md). Fault injection proves application rollback/retry handling, not real ENOSPC or power-loss durability. Temporary diagnostic/test stores are retained rather than deleted while contexts may be alive. Physical-device file protection/backup, crash/power-loss durability and incomplete-initialization repair remain unverified/unimplemented.
+
+## CF-07D Creation Boundary
+
+The owner approved §21.5.1 on 2026-10-31. The implementation extends `NotebookStore` in place: UUID-valued snapshots/commands, name-only creation of additional routes in either existing area, one General section and zero pitches. `NotebookSchemaV1`, version `1.0.0`, marker `CF-07B-1`, slice path and ModelContainer configuration are unchanged; no migration or diagnostic-store adoption is performed. Fixed area/route/note/pitch identities, immutable fixture metadata and ownership remain mandatory. Validation checks global UUID uniqueness, fetched/inverse ownership sets, General shape, bounded content, revisions and exact fixture pitch membership with persisted contiguous order. Existing note bytes and pitch order are saved content, not initialization defaults.
+
+Draft UUIDs survive validation/save errors. Creation rejects reserved IDs before idempotent matching, validates/prepares the snapshot before explicit save, and returns success only after commit. Exact repeat of an unedited nonfixture pair returns the acknowledged snapshot without another insert; collisions/differing retries fail rather than upsert. Failure rolls back and replaces the context on the same container. Existing absent-root-only initialization and retained incomplete/corrupt-store behavior remain in force. Older fixture-only binaries reject added routes; this does not establish downgrade compatibility or full-library adoption.
+
+Verification was paused at owner direction on 2026-10-31 with tests retained, not accepted. The focused iOS27 bundle passed all 22 persistence and 11 state tests, including a direct predecessor-format V1 graph writer with independently fixed IDs/marker, distinctive Unicode bytes/revisions and reversed pitch order, followed by in-place create/edit/reopen assertions. The predecessor container is deliberately retained; this is ordinary unchanged-format preservation, not a closed-generation/migration lifetime claim. Exact completed UI evidence and unrun full-suite/coverage/tablet checks are recorded in [CF-07D current results](NotebookPrototype.md#cf-07d-current-results). Personal data, actual ENOSPC, power-loss durability and release readiness remain out of scope.
 
 ## Recovery Baseline
 

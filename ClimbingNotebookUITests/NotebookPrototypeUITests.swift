@@ -47,7 +47,7 @@ final class NotebookPrototypeUITests: XCTestCase {
     }
 
     private func reachable(_ element: XCUIElement, in app: XCUIApplication) -> Bool {
-        element.exists && element.isHittable && (element.frame.intersection(visibleBounds(element, in: app)).height > 30
+        element.exists && element.isHittable && (element.frame.intersection(visibleBounds(element, in: app)).height >= min(30, element.frame.height)
             || app.navigationBars.allElementsBoundByIndex.contains { $0.isHittable && $0.frame.contains(element.frame) })
     }
 
@@ -517,6 +517,215 @@ final class NotebookPrototypeUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["noteText"].label, pitchText)
         goBack(app)
         assertAcknowledgment(app, "Loaded from this device")
+    }
+
+    private func openArea(_ app: XCUIApplication, alias: String = "meadow") {
+        let area = app.buttons["area-\(alias)"]
+        XCTAssertTrue(area.waitForExistence(timeout: 10))
+        tap(area, in: app)
+    }
+
+    private func nameField(_ app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(identifier: "routeNameEditor").firstMatch
+    }
+
+    private func beginRoute(_ app: XCUIApplication, name: String) {
+        tap(app.buttons["Add Route"], in: app)
+        let field = nameField(app)
+        XCTAssertTrue(field.waitForExistence(timeout: 3))
+        capture(app, name: "Add Route initial form")
+        tap(field, in: app)
+        field.typeText(name)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 3))
+        let dismissKeyboard = app.buttons["Dismiss keyboard"]
+        reveal(dismissKeyboard, in: app)
+        XCTAssertTrue(dismissKeyboard.isHittable)
+        // Simulator may expose an off-screen keyboard; this tests focus dismissal, not rendered keys.
+        let keyboardCapture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        keyboardCapture.name = "Add Route focused field and dismissal control"
+        keyboardCapture.lifetime = .keepAlways
+        add(keyboardCapture)
+        dismissKeyboard.tap()
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                                  object: app.keyboards.firstMatch)
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed)
+        XCTAssertEqual(field.value as? String, name)
+    }
+
+    private func assertCreationClosed(_ app: XCUIApplication) {
+        let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                               object: app.staticTexts["creationSaveState"])
+        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 5), .completed)
+    }
+
+    private func addedRouteIDs(_ app: XCUIApplication, name: String) -> [String] {
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label BEGINSWITH %@", "route-", name))
+            .allElementsBoundByIndex.map(\.identifier).sorted()
+    }
+
+    func testAddDuplicateRoutesGeneralNotesAndStableIDsSurviveProcessRelaunch() {
+        let app = application()
+        app.launch()
+        // Preserve preexisting acknowledged fixture notes/order through creation.
+        openRoute(app)
+        tap(routeNotes(app), in: app)
+        let fixtureNotes = saveNotes(app, append: "\nFixture retained through creation")
+        goBack(app)
+        tap(app.buttons["Edit Pitch Order"], in: app)
+        tap(app.buttons["move-down-slab"], in: app)
+        tap(app.buttons["Done"], in: app)
+        assertEditorClosed(app)
+        goBack(app)
+        goBack(app)
+        openArea(app)
+        let name = "Synthetic Twin"
+        var ids: [String] = []
+        var notes: [String: String] = [:]
+        for number in 1...2 {
+            beginRoute(app, name: name)
+            tap(app.buttons["Add"], in: app)
+            assertCreationClosed(app)
+            let current = addedRouteIDs(app, name: name)
+            XCTAssertEqual(current.count, number)
+            let id = current.first { !ids.contains($0) }!
+            XCTAssertNotNil(UUID(uuidString: String(id.dropFirst("route-".count))))
+            ids = current
+            tap(app.buttons[id], in: app)
+            XCTAssertTrue(app.staticTexts["0 pitches entered"].exists)
+            XCTAssertFalse(app.buttons["Edit Pitch Order"].exists)
+            assertAcknowledgment(app, "Saved on this device")
+            tap(routeNotes(app), in: app)
+            XCTAssertEqual(app.staticTexts["noteText"].label, "No notes entered")
+            notes[id] = saveNotes(app, append: "Twin \(number)\nDistinct General notes")
+            goBack(app)
+            goBack(app)
+        }
+        for _ in 0..<2 {
+            app.terminate()
+            app.launch()
+            XCTAssertTrue(app.buttons["area-meadow"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons["area-meadow"].label.contains("2 routes"))
+            openArea(app)
+            XCTAssertEqual(addedRouteIDs(app, name: name), ids)
+            for id in ids {
+                tap(app.buttons[id], in: app)
+                assertAcknowledgment(app, "Loaded from this device")
+                tap(routeNotes(app), in: app)
+                XCTAssertEqual(app.staticTexts["noteText"].label, notes[id])
+                goBack(app)
+                goBack(app)
+            }
+        }
+        goBack(app)
+        openRoute(app)
+        assertOrder(app, ["corner", "slab", "traverse", "crack", "ridge"])
+        tap(routeNotes(app), in: app)
+        XCTAssertEqual(app.staticTexts["noteText"].label, fixtureNotes)
+    }
+
+    func testCreationValidationCancelAndUnsavedTerminationDoNotCreateRoutes() {
+        let app = application()
+        app.launch()
+        openArea(app)
+        tap(app.buttons["Add Route"], in: app)
+        tap(app.buttons["Add"], in: app)
+        XCTAssertEqual(app.staticTexts["creationSaveState"].label, "Not saved - retry")
+        tap(app.buttons["Cancel"], in: app)
+        assertCreationClosed(app)
+        XCTAssertFalse(app.buttons["Discard Changes"].exists)
+        beginRoute(app, name: "   ")
+        tap(app.buttons["Add"], in: app)
+        XCTAssertEqual(app.staticTexts["creationSaveState"].label, "Not saved - retry")
+        tap(app.buttons["Cancel"], in: app)
+        app.buttons["Keep Editing"].tap()
+        XCTAssertEqual(nameField(app).value as? String, "   ")
+        tap(app.buttons["Cancel"], in: app)
+        app.buttons["Discard Changes"].tap()
+        assertCreationClosed(app)
+        beginRoute(app, name: String(repeating: "x", count: 501))
+        tap(app.buttons["Add"], in: app)
+        XCTAssertEqual(app.staticTexts["creationSaveState"].label, "Not saved - retry")
+        tap(app.buttons["Cancel"], in: app)
+        app.buttons["Discard Changes"].tap()
+        assertCreationClosed(app)
+        beginRoute(app, name: "Never added")
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["area-meadow"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["area-meadow"].label.contains("0 routes"))
+        openArea(app)
+        XCTAssertTrue(app.staticTexts["No routes entered"].exists)
+        XCTAssertTrue(addedRouteIDs(app, name: "Never added").isEmpty)
+    }
+
+    func testCreationFailureRetryAndUnsavedGeneralTerminationRetainOneRoute() {
+        checkCreationFailure(accessibility: false)
+    }
+
+    func testCreationAtLargestTextRetainsDraftAndAccessibleRecovery() {
+        checkCreationFailure(accessibility: true)
+    }
+
+    func testCreationInDarkAppearanceRetainsDraftAndRecovery() {
+        checkCreationFailure(accessibility: false, dark: true)
+    }
+
+    private func checkCreationFailure(accessibility: Bool, dark: Bool = false) {
+        let app = application(failSave: true, accessibility: accessibility)
+        if dark { app.launchEnvironment["NOTEBOOK_TEST_DARK"] = "1" }
+        app.launch()
+        openArea(app, alias: "granite")
+        let name = "Synthetic route with a longer name for wrapping"
+        beginRoute(app, name: name)
+        capture(app, name: "Add Route draft")
+        tap(app.buttons["Add"], in: app)
+        let state = app.staticTexts["creationSaveState"]
+        reveal(state, in: app)
+        XCTAssertEqual(state.label, "Not saved - retry")
+        reveal(nameField(app), in: app)
+        XCTAssertEqual(nameField(app).value as? String, name)
+        capture(app, name: "Add Route retained failure")
+        XCTAssertFalse(app.staticTexts["Saved on this device"].isHittable)
+        tap(app.buttons["Retry"], in: app)
+        assertCreationClosed(app)
+        let ids = addedRouteIDs(app, name: name)
+        XCTAssertEqual(ids.count, 1)
+        tap(app.buttons[ids[0]], in: app)
+        tap(routeNotes(app), in: app)
+        let saved = saveNotes(app, append: "Acknowledged new route notes")
+        draftNotes(app, append: "UNSAVED do not retain")
+        app.terminate()
+        app.launchEnvironment.removeValue(forKey: "NOTEBOOK_FAIL_SAVE")
+        app.launch()
+        XCTAssertTrue(app.buttons["area-granite"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["area-granite"].label.contains("3 routes"))
+        openArea(app, alias: "granite")
+        XCTAssertEqual(addedRouteIDs(app, name: name), ids)
+        tap(app.buttons[ids[0]], in: app)
+        assertAcknowledgment(app, "Loaded from this device")
+        tap(routeNotes(app), in: app)
+        XCTAssertEqual(app.staticTexts["noteText"].label, saved)
+        // Existing-field failure recovery also works on arbitrary (nonfixture) IDs.
+        app.terminate()
+        app.launchEnvironment["NOTEBOOK_FAIL_SAVE"] = "1"
+        app.launch()
+        openArea(app, alias: "granite")
+        tap(app.buttons[ids[0]], in: app)
+        tap(routeNotes(app), in: app)
+        let retryText = draftNotes(app, append: "\nRetry new route notes")
+        tap(app.buttons["Finish Editing"], in: app)
+        assertSaveFailure(app)
+        tap(app.buttons["Retry"], in: app)
+        assertEditorClosed(app)
+        XCTAssertEqual(app.staticTexts["noteText"].label, retryText)
+        app.terminate()
+        app.launchEnvironment.removeValue(forKey: "NOTEBOOK_FAIL_SAVE")
+        app.launch()
+        openArea(app, alias: "granite")
+        XCTAssertEqual(addedRouteIDs(app, name: name), ids)
+        tap(app.buttons[ids[0]], in: app)
+        tap(routeNotes(app), in: app)
+        XCTAssertEqual(app.staticTexts["noteText"].label, retryText)
     }
 
     private func capture(_ app: XCUIApplication, name: String) {

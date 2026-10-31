@@ -1,10 +1,10 @@
 # Notebook Prototype Verification
 
-Updated: 2026-10-30
+Updated: 2026-10-31
 
 ## Conclusion
 
-CF-07A's native flow was accepted by Leif on 2026-10-29 (`4591da1`). CF-07B's bounded durable implementation was subsequently approved in [§21.4.5](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2145-cf-07b-approved-ordinary-durable-saverelaunch-slice); owner testing/acceptance remains separate. Neither packet establishes M1 completion, migration safety, a complete notebook or release readiness. [Kanban](../WIP_KANBAN.md) owns task status.
+CF-07A's native flow was accepted by Leif on 2026-10-29 (`4591da1`). The 2026-10-31 owner handoff reports CF-07C human testing passed; its committed reading/navigation implementation (`423685d`) is accepted. CF-07B's bounded durable implementation was approved in [§21.4.5](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2145-cf-07b-approved-ordinary-durable-saverelaunch-slice), but its separate owner acceptance remains pending. These acceptances do not establish M1 completion, migration safety, a complete notebook or release readiness. [Kanban](../WIP_KANBAN.md) owns task status.
 
 Browse areas/routes/pitches and read notes without mutation. Previous/Next changes pitch selection; Edit Notes and Edit Pitch Order isolate editing in full-screen workflows. Reordering moves complete stable-ID pitch values, preserving names/notes. Finish Editing/Done explicitly save to a separate fixture store before closing. Cancel confirms discard, failures retain working buffers for Retry, and unacknowledged edits may be lost on termination. A commit can complete just before termination interrupts its UI acknowledgment; only successful explicit saves are presented as saved. Successful load validates fixed identities/relationships without reseeding. The earlier reported notes mismatch was clarified as navigation-versus-reorder confusion, not a reproduced data defect; that accepted separation remains intentional.
 
@@ -59,7 +59,26 @@ The full bundles remain failed; targeted reruns do not constitute a newly execut
 
 Independent review corrected globally scoped tint, truncated XXXL pitch metadata, and insufficient long-note coverage. Screenshot/activity evidence distinguished UI crowding from test-helper problems: helpers now intersect target/container visibility and verify pitch order with a bounded forward traversal rather than repeated wrong-direction drags. Final independent review inspected 12 phone and 7 tablet screenshots with no new material defect. Exports are `.build/CF07C-independent-final-v8-screens-20261030/` and the final reviewer exports in the approved temporary directory. Long-note tests verify bottom-line reachability, stable ownership after relaunch, boundary disabling and adjacent navigation; no test timeouts were raised or migration assertions weakened.
 
-Limits: final captures are light portrait; attempted dark launch arguments did not establish dark rendering and were removed. Dark-mode tint, live VoiceOver, arbitrary long-name layouts, landscape, physical devices and keyboard-open screenshots remain unverified. Typing/keyboard dismissal is exercised, but final editor captures occur after dismissal. Native navigation titles can ellipsize at XXXL. CF-07C is ready for owner review, not accepted/Done; CF-07B's acceptance remains separate.
+Limits: final captures are light portrait; attempted dark launch arguments did not establish dark rendering and were removed. Dark-mode tint, live VoiceOver, arbitrary long-name layouts, landscape, physical devices and keyboard-open screenshots remain unverified. Typing/keyboard dismissal is exercised, but final editor captures occur after dismissal. Native navigation titles can ellipsize at XXXL. The 2026-10-31 owner handoff accepts CF-07C after human testing; it supplies no per-device/accessibility measurements, so it does not turn these unrun checks into passes. CF-07B's acceptance remains separate and pending.
+
+## CF-07D Current Results
+
+The owner approved §21.5.1 and subsequently directed recording current results, keeping automated tests and moving on (2026-10-31). Implementation is retained, but verification is incomplete and CF-07D is paused in Blocked, not Review/Done or accepted. The running creation batch was stopped at that direction; no follow-up schedules remain. CF-07B acceptance remains separate.
+
+Implemented: existing-area name-only Add/Cancel drafts; actual UUID snapshots/commands; duplicate names, blank metadata and zero pitches; explicit General-note saves; stable-ID retry with reserved/collision rejection; strict additive graph validation and unchanged V1 schema, marker, namespace and initialization policy. No migration, reset/reseed, diagnostic-store adoption or personal data. Added tests remain active in source, not skipped or deleted.
+
+| Completed evidence | Result |
+| --- | --- |
+| `.build/CF07D-focused-v1-iOS27-20261031.xcresult`, iPhone 18 Pro/iOS 27.0 | 33/33 persistence/state tests passed: 22 persistence and 11 prototype/state, including predecessor-format byte/ID/revision/order preservation, arbitrary UUIDs, ownership/corrupt graphs, duplicate names, validation and rollback/retry. The accompanying UI test failed on test-helper reachability before typing; not a known CF-04B failure. |
+| `.build/CF07D-ui-v3-iOS27-20261031.xcresult` | 1/1 creation UI test passed after fixing the helper's rejection of fully visible controls shorter than 30 points. Covers failed Add with retained name/Retry, exactly one created route, explicit General save, unsaved-edit termination, acknowledged content on real process relaunch, General failure/retry and another relaunch. |
+| Separate internal implementation reviews | Persistence/state/unit review found no concrete integrity defects. UI review identified weak keyboard evidence; assertions/capture were revised. These were static reviews, not runtime acceptance. |
+| Simulator/toolchain verification | Selected iPhone 15/iOS17, iPhone 18 Pro/iOS27 and iPad10/iOS26.4 available; Xcode 27.0.1. Availability is not destination test coverage. |
+
+The stricter software-keyboard prerequisite failed in `.build/CF07D-creation-v5-iOS27-20261031.xcresult` (four tests stopped at that check) and the isolated v6 diagnostic. The captured accessibility tree placed a childless keyboard off screen at y=918 on a 874-point display; full-display captures showed no software keys. This is a measured environment/evidence limit, not proof that keyboard-open actions work. Current functional tests assert focus/keyboard-container dismissal and label captures accordingly; actual software-keyboard-open reachability remains a human/device check. They no longer misrepresent container existence as rendered-keyboard evidence.
+
+The v2 reachability reproduction failed; v4 and v7 were interrupted without valid finalized bundles. The final v8 functional batch was still running when the owner ended verification and was explicitly stopped; it supplies no completed pass claim. The four duplicate/Cancel-validation/XXXL/dark scenarios therefore have no completed functional pass under the final helper. Last passing v3 predates the final capture/assertion adjustment. Dark and XXXL screenshots alone do not establish successful flows.
+
+Remaining, not executed/completed: final full suites on both selected phones, both final coverage gates and rejection self-test, selected-iPad touched-layout checks, final complete creation UI coverage, rendered software-keyboard/VoiceOver/physical-device checks and owner acceptance. The two historical CF-04B migration tests remain active and were not run in these focused bundles: `testFailedMigrationRecoversAndRetriesFromIndependentClosedGeneration` and `testOnDiskSyntheticMigrationPreservesRelationshipsAndSavedChangesAfterReopen`. No current CF-04B pass/failure is inferred, and none of the new UI failures is classified as known CF-04B. No valuable-data, migration, backup, actual ENOSPC or crash/power-loss safety claim follows from these results.
 
 ## Retained Data Boundary
 
