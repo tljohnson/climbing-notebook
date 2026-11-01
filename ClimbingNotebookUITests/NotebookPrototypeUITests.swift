@@ -493,8 +493,12 @@ final class NotebookPrototypeUITests: XCTestCase {
             if note.frame.maxY <= app.frame.maxY - 34 { break }
             app.scrollViews.firstMatch.swipeUp()
         }
-        XCTAssertLessThanOrEqual(note.frame.maxY, app.frame.maxY - 34, "Final note lines must remain reachable below pinned controls")
         capture(app, name: "Long pitch notes with pinned navigation")
+        let geometry = XCTAttachment(string: "note=\(note.frame); scroll=\(app.scrollViews.firstMatch.frame); app=\(app.frame); requiredBottom=\(app.frame.maxY - 34)")
+        geometry.name = "Long pitch final-line geometry"
+        geometry.lifetime = .keepAlways
+        add(geometry)
+        XCTAssertLessThanOrEqual(note.frame.maxY, app.frame.maxY - 34, "Final note lines must remain reachable below pinned controls")
         app.buttons["Next Pitch"].tap()
         XCTAssertTrue(app.navigationBars["Quiet corner"].exists)
         XCTAssertTrue(app.buttons["Previous Pitch"].isHittable)
@@ -536,6 +540,7 @@ final class NotebookPrototypeUITests: XCTestCase {
         capture(app, name: "Add Route initial form")
         tap(field, in: app)
         field.typeText(name)
+        XCTAssertEqual(field.value as? String, name, "Typing must preserve the exact supplied name before scrolling or focus dismissal")
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 3))
         let dismissKeyboard = app.buttons["Dismiss keyboard"]
         reveal(dismissKeyboard, in: app)
@@ -545,6 +550,7 @@ final class NotebookPrototypeUITests: XCTestCase {
         keyboardCapture.name = "Add Route focused field and dismissal control"
         keyboardCapture.lifetime = .keepAlways
         add(keyboardCapture)
+        XCTAssertEqual(field.value as? String, name, "Revealing keyboard dismissal must not change the name")
         dismissKeyboard.tap()
         let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
                                                   object: app.keyboards.firstMatch)

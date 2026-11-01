@@ -2,7 +2,7 @@
 
 **Status:** Owner-approved implementation plan, including the consolidated text-notebook milestone in §21.6 (2026-10-31).
 **Prepared:** 2026-10-27
-**Updated:** 2026-10-31
+**Updated:** 2026-11-01
 **Inputs:** `handoff.md` and the owner's clarification answers in this session.
 **Deliverable boundary:** Approved implementation specification. The repository now contains a partial M0/M1 foundation and an accepted disposable notebook prototype; prospective files and contracts below are not claims of implemented features. Measured evidence and remaining gaps live in [notebook prototype verification](docs/verification/NotebookPrototype.md), [persistence verification](docs/verification/Persistence.md) and [archive verification](docs/verification/Archives.md). Task status lives in [WIP Kanban](docs/WIP_KANBAN.md); this plan retains approval scope and milestone gates. README owns setup and build/test entry points, not the evidence ledger.
 
@@ -1115,7 +1115,7 @@ Use internal test seams for before-save failures and generated UUID UI stores, p
 
 #### 21.6.7 Honest Safety Boundary and Final Handoff
 
-**Execution status (2026-10-31): Blocked, not implementation-complete or owner-accepted.** Working-tree implementation and current-runtime checks exist, but iOS17 fresh-container coexistence breaks later relationship insertion. Narrow candidates failed and were reverted. The [blocked handoff/TN status](docs/verification/NotebookPrototype.md#cf-07e-blocked-handoff) records results, additional UI failures, failed interim coverage, unrun criteria and recommended bounded model-identity diagnostic decision. Existing approval does not authorize a runtime-floor/schema/architecture workaround or archive/recovery research.
+**Execution status (2026-11-01): Blocked, not implementation-complete or owner-accepted.** Resumed from clean `8c00e04`; fixes remain uncommitted. First-throw LLDB/minimal reproducer prove different native entity/model identities within one context on iOS17, with no supported public-API remedy found. Complete suites failed current138/147 and minimum111/147; both combined coverage gates pass. Changed tablet3/5; active UI/audit failures remain. See [verified disposition/TN status](docs/verification/NotebookPrototype.md#consolidated-final-disposition). Recommend an explicit owner decision to qualify a higher runtime floor or retain iOS17 pending a supported remedy/Apple escalation; no floor is changed and iOS27 success does not qualify intermediate versions. Ordinary debugging was already authorized, not a new packet gate. Consequential product, schema/data-contract, architecture, runtime-floor or destructive changes still require approval. Archive/recovery research remains excluded.
 
 This milestone can establish ordinary explicit-save durability across real app process termination, complete hierarchy invariants, non-destructive failed-command handling and clear retained-store failures on the tested simulator matrix. It cannot establish corruption repair, safe future schema migration, closed-generation recovery, portable backup/restore, actual ENOSPC/power-loss durability, OS backup restoration or physical-device protection. CF-04B and archive blockers remain unresolved and separately scoped; no research is silently included to remove them.
 

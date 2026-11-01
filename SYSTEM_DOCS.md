@@ -1,6 +1,6 @@
 # Climbing Notebook System Documentation Index
 
-Updated: 2026-10-31
+Updated: 2026-11-01
 
 ## Reading Workflow
 
@@ -10,9 +10,9 @@ Read this index first, then task-relevant references and cross-cutting contracts
 
 Climbing Notebook is an offline-first personal climbing notebook, iPhone-primary with minimal iPad support, targeting iOS 17+ with SwiftUI. The approved architecture routes presentation through feature coordinators to app-private SwiftData persistence and managed-file services. The main app alone owns library mutations and managed originals; the share extension delivers only to an App Group mailbox for main-app intake and draft review. Portable backup uses explicit data-transfer models plus originals, not a raw database copy. These are approved architectural contracts, not claims that all components exist. See [architecture](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#5-architecture-and-technology-decisions).
 
-The launch UI is a synthetic notebook: browsing is read-only and note/order editing uses explicit workflows. CF-07B adds an isolated versioned SwiftData fixture store and buffered explicit save/relaunch for route notes, pitch notes and whole pitch order. It is not the full product schema. The separate diagnostic LibraryStore/generation harnesses remain unchanged; intake, migration/replacement acceptance and backup/restore remain incomplete. Consult source, [current capabilities](README.md#current-capabilities) and task-relevant evidence below, not the plan's prospective file map.
+Historical CF-07A/B fixture baseline: browsing is read-only and note/order editing uses explicit workflows. CF-07B adds an isolated versioned SwiftData fixture store and buffered explicit save/relaunch for route notes, pitch notes and whole pitch order. It is not the full product schema. The separate diagnostic LibraryStore/generation harnesses remain unchanged; intake, migration/replacement acceptance and backup/restore remain incomplete. Consult source, [current capabilities](README.md#current-capabilities) and task-relevant evidence below, not the plan's prospective file map.
 
-The owner-approved [consolidated text milestone](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#216-consolidated-text-notebook-milestone-approved) is blocked, not implementation-complete/accepted. Its working-tree entry opens a separate initially empty `TextNotebook` format with persisted sibling order and explicit saves. Examples and unchanged-format retained content are separate sources; legacy reading cannot initialize an absent root. Source-bound drafts prevent retargeting. The [blocked handoff](docs/verification/NotebookPrototype.md#cf-07e-blocked-handoff) distinguishes iOS17 fresh-container insertion failures, UI/coverage gaps and the migration baseline. The preceding paragraph describes the historical fixture baseline, not this entry point.
+The owner-approved [consolidated text milestone](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#216-consolidated-text-notebook-milestone-approved) is blocked, not implementation-complete/accepted. Its committed entry opens a separate initially empty `TextNotebook` format with persisted sibling order and explicit saves. Examples and unchanged-format retained content are separate sources; legacy reading cannot initialize an absent root. Source-bound drafts prevent retargeting. The [verified disposition](docs/verification/NotebookPrototype.md#consolidated-final-disposition) distinguishes confirmed iOS17 native model-identity failures, active UI/audit gaps and migration baseline; full phone suites failed while both combined coverage gates passed. The preceding paragraph describes the historical fixture baseline, not this entry point.
 
 ## Cross-Cutting Invariants
 

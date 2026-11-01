@@ -110,10 +110,11 @@ final class TextNotebookUITests: XCTestCase {
                 previousRows = rows
                 let bounds = list.frame.intersection(viewport(app)).insetBy(dx: 12, dy: 12)
                 guard bounds.height > 40 else { break }
+                // Stay inside the scrollable content, not on the inset List row's trailing boundary.
                 let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
-                    dx: bounds.maxX - 4, dy: bounds.minY + bounds.height * (down ? 0.25 : 0.75)))
+                    dx: bounds.midX, dy: bounds.minY + bounds.height * (down ? 0.25 : 0.75)))
                 let end = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
-                    dx: bounds.maxX - 4, dy: bounds.minY + bounds.height * (down ? 0.75 : 0.25)))
+                    dx: bounds.midX, dy: bounds.minY + bounds.height * (down ? 0.75 : 0.25)))
                 start.press(forDuration: 0.05, thenDragTo: end)
                 if reachable(element, in: app) { return }
             }
@@ -215,6 +216,24 @@ final class TextNotebookUITests: XCTestCase {
             .allElementsBoundByIndex.map(\.identifier)
     }
 
+    private func allRowIDs(_ app: XCUIApplication, kind: String) -> Set<String> {
+        var ids = Set(rowIDs(app, kind: kind))
+        guard let list = foregroundList(app) else { return ids }
+        for down in [true, false] {
+            var previous = ""
+            for _ in 0..<24 {
+                let rows = list.cells.allElementsBoundByIndex.map { "\($0.label):\($0.frame)" }.joined(separator: "|")
+                if rows == previous { break }
+                previous = rows
+                let bars = list.otherElements.matching(NSPredicate(format: "label BEGINSWITH %@", "Vertical scroll bar"))
+                if bars.allElementsBoundByIndex.contains(where: { ($0.value as? String) == (down ? "0%" : "100%") }) { break }
+                if down { list.swipeDown() } else { list.swipeUp() }
+                ids.formUnion(rowIDs(app, kind: kind))
+            }
+        }
+        return ids
+    }
+
     @discardableResult
     private func create(_ app: XCUIApplication, kind: String, name: String) -> String {
         reveal(addButton(app, kind: kind), in: app)
@@ -222,12 +241,12 @@ final class TextNotebookUITests: XCTestCase {
         beginName(app, action: "Add \(kind.capitalized)", name: name)
         tap(app.buttons["Add"], in: app)
         assertClosed(app)
+        if kind == "pitch" { tap(app.buttons["Jump to Pitches"], in: app) }
         reveal(addButton(app, kind: kind), in: app)
-        let matches = (kind == "area" ? library(app).buttons : app.buttons).matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
-            "text-\(kind)-", name.isEmpty ? "Pitch" : name)).allElementsBoundByIndex
-        let candidate = matches.first { !previous.contains($0.identifier) }
-        if let candidate { reveal(candidate, in: app) }
-        let added = matches.map(\.identifier).filter { !previous.contains($0) }
+        let matches = (kind == "area" ? library(app).buttons : app.buttons).matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@ AND NOT (identifier IN %@)",
+            "text-\(kind)-", name.isEmpty ? "Pitch" : name, Array(previous)))
+        reveal(matches.firstMatch, in: app)
+        let added = matches.allElementsBoundByIndex.map(\.identifier)
         XCTAssertEqual(added.count, 1)
         let id = added.first ?? "missing-\(kind)"
         XCTAssertNotNil(UUID(uuidString: String(id.dropFirst("text-\(kind)-".count))))
@@ -312,7 +331,7 @@ final class TextNotebookUITests: XCTestCase {
 
     private func verify(_ app: XCUIApplication, areas: [Area], loaded: Bool = true) {
         assertLibrary(app)
-        XCTAssertEqual(Set(rowIDs(app, kind: "area")), Set(areas.map(\.id)))
+        XCTAssertEqual(allRowIDs(app, kind: "area"), Set(areas.map(\.id)))
         order(app, kind: "Area", ids: areas.map(\.id), names: areas.map(\.name))
         for area in areas {
             let areaRow = app.buttons[area.id]
@@ -320,7 +339,7 @@ final class TextNotebookUITests: XCTestCase {
             XCTAssertTrue(areaRow.label.contains(area.name))
             XCTAssertTrue(areaRow.label.contains("\(area.routes.count) routes"))
             tap(areaRow, in: app)
-            XCTAssertEqual(Set(rowIDs(app, kind: "route")), Set(area.routes.map(\.id)))
+            XCTAssertEqual(allRowIDs(app, kind: "route"), Set(area.routes.map(\.id)))
             if !area.routes.isEmpty {
                 order(app, kind: "Route", ids: area.routes.map(\.id), names: area.routes.map(\.name))
             }
@@ -343,7 +362,8 @@ final class TextNotebookUITests: XCTestCase {
                     tap(app.buttons["Jump to Pitches"], in: app)
                     order(app, kind: "Pitch", ids: route.pitches.map(\.id), names: route.pitches.map(\.name))
                 }
-                XCTAssertEqual(Set(rowIDs(app, kind: "pitch")), Set(route.pitches.map(\.id)))
+                XCTAssertEqual(allRowIDs(app, kind: "pitch"), Set(route.pitches.map(\.id)))
+                if !route.pitches.isEmpty { tap(app.buttons["Jump to Pitches"], in: app) }
                 for (index, pitch) in route.pitches.enumerated() {
                     let row = app.buttons[pitch.id]
                     reveal(row, in: app)
@@ -380,12 +400,8 @@ final class TextNotebookUITests: XCTestCase {
         route.notes = "General exact text\nCafe\u{301}, \u{96ea}, and trailing spaces  "
         editNotes(app, action: "Edit General Notes", text: route.notes)
         for number in 1...5 {
-            var pitch = Pitch(id: create(app, kind: "pitch", name: "Pitch name \(number)"), name: "Pitch name \(number)")
-            tap(app.buttons[pitch.id], in: app)
-            pitch.notes = "Distinct pitch \(number)\nExact synthetic notes \(number)."
-            editNotes(app, action: "Edit Notes", text: pitch.notes)
+            let pitch = Pitch(id: create(app, kind: "pitch", name: "Pitch name \(number)"), name: "Pitch name \(number)")
             route.pitches.append(pitch)
-            back(app)
         }
         beginOrder(app, kind: "Pitch")
         move(app, id: route.pitches[4].id, direction: "up")
@@ -404,6 +420,40 @@ final class TextNotebookUITests: XCTestCase {
         // All-kind rename/order durability has its own shorter workflows below.
         relaunch(app)
         verify(app, areas: [first, second])
+    }
+
+    func testFiveDistinctPitchNotesSurviveProcessRelaunch() {
+        let app = application()
+        app.launch()
+        assertLibrary(app)
+        let area = create(app, kind: "area", name: "Pitch notes area")
+        tap(app.buttons[area], in: app)
+        let route = create(app, kind: "route", name: "Pitch notes route")
+        tap(app.buttons[route], in: app)
+        var pitches: [Pitch] = []
+        for number in 1...5 {
+            pitches.append(Pitch(id: create(app, kind: "pitch", name: "Pitch name \(number)"),
+                                 name: "Pitch name \(number)",
+                                 notes: "Distinct pitch \(number)\nExact synthetic notes \(number)."))
+        }
+        tap(app.buttons[pitches[0].id], in: app)
+        for (index, pitch) in pitches.enumerated() {
+            XCTAssertEqual(app.staticTexts["textPitchIdentity"].label, pitch.name)
+            editNotes(app, action: "Edit Notes", text: pitch.notes)
+            if index < pitches.count - 1 { tap(app.buttons["Next Pitch"], in: app) }
+        }
+        back(app)
+        beginOrder(app, kind: "Pitch")
+        move(app, id: pitches[4].id, direction: "up")
+        move(app, id: pitches[1].id, direction: "up")
+        tap(app.buttons["Done"], in: app)
+        assertClosed(app)
+        pitches.swapAt(3, 4)
+        pitches.swapAt(0, 1)
+        relaunch(app)
+        verify(app, areas: [Area(id: area, name: "Pitch notes area", routes: [
+            Route(id: route, name: "Pitch notes route", pitches: pitches)
+        ])])
     }
 
     func testInvalidNamesKeepEditingDiscardAndTerminatedDraftsNeverCreateRecords() {
@@ -757,9 +807,11 @@ final class TextNotebookUITests: XCTestCase {
             if kind != "Area" { tap(app.buttons[route], in: app) }
             if kind == "Pitch" { tap(app.buttons[pitch], in: app) }
             actions(app, kind: kind, action: "Delete")
+            reveal(app.staticTexts["textEditorContext"], in: app)
             let context = app.staticTexts["textEditorContext"].label
             tap(app.buttons["Delete"], in: app)
             assertFailure(app)
+            reveal(app.staticTexts["textEditorContext"], in: app)
             XCTAssertEqual(app.staticTexts["textEditorContext"].label, context)
             XCTAssertTrue(app.buttons["Delete"].exists)
             // Cancel after failed staging, then process-reopen to prove the acknowledged item survived.
@@ -980,6 +1032,12 @@ final class TextNotebookUITests: XCTestCase {
         let app = application(accessibility: accessibility, dark: dark)
         app.launch()
         assertLibrary(app)
+        reveal(app.staticTexts["textSaveStatus"], in: app)
+        capture(app, "Library status at \(accessibility ? "AXXXL" : "ordinary") text size")
+        let statusEvidence = XCTAttachment(string: "Rendered status: \(app.staticTexts["textSaveStatus"].label); frame: \(app.staticTexts["textSaveStatus"].frame)")
+        statusEvidence.name = "Library status Dynamic Type frame"
+        statusEvidence.lifetime = .keepAlways
+        add(statusEvidence)
         let area = create(app, kind: "area", name: "Synthetic long area name with wrapping and Cafe\u{301}")
         tap(app.buttons[area], in: app)
         let route = create(app, kind: "route", name: "Synthetic route with a long readable contextual name")
@@ -1013,7 +1071,11 @@ final class TextNotebookUITests: XCTestCase {
         editor.typeText("\nKeyboard-focused functional typing")
         XCTAssertTrue((editor.value as? String ?? "").contains("Keyboard-focused functional typing"))
         let renderedKeys = app.keyboards.keys.allElementsBoundByIndex.filter {
-            $0.isHittable && !$0.frame.intersection(app.frame).isEmpty && $0.frame.width > 0 && $0.frame.height > 0
+            let frame = $0.frame
+            return frame.origin.x.isFinite && frame.origin.y.isFinite
+                && frame.width.isFinite && frame.height.isFinite
+                && frame.width > 0 && frame.height > 0
+                && !frame.intersection(app.frame).isEmpty && $0.isHittable
         }
         if renderedKeys.isEmpty {
             let limitation = XCTAttachment(string: "No software keyboard keys were rendered/hittable in the app viewport. Functional typing is asserted separately; software-keyboard-visible reachability is unverified. No simulator settings changed.")

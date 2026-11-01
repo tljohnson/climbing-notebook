@@ -47,6 +47,25 @@ final class TextNotebookPersistenceTests: XCTestCase {
         }
     }
 
+    func testPersistenceDiagnosticsNameBoundaryAndUnderlyingCodesWithoutRawDescriptions() {
+        let underlying = NSError(domain: NSCocoaErrorDomain, code: 134020,
+                                 userInfo: [NSLocalizedDescriptionKey: "Private note and /private/store/path"])
+        let outer = NSError(domain: "SwiftData", code: 1,
+                            userInfo: [NSUnderlyingErrorKey: underlying, NSLocalizedDescriptionKey: "Private outer detail"])
+        let diagnostic = TextNotebookStore.storeFailure(outer, at: "save command").localizedDescription
+        XCTAssertTrue(diagnostic.contains("save command: SwiftData (1) / NSCocoaErrorDomain (134020)"))
+        XCTAssertFalse(diagnostic.contains("Private"))
+        XCTAssertFalse(diagnostic.contains("/private/store/path"))
+        var chain = underlying
+        for _ in 0..<12 {
+            chain = NSError(domain: "Layer", code: 2, userInfo: [NSUnderlyingErrorKey: chain])
+        }
+        let bounded = TextNotebookStore.storeFailure(chain, at: "fetch Route").localizedDescription
+        XCTAssertTrue(bounded.contains("fetch Route:"))
+        XCTAssertEqual(bounded.components(separatedBy: "Layer (2)").count - 1, 8)
+        XCTAssertFalse(bounded.contains("134020"))
+    }
+
     func testOriginalCreatesRouteWhileSecondSameRootContainerIsRetained() throws {
         let (original, areaID, _, _) = try populated()
         let baseline = try original.load()
@@ -296,6 +315,54 @@ final class TextNotebookPersistenceTests: XCTestCase {
         }
     }
 
+    func testForeignPitchCommandsRejectWithCurrentOwnerRevisionAndKeepGraph() throws {
+        let (store, area, route, pitch) = try populated()
+        let otherRoute = UUID()
+        try run(store, .createRoute(areaID: area, id: otherRoute, generalNoteID: UUID(), name: "Other"))
+        let before = try store.load()
+        let currentRevision = try XCTUnwrap(before.areas[0].routes.first { $0.id == otherRoute }).revision
+        let commands: [TextNotebookStore.Command] = [
+            .renamePitch(routeID: otherRoute, id: pitch, name: "Wrong owner"),
+            .deletePitch(routeID: otherRoute, id: pitch),
+            .pitchNotes(routeID: otherRoute, pitchID: pitch, text: "Wrong owner")
+        ]
+        for command in commands {
+            XCTAssertThrowsError(try store.execute(command, sourceToken: before.sourceToken,
+                                                   expectedRevision: before.revision, expectedRouteRevision: currentRevision)) { error in
+                guard case TextNotebookStore.Failure.unavailable = error else {
+                    return XCTFail("Expected owner rejection, not a stale-revision rejection: \(error)")
+                }
+            }
+            XCTAssertEqual(try store.load(), before)
+        }
+        XCTAssertEqual(before.areas[0].routes.first { $0.id == route }?.pitches.map(\.id), [pitch])
+        try assertReopen(store, before)
+    }
+
+    func testCreationReplayRejectsExactRecordsAfterInterveningCommitForEveryKind() throws {
+        for kind in 0..<3 {
+            let (store, area, route, _) = try populated()
+            let before = try store.load()
+            let id = UUID()
+            let command: TextNotebookStore.Command
+            switch kind {
+            case 0: command = .createArea(id: id, name: "Replay")
+            case 1: command = .createRoute(areaID: area, id: id, generalNoteID: UUID(), name: "Replay")
+            default: command = .createPitch(routeID: route, id: id, name: "Replay")
+            }
+            let committed = try store.execute(command, sourceToken: before.sourceToken, expectedRevision: before.revision)
+            let changed = try run(store, .renameArea(id: area, name: "Intervening"))
+            XCTAssertEqual(changed.revision, committed.revision + 1)
+            XCTAssertThrowsError(try store.execute(command, sourceToken: before.sourceToken, expectedRevision: before.revision)) { error in
+                guard case TextNotebookStore.Failure.conflict = error else {
+                    return XCTFail("Expected conservative replay rejection: \(error)")
+                }
+            }
+            XCTAssertEqual(try store.load(), changed)
+            try assertReopen(store, changed)
+        }
+    }
+
     func testIdempotentCreateRetryForEveryKindRejectsChangedAndCrossKindCollisions() throws {
         let store = try TextNotebookStore(root: root())
         let area = UUID(), route = UUID(), note = UUID(), pitch = UUID()
@@ -370,6 +437,44 @@ final class TextNotebookPersistenceTests: XCTestCase {
         let decomposed = try run(store, .routeNotes(routeID: route, text: "e\u{0301}"), routeRevision: revision + 1)
         XCTAssertEqual(Array(decomposed.areas[0].routes[0].notes.utf8), [101, 204, 129])
         try assertReopen(store, decomposed)
+    }
+
+    func testRouteDeletionPreservesPopulatedSiblingBytesAndExactRevisionDeltas() throws {
+        let (store, area, firstRoute, firstPitch) = try populated()
+        let secondRoute = UUID(), secondNote = UUID(), secondPitch = UUID()
+        try run(store, .createRoute(areaID: area, id: secondRoute, generalNoteID: secondNote, name: "Sibling e\u{0301}"))
+        try run(store, .createPitch(routeID: secondRoute, id: secondPitch, name: "\u{5ca9}"))
+        for (routeID, pitchID, value) in [(firstRoute, firstPitch, "First\n"),
+                                         (secondRoute, secondPitch, "\u{00e9} e\u{0301}\n\nTail  \n")] {
+            var revision = try XCTUnwrap(store.load().areas[0].routes.first { $0.id == routeID }).revision
+            try run(store, .routeNotes(routeID: routeID, text: "General " + value), routeRevision: revision)
+            revision += 1
+            try run(store, .pitchNotes(routeID: routeID, pitchID: pitchID, text: "Pitch " + value), routeRevision: revision)
+        }
+        let before = try store.load()
+        let first = try XCTUnwrap(before.areas[0].routes.first { $0.id == firstRoute })
+        let second = try XCTUnwrap(before.areas[0].routes.first { $0.id == secondRoute })
+        let ordered = try run(store, .routeOrder(areaID: area, ids: [secondRoute, firstRoute]))
+        XCTAssertEqual(ordered.areas[0].routes.map(\.revision), [second.revision + 1, first.revision + 1])
+        let deletedPitch = try run(store, .deletePitch(routeID: firstRoute, id: firstPitch))
+        XCTAssertEqual(deletedPitch.areas[0].routes[0].revision, second.revision + 1)
+        XCTAssertEqual(deletedPitch.areas[0].routes[1].revision, first.revision + 2)
+        let survivor = deletedPitch.areas[0].routes[0]
+        let deletedRoute = try run(store, .deleteRoute(areaID: area, id: firstRoute))
+        XCTAssertEqual(deletedRoute.areas[0].routes, [survivor])
+        let actual = try XCTUnwrap(deletedRoute.areas[0].routes.first)
+        XCTAssertEqual(actual.generalNoteID, secondNote)
+        XCTAssertEqual(actual.areaID, area)
+        XCTAssertEqual(actual.pitches.map(\.id), [secondPitch])
+        XCTAssertEqual(Array(actual.notes.utf8), Array(second.notes.utf8))
+        XCTAssertEqual(Array(actual.pitches[0].notes.utf8), Array(second.pitches[0].notes.utf8))
+        let thirdRoute = UUID()
+        try run(store, .createRoute(areaID: area, id: thirdRoute, generalNoteID: UUID(), name: "Renumber survivor"))
+        let shifted = try run(store, .deleteRoute(areaID: area, id: secondRoute))
+        XCTAssertEqual(shifted.areas[0].routes.map(\.id), [thirdRoute])
+        XCTAssertEqual(shifted.areas[0].routes[0].revision, 1, "Renumbered surviving route increments exactly once")
+        XCTAssertEqual(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.Route>()).map(\.order), [0])
+        try assertReopen(store, shifted)
     }
 
     func testSourceMismatchAndSharedWindowRevisionRules() throws {

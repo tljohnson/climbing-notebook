@@ -16,8 +16,14 @@ final class FoundationLaunchTests: XCTestCase {
             field.tap()
             field.typeText(name)
             app.buttons["Add"].tap()
+            if kind == "Pitch" {
+                let jump = app.buttons["Jump to Pitches"]
+                XCTAssertTrue(jump.waitForExistence(timeout: 5))
+                jump.tap()
+            }
             let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
                 "text-\(kind.lowercased())-", name)).firstMatch
+            for _ in 0..<8 where !row.exists || !row.isHittable { app.collectionViews.firstMatch.swipeUp() }
             XCTAssertTrue(row.waitForExistence(timeout: 5))
             return row.identifier
         }
@@ -56,7 +62,11 @@ final class FoundationLaunchTests: XCTestCase {
         app.buttons[routeID].tap()
         XCTAssertTrue(app.staticTexts["textGeneralNotes"].label.contains("Second line retained."))
         app.buttons["Jump to Pitches"].tap()
-        for identity in pitchIDs { XCTAssertTrue(app.buttons[identity].exists) }
+        for identity in pitchIDs {
+            for _ in 0..<8 where !app.buttons[identity].exists { app.collectionViews.firstMatch.swipeUp() }
+            XCTAssertTrue(app.buttons[identity].exists)
+        }
+        app.buttons["Jump to Pitches"].tap()
         app.buttons[pitchIDs[0]].tap()
         XCTAssertTrue(app.staticTexts["textPitchNotes"].label.contains("Complete body retained."))
         XCTAssertTrue(app.staticTexts["Pitch 1 of 5"].exists)

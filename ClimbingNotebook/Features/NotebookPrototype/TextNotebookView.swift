@@ -84,6 +84,7 @@ struct TextNotebookView: View {
                                 .accessibilityIdentifier("textSaveStatus")
                         } header: {
                             Text(notebook.source == .notebook ? "Notebook" : "Example Notebook")
+                                .textCase(nil)
                                 .accessibilityIdentifier("sourceLabel")
                         }
                         Section("Areas (\(notebook.areas.count))") {
@@ -208,6 +209,7 @@ private struct TextAreaView: View {
 private struct TextRouteView: View {
     @Environment(TextNotebookState.self) private var notebook
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let routeID: UUID
     @State private var draft: TextNotebookDraft?
 
@@ -216,8 +218,14 @@ private struct TextRouteView: View {
             if let route = notebook.route(routeID) {
                 ScrollViewReader { proxy in
                     VStack(spacing: 0) {
-                        if !route.pitches.isEmpty {
-                            Button("Jump to Pitches", systemImage: "list.number") { proxy.scrollTo("pitches", anchor: .top) }
+                        let actionLayout = dynamicTypeSize.isAccessibilitySize
+                            ? AnyLayout(VStackLayout(spacing: 0)) : AnyLayout(HStackLayout())
+                        actionLayout {
+                            if !route.pitches.isEmpty {
+                                Button("Jump to Pitches", systemImage: "list.number") { proxy.scrollTo("pitches", anchor: .top) }
+                                    .frame(minHeight: 48)
+                            }
+                            Button("Add Pitch", systemImage: "plus") { draft = notebook.draft(.addPitch(routeID)) }
                                 .frame(minHeight: 48)
                         }
                         List {
@@ -251,8 +259,6 @@ private struct TextRouteView: View {
                                     }.accessibilityIdentifier("text-pitch-\(pitch.id.uuidString)")
                                         .accessibilityValue("Position \(index + 1) of \(route.pitches.count)")
                                 }
-                                Button("Add Pitch", systemImage: "plus") { draft = notebook.draft(.addPitch(routeID)) }
-                                    .frame(minHeight: 48)
                             } header: { Text("Pitches (\(route.pitches.count))").id("pitches") }
                         }
                         .modifier(TextNotebookListStyle())

@@ -87,7 +87,9 @@ final class TextNotebookStore {
             }
             let schema = Schema(versionedSchema: TextNotebookSchemaV1.self)
             let configuration = ModelConfiguration(schema: schema, url: storeURL, cloudKitDatabase: .none)
-            container = try ModelContainer(for: schema, migrationPlan: TextNotebookMigrationPlan.self, configurations: [configuration])
+            do {
+                container = try ModelContainer(for: schema, migrationPlan: TextNotebookMigrationPlan.self, configurations: [configuration])
+            } catch { throw Self.storeFailure(error, at: "open container") }
             context = ModelContext(container)
             context.autosaveEnabled = false
             container.mainContext.autosaveEnabled = false
@@ -106,7 +108,7 @@ final class TextNotebookStore {
                     }
                 }
                 try self.beforeSave?()
-                try context.save()
+                try save(at: "initialize notebook")
             } else { _ = try readSnapshot() }
         } catch {
             rollback()
@@ -143,11 +145,11 @@ final class TextNotebookStore {
     }
 
     private func readSnapshot() throws -> TextNotebookSnapshot {
-        let areas = try context.fetch(FetchDescriptor<TextNotebookSchemaV1.Area>())
-        let routes = try context.fetch(FetchDescriptor<TextNotebookSchemaV1.Route>())
-        let pitches = try context.fetch(FetchDescriptor<TextNotebookSchemaV1.Pitch>())
-        let notes = try context.fetch(FetchDescriptor<TextNotebookSchemaV1.NoteSection>())
-        let markers = try context.fetch(FetchDescriptor<TextNotebookSchemaV1.NotebookState>())
+        let areas: [TextNotebookSchemaV1.Area] = try fetch()
+        let routes: [TextNotebookSchemaV1.Route] = try fetch()
+        let pitches: [TextNotebookSchemaV1.Pitch] = try fetch()
+        let notes: [TextNotebookSchemaV1.NoteSection] = try fetch()
+        let markers: [TextNotebookSchemaV1.NotebookState] = try fetch()
         let ids = areas.map(\.id) + routes.map(\.id) + pitches.map(\.id) + notes.map(\.id) + markers.map(\.id)
         guard Set(ids).count == ids.count, markers.count == 1, let marker = markers.first,
               marker.format == Self.format + ":" + mode.rawValue, marker.revision >= 0,
@@ -192,6 +194,28 @@ final class TextNotebookStore {
         actual.count == expected.count && Set(actual).count == actual.count && Set(actual) == Set(expected)
     }
 
+    static func storeFailure(_ error: Error, at boundary: String) -> Failure {
+        var details: [String] = []
+        var current: NSError? = error as NSError
+        // Bound diagnostics even if a framework supplies a cyclic underlying-error chain.
+        for _ in 0..<8 {
+            guard let value = current else { break }
+            details.append("\(value.domain) (\(value.code))")
+            current = value.userInfo[NSUnderlyingErrorKey] as? NSError
+        }
+        return .store("\(boundary): " + details.joined(separator: " / "))
+    }
+
+    private func fetch<Model: PersistentModel>() throws -> [Model] {
+        do { return try context.fetch(FetchDescriptor<Model>()) }
+        catch { throw Self.storeFailure(error, at: "fetch \(String(describing: Model.self))") }
+    }
+
+    private func save(at boundary: String) throws {
+        do { try context.save() }
+        catch { throw Self.storeFailure(error, at: boundary) }
+    }
+
     /// Structural commands require the notebook revision. Notes use their route revision so
     /// an unrelated route edit does not invalidate a note buffer. Every command checks source.
     @discardableResult
@@ -200,11 +224,12 @@ final class TextNotebookStore {
         do {
             let saved = try load()
             guard sourceToken == saved.sourceToken else { throw Failure.source }
-            let areas = try context.fetch(FetchDescriptor<TextNotebookSchemaV1.Area>())
-            let routes = try context.fetch(FetchDescriptor<TextNotebookSchemaV1.Route>())
-            let pitches = try context.fetch(FetchDescriptor<TextNotebookSchemaV1.Pitch>())
-            let notes = try context.fetch(FetchDescriptor<TextNotebookSchemaV1.NoteSection>())
-            guard let marker = try context.fetch(FetchDescriptor<TextNotebookSchemaV1.NotebookState>()).first else { throw Failure.invalid }
+            let areas: [TextNotebookSchemaV1.Area] = try fetch()
+            let routes: [TextNotebookSchemaV1.Route] = try fetch()
+            let pitches: [TextNotebookSchemaV1.Pitch] = try fetch()
+            let notes: [TextNotebookSchemaV1.NoteSection] = try fetch()
+            let markers: [TextNotebookSchemaV1.NotebookState] = try fetch()
+            guard let marker = markers.first else { throw Failure.invalid }
             let used = Set(areas.map(\.id) + routes.map(\.id) + pitches.map(\.id) + notes.map(\.id) + [marker.id])
             func area(_ id: UUID) throws -> TextNotebookSchemaV1.Area {
                 guard let value = areas.first(where: { $0.id == id }) else { throw Failure.unavailable }
@@ -375,7 +400,7 @@ final class TextNotebookStore {
             context.processPendingChanges()
             let result = try readSnapshot()
             try beforeSave?()
-            try context.save()
+            try save(at: "save command")
             return result
         } catch {
             rollback()

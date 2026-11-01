@@ -1,6 +1,6 @@
 # Persistence and URL Policy Verification
 
-Updated: 2026-10-31
+Updated: 2026-11-01
 
 ## Conclusion
 
@@ -31,6 +31,29 @@ Commands check source tokens before mutation; structural edits check notebook re
 Retained prototype reading adds only an absent-root initialization guard to the old store/state and read-only presentation. Its schema, marker, path, graph validation and saved bytes are not transformed. Independent predecessor-writing tests compare IDs, revisions, relationships, exact Unicode text and order while creating/reopening separate notebook and example stores. Existing unknown saved edits are not labeled disposable synthetic content.
 
 Initial iPhone18Pro/iOS27 focused verification passed 38/38 new/legacy persistence tests, followed by 29/29 new state/persistence tests including strengthened fresh-container UTF-8 comparisons. Exact bundle names, subsequent UI failures and pending final acceptance checks are in [notebook verification](NotebookPrototype.md#cf-07e-text-notebook-milestone). This is in-progress ordinary storage evidence, not a completed milestone, migration/recovery result or sole-copy personal-data recommendation. Fault injection is pre-save, not actual ENOSPC; retained contexts are not claimed closed and diagnostic roots are not deleted on that assumption.
+
+### Minimum-Runtime Model Identity Blocker
+
+Resumed 2026-10-31 at clean commit `8c00e04`. A standalone simulator executable using the unchanged `TextNotebookSchemaV1` reproduces the iOS17 failure without application state, rollback, examples or legacy schemas: save Area/Route in one on-disk container, open another container at a different URL, fetch Area through a fresh context on the first container, insert Route, then assign `Route.area`. The identical one-container control passes. Explicit `Schema(models, version:)` construction also fails; no production configuration change was retained.
+
+LLDB stopped at the first `objc_exception_throw`, before save, in `_PFManagedObject_coerceValueForKeyWithDescription`. Native public Core Data descriptions obtained in the debugger show the fetched Area's `routes` destination entity `0x60000350c2c0`, while the inserted Route entity is `0x600003504d10`. Their owning models are respectively `0x600002105b30` and `0x600002100730`, despite both objects belonging to the **same** native context. These addresses identify one capture, not stable identifiers. Selection of latest-container global metadata is a plausible mechanism, not a proven implementation detail. No private API, KVC or reflection workaround was added to production.
+
+The reproducible local artifacts are ignored `.build/CF07EReproducer.swift` and `.build/CF07EFirstThrow.lldb`. The compiled temporary bundle is `/var/folders/24/1n7l5f3j1jx_htlsly4crd980000gn/T/kilo/CF07EReproducer.app`, with a `CFBundleName` required by SwiftData. Rebuild/run commands (no package installation/signing):
+
+```sh
+xcrun swiftc -g -Onone -parse-as-library -target arm64-apple-ios17.0-simulator -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" ClimbingNotebook/Models/TextNotebookSchemaV1.swift .build/CF07EReproducer.swift -o /var/folders/24/1n7l5f3j1jx_htlsly4crd980000gn/T/kilo/CF07EReproducer.app/CF07EReproducer
+xcrun simctl spawn FB17E53E-C6B7-419C-8D52-6205AD037B52 /var/folders/24/1n7l5f3j1jx_htlsly4crd980000gn/T/kilo/CF07EReproducer.app/CF07EReproducer --one-container
+```
+
+Omit `--one-container` to reproduce the exception; the identical two-container executable passes on selected iOS27. For first-throw capture, use tracked `background_process` with `simctl spawn -w` (not shell backgrounding), then `xcrun lldb -b -s .build/CF07EFirstThrow.lldb`. Register selection is specific to the captured arm64/iOS17 Core Data stack. Diagnostic stores remain retained. No signing, simulator settings or permissions were changed. The compiler emits an SDK sysroot warning; execution results, not compilation alone, establish the control.
+
+`CF07E-resumed-persistence-v10-iOS17-20261031.xcresult`: **52/59 passed**, zero skipped/runtime warnings, selecting legacy persistence plus new persistence/state. Five relationship-exception failures comprise one legacy creation/retry, one new creation-state and all three fresh-container controls. The other two new all-mutation retry methods now identify **save command**, `NSCocoaErrorDomain (134020)`, incompatible model configuration. Named open/fetch/save error boundaries preserve NSError domain/code and a bounded underlying-error chain; they diagnose Swift errors, not catch Objective-C exceptions. Independent review prompted removal of raw underlying descriptions from user-visible diagnostics, with redaction/chain-bound regression coverage. This focused run predates that redaction and did not include the two migration methods or legacy state tests.
+
+Independent read-only API review found no documented iOS17 context/container-bound new-model factory or native entity rebinding API. `createBackingData()` is parameterless; `insert(_:)` registers an already constructed model. Caching containers, aliasing backing data, fabricating persistent identifiers or weakening fresh-container tests are not fixes. If no supported remedy emerges, recommend an owner decision to qualify a higher runtime floor, or retain the iOS17 blocker and escalate the minimal reproducer to Apple. No higher floor is selected or changed by this evidence; iOS27 success does not prove intermediate-runtime support. This is ordinary persistence diagnosis, not resumed migration/recovery research.
+
+Independent implementation review found no additional store/state integrity defect. Added regressions independently check current-revision foreign-owner rejection, creation replay after intervening commits, populated-sibling General/pitch UTF-8 preservation on route deletion and exact affected/unaffected route revision deltas. Final runtime results, not static review, determine their verification status. Focused v10 coverage remains **1658/4615 (35.93%)**, failed and not a final combined gate; percentages from separate runs are not added.
+
+Complete phone suites now verify all four added regressions pass both runtimes. Current units106/108 fail only the two retained migration methods; minimum98/108 fail those two plus eight ordinary persistence/state methods. Combined unit/UI gates pass current4542/4635 (97.99%) and minimum3500/4635 (75.51%), but behavior suites remain failed. Exact counts, UI failures and subsequent targeted checks are in the [consolidated disposition](NotebookPrototype.md#consolidated-final-disposition); no coverage pass resolves native model identity or accepts migration/personal-data safety.
 
 ## Recovery Baseline
 
