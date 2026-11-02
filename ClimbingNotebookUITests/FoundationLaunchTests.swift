@@ -14,8 +14,14 @@ final class FoundationLaunchTests: XCTestCase {
             let field = app.descendants(matching: .any)["textNameEditor"].firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 5))
             field.tap()
+            if !app.keyboards.firstMatch.waitForExistence(timeout: 2) { field.tap() }
             field.typeText(name)
+            XCTAssertEqual(field.value as? String, name)
+            app.buttons["Dismiss keyboard"].tap()
             app.buttons["Add"].tap()
+            let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                                   object: app.collectionViews["textEditorForm"])
+            XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 5), .completed)
             if kind == "Pitch" {
                 let jump = app.buttons["Jump to Pitches"]
                 XCTAssertTrue(jump.waitForExistence(timeout: 5))

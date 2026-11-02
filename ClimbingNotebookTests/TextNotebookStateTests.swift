@@ -141,6 +141,18 @@ final class TextNotebookStateTests: XCTestCase {
             default: XCTFail("Expected creation")
             }
             let committed = try XCTUnwrap(state.snapshot)
+            let reopened = try TextNotebookStore(root: state.root)
+            for snapshot in [committed, try reopened.load()] {
+                let name: String
+                switch kind {
+                case .addArea: name = try XCTUnwrap(snapshot.areas.first { $0.id == draft.recordID }).name
+                case .addRoute: name = try XCTUnwrap(snapshot.areas.flatMap(\.routes).first { $0.id == draft.recordID }).name
+                case .addPitch:
+                    name = try XCTUnwrap(snapshot.areas.flatMap(\.routes).flatMap(\.pitches).first { $0.id == draft.recordID }).name
+                default: return XCTFail("Expected creation")
+                }
+                XCTAssertEqual(Array(name.utf8), Array(draft.text.utf8))
+            }
             try state.submit(draft)
             XCTAssertEqual(state.snapshot, committed, "Exact retry must not duplicate a creation")
             try assertDisk(state, equals: committed)
@@ -156,6 +168,26 @@ final class TextNotebookStateTests: XCTestCase {
             let baseline = try XCTUnwrap(state.snapshot)
             let acknowledgment = state.acknowledgedRevision
             let store = try XCTUnwrap(state.store)
+            var expectedRouteRevisions = Dictionary(uniqueKeysWithValues: baseline.areas.flatMap(\.routes).map { ($0.id, $0.revision) })
+            switch kind {
+            case .addRoute: expectedRouteRevisions[recordID] = 0
+            case .addPitch(let id), .renameRoute(_, let id), .renamePitch(let id, _),
+                 .general(let id), .notes(let id, _), .pitches(let id), .deletePitch(let id, _):
+                expectedRouteRevisions[id] = try XCTUnwrap(expectedRouteRevisions[id]) + 1
+            case .routes(let owner):
+                let siblings = try XCTUnwrap(baseline.areas.first { $0.id == owner }).routes
+                for (index, sibling) in siblings.enumerated() where order[index] != sibling.id {
+                    expectedRouteRevisions[sibling.id] = sibling.revision + 1
+                }
+            case .deleteRoute(let owner, let id):
+                let siblings = try XCTUnwrap(baseline.areas.first { $0.id == owner }).routes
+                let deletedIndex = try XCTUnwrap(siblings.firstIndex { $0.id == id })
+                expectedRouteRevisions.removeValue(forKey: id)
+                for sibling in siblings.dropFirst(deletedIndex + 1) {
+                    expectedRouteRevisions[sibling.id] = sibling.revision + 1
+                }
+            default: break
+            }
             var attempts = 0
             store.beforeSave = {
                 attempts += 1
@@ -180,6 +212,44 @@ final class TextNotebookStateTests: XCTestCase {
             XCTAssertEqual(attempts, 2, draft.title)
             XCTAssertEqual(state.snapshot?.revision, baseline.revision + 1, draft.title)
             XCTAssertEqual(state.acknowledgedRevision, state.snapshot?.revision)
+            let committed = try XCTUnwrap(state.snapshot)
+            let reopened = try TextNotebookStore(root: state.root)
+            for snapshot in [committed, try reopened.load()] {
+                XCTAssertEqual(Dictionary(uniqueKeysWithValues: snapshot.areas.flatMap(\.routes).map { ($0.id, $0.revision) }),
+                               expectedRouteRevisions, draft.title)
+                let submittedText: String?
+                switch kind {
+                case .addArea: submittedText = try XCTUnwrap(snapshot.areas.first { $0.id == recordID }).name
+                case .renameArea(let id): submittedText = try XCTUnwrap(snapshot.areas.first { $0.id == id }).name
+                case .addRoute: submittedText = try XCTUnwrap(snapshot.areas.flatMap(\.routes).first { $0.id == recordID }).name
+                case .renameRoute(_, let id): submittedText = try XCTUnwrap(snapshot.areas.flatMap(\.routes).first { $0.id == id }).name
+                case .addPitch:
+                    submittedText = try XCTUnwrap(snapshot.areas.flatMap(\.routes).flatMap(\.pitches).first { $0.id == recordID }).name
+                case .renamePitch(_, let id):
+                    submittedText = try XCTUnwrap(snapshot.areas.flatMap(\.routes).flatMap(\.pitches).first { $0.id == id }).name
+                case .general(let id): submittedText = try XCTUnwrap(snapshot.areas.flatMap(\.routes).first { $0.id == id }).notes
+                case .notes(_, let id):
+                    submittedText = try XCTUnwrap(snapshot.areas.flatMap(\.routes).flatMap(\.pitches).first { $0.id == id }).notes
+                default: submittedText = nil
+                }
+                if let submittedText { XCTAssertEqual(Array(submittedText.utf8), textBytes, draft.title) }
+                switch kind {
+                case .areas: XCTAssertEqual(snapshot.areas.map(\.id), order, draft.title)
+                case .routes(let owner):
+                    XCTAssertEqual(try XCTUnwrap(snapshot.areas.first { $0.id == owner }).routes.map(\.id), order, draft.title)
+                case .pitches(let owner):
+                    XCTAssertEqual(try XCTUnwrap(snapshot.areas.flatMap(\.routes).first { $0.id == owner }).pitches.map(\.id), order, draft.title)
+                case .deleteArea(let id):
+                    XCTAssertEqual(snapshot.areas.map(\.id), baseline.areas.map(\.id).filter { $0 != id }, draft.title)
+                case .deleteRoute(let owner, let id):
+                    XCTAssertEqual(try XCTUnwrap(snapshot.areas.first { $0.id == owner }).routes.map(\.id),
+                                   try XCTUnwrap(baseline.areas.first { $0.id == owner }).routes.map(\.id).filter { $0 != id }, draft.title)
+                case .deletePitch(let owner, let id):
+                    XCTAssertEqual(try XCTUnwrap(snapshot.areas.flatMap(\.routes).first { $0.id == owner }).pitches.map(\.id),
+                                   order.filter { $0 != id }, draft.title)
+                default: break
+                }
+            }
             try assertDisk(state, equals: XCTUnwrap(state.snapshot))
         }
     }
@@ -232,6 +302,18 @@ final class TextNotebookStateTests: XCTestCase {
             let refreshed = try XCTUnwrap(state.draft(kind))
             XCTAssertEqual(refreshed.order, draft.order)
             XCTAssertFalse(refreshed.dirty)
+            if case .routes(let owner) = kind {
+                let before = try XCTUnwrap(baseline.areas.first { $0.id == owner }).routes
+                let expectedRevisions = [original[0]: before[0].revision + 1,
+                                         original[1]: before[1].revision + 1,
+                                         original[2]: before[2].revision]
+                let reopened = try TextNotebookStore(root: state.root)
+                for snapshot in [try XCTUnwrap(state.snapshot), try reopened.load()] {
+                    let routes = try XCTUnwrap(snapshot.areas.first { $0.id == owner }).routes
+                    XCTAssertEqual(routes.map(\.id), [original[1], original[0], original[2]])
+                    XCTAssertEqual(Dictionary(uniqueKeysWithValues: routes.map { ($0.id, $0.revision) }), expectedRevisions)
+                }
+            }
             try assertDisk(state, equals: XCTUnwrap(state.snapshot))
         }
     }

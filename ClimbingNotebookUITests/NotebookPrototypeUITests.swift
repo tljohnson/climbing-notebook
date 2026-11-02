@@ -25,20 +25,34 @@ final class NotebookPrototypeUITests: XCTestCase {
         _ = element.waitForExistence(timeout: 1)
         if reachable(element, in: app) { return }
         // Only the foreground Form/List should scroll, never the status bar or covered route.
-        let towardTop = !element.exists
-            || (element.frame != .zero && element.frame.midY < app.frame.midY)
+        let towardTop = element.exists && element.frame != .zero && element.frame.midY < app.frame.midY
         for down in [towardTop, !towardTop] {
+            var previousRows: [String] = []
             for _ in 0..<20 {
-                let list = (app.collectionViews.allElementsBoundByIndex + app.scrollViews.allElementsBoundByIndex).last {
+                let containers = app.collectionViews.allElementsBoundByIndex + app.scrollViews.allElementsBoundByIndex
+                let owningContainer: XCUIElement?
+                if element.exists {
+                    let match = NSPredicate(format: "identifier == %@ AND label == %@", element.identifier, element.label)
+                    owningContainer = containers.last {
+                        $0.descendants(matching: element.elementType).matching(match).firstMatch.exists
+                    }
+                } else {
+                    owningContainer = nil
+                }
+                let list = owningContainer ?? containers.last {
                     $0.isHittable || $0.cells.allElementsBoundByIndex.contains { $0.isHittable }
                 }
                 guard let list else { break }
-                let bounds = list.frame.intersection(viewport(app)).insetBy(dx: 12, dy: 12)
-                guard bounds.height > 40 else { break }
+                let rows = list.cells.allElementsBoundByIndex.map { "\($0.label):\($0.frame)" }
+                if !rows.isEmpty && rows == previousRows { break }
+                previousRows = rows
+                let bounds = list.frame.intersection(viewport(app)).insetBy(dx: 0, dy: 12)
+                guard bounds.width > 24, bounds.height > 40 else { break }
+                // Use the Form's outer gutter, not the multiline field or rendered keyboard.
                 let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
-                    dx: bounds.maxX - 4, dy: bounds.minY + bounds.height * (down ? 0.25 : 0.75)))
+                    dx: bounds.minX + 12, dy: bounds.minY + bounds.height * (down ? 0.25 : 0.75)))
                 let end = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
-                    dx: bounds.maxX - 4, dy: bounds.minY + bounds.height * (down ? 0.75 : 0.25)))
+                    dx: bounds.minX + 12, dy: bounds.minY + bounds.height * (down ? 0.75 : 0.25)))
                 start.press(forDuration: 0.05, thenDragTo: end)
                 if reachable(element, in: app) { return }
             }
@@ -65,8 +79,16 @@ final class NotebookPrototypeUITests: XCTestCase {
     private func viewport(_ app: XCUIApplication) -> CGRect {
         let top = app.navigationBars.allElementsBoundByIndex.filter { $0.isHittable }
             .map { $0.frame.maxY }.max() ?? (app.frame.minY + 90)
+        var bottom = app.frame.maxY - 34
+        for keyboard in app.keyboards.allElementsBoundByIndex {
+            let frame = keyboard.frame
+            if frame.minY.isFinite && frame.maxY.isFinite && frame.width > 0 && frame.height > 0,
+               frame.intersects(app.frame) {
+                bottom = min(bottom, frame.minY)
+            }
+        }
         return CGRect(x: app.frame.minX, y: top, width: app.frame.width,
-                      height: max(0, app.frame.maxY - 34 - top))
+                      height: max(0, bottom - top))
     }
 
     private func tap(_ element: XCUIElement, in app: XCUIApplication) {
@@ -489,8 +511,12 @@ final class NotebookPrototypeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Next Pitch"].isHittable)
         XCTAssertFalse(app.buttons["Previous Pitch"].isEnabled)
         let note = app.staticTexts["noteText"]
+        let screenshot = app.screenshot()
+        let pixelsPerPoint = CGFloat(screenshot.image.cgImage!.width) / app.frame.width
+        let bottom = app.frame.maxY - 34
+        // AX coordinates contain fractional-pixel noise; compare the same rendered pixel edges.
         for _ in 0..<12 {
-            if note.frame.maxY <= app.frame.maxY - 34 { break }
+            if (note.frame.maxY * pixelsPerPoint).rounded() <= (bottom * pixelsPerPoint).rounded() { break }
             app.scrollViews.firstMatch.swipeUp()
         }
         capture(app, name: "Long pitch notes with pinned navigation")
@@ -498,7 +524,8 @@ final class NotebookPrototypeUITests: XCTestCase {
         geometry.name = "Long pitch final-line geometry"
         geometry.lifetime = .keepAlways
         add(geometry)
-        XCTAssertLessThanOrEqual(note.frame.maxY, app.frame.maxY - 34, "Final note lines must remain reachable below pinned controls")
+        XCTAssertLessThanOrEqual((note.frame.maxY * pixelsPerPoint).rounded(), (bottom * pixelsPerPoint).rounded(),
+                                 "Final note lines must remain reachable below pinned controls at rendered pixel resolution")
         app.buttons["Next Pitch"].tap()
         XCTAssertTrue(app.navigationBars["Quiet corner"].exists)
         XCTAssertTrue(app.buttons["Previous Pitch"].isHittable)

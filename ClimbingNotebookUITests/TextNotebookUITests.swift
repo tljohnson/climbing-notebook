@@ -59,10 +59,16 @@ final class TextNotebookUITests: XCTestCase {
                       height: max(0, app.frame.maxY - 34 - top))
     }
 
-    private func reachable(_ element: XCUIElement, in app: XCUIApplication) -> Bool {
-        element.exists && element.isHittable && (element.frame.intersection(visibleBounds(element, in: app)).height >= min(30, element.frame.height)
-            || (element.label == "Close Examples" && app.frame.contains(element.frame))
-            || app.navigationBars.allElementsBoundByIndex.contains { $0.isHittable && $0.frame.contains(element.frame) })
+    private func reachableBounds(_ element: XCUIElement, in app: XCUIApplication) -> CGRect? {
+        guard element.exists && element.isHittable else { return nil }
+        let frame = element.frame
+        let bounds = visibleBounds(element, in: app)
+        if frame.intersection(bounds).height >= min(30, frame.height) { return bounds }
+        if (element.label == "Close Examples" && app.frame.contains(frame))
+            || app.navigationBars.allElementsBoundByIndex.contains(where: { $0.isHittable && $0.frame.contains(frame) }) {
+            return frame
+        }
+        return nil
     }
 
     private func visibleBounds(_ element: XCUIElement, in app: XCUIApplication) -> CGRect {
@@ -94,15 +100,20 @@ final class TextNotebookUITests: XCTestCase {
         kind == "area" ? library(app).buttons["Add Area"] : app.buttons["Add \(kind.capitalized)"]
     }
 
+    @discardableResult
     private func reveal(_ element: XCUIElement, in app: XCUIApplication,
-                        file: StaticString = #filePath, line: UInt = #line) {
+                        file: StaticString = #filePath, line: UInt = #line) -> CGRect {
         if !element.exists { _ = element.waitForExistence(timeout: 1) }
-        if reachable(element, in: app) { return }
+        if let bounds = reachableBounds(element, in: app) { return bounds }
+        if element.exists, element.identifier.hasPrefix("text-pitch-"), app.buttons["Jump to Pitches"].isHittable {
+            app.buttons["Jump to Pitches"].tap()
+            if let bounds = reachableBounds(element, in: app) { return bounds }
+        }
         // Validation rows can virtualize a field below the visible Form.
         let towardTop = element.exists && element.frame != .zero && element.frame.midY < app.frame.midY
         for down in [towardTop, !towardTop] {
             var previousRows: [String] = []
-            for _ in 0..<6 {
+            for _ in 0..<64 {
                 let list = foregroundList(app)
                 guard let list else { break }
                 let rows = list.cells.allElementsBoundByIndex.map { "\($0.label):\($0.frame)" }
@@ -116,22 +127,23 @@ final class TextNotebookUITests: XCTestCase {
                 let end = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
                     dx: bounds.midX, dy: bounds.minY + bounds.height * (down ? 0.75 : 0.25)))
                 start.press(forDuration: 0.05, thenDragTo: end)
-                if reachable(element, in: app) { return }
+                if let bounds = reachableBounds(element, in: app) { return bounds }
             }
         }
         capture(app, "Unreachable target \(element)")
         XCTFail("Control is not reachable: \(element)", file: file, line: line)
+        return .null
     }
 
     private func tap(_ element: XCUIElement, in app: XCUIApplication) {
-        reveal(element, in: app)
+        let bounds = reveal(element, in: app)
         let closesExamples = element.label == "Close Examples"
-        let bounds = visibleBounds(element, in: app)
-        if bounds.contains(element.frame) || element.label == "Close Examples"
-            || app.navigationBars.allElementsBoundByIndex.contains(where: { $0.isHittable && $0.frame.contains(element.frame) }) {
+        let frame = element.frame
+        if bounds.contains(frame) || closesExamples
+            || app.navigationBars.allElementsBoundByIndex.contains(where: { $0.isHittable && $0.frame.contains(frame) }) {
             element.tap()
         } else {
-            let visible = element.frame.intersection(bounds)
+            let visible = frame.intersection(bounds)
             app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: visible.midX, dy: visible.midY)).tap()
         }
         if closesExamples {
@@ -198,17 +210,16 @@ final class TextNotebookUITests: XCTestCase {
 
     private func beginName(_ app: XCUIApplication, action: String, name: String) {
         tap(action == "Add Area" ? library(app).buttons[action] : app.buttons[action], in: app)
-        XCTAssertTrue(nameField(app).waitForExistence(timeout: 3))
-        fill(nameField(app), with: name, in: app)
+        let field = nameField(app)
+        XCTAssertTrue(field.waitForExistence(timeout: 3))
+        fill(field, with: name, in: app)
     }
 
     private func nameField(_ app: XCUIApplication) -> XCUIElement {
         // v2 captured index zero before the modal existed, permanently querying the covered root.
         XCTAssertTrue(app.collectionViews["textEditorForm"].waitForExistence(timeout: 5))
-        let field = app.collectionViews["textEditorForm"]
+        return app.collectionViews["textEditorForm"]
             .descendants(matching: .any).matching(identifier: "textNameEditor").firstMatch
-        reveal(field, in: app)
-        return field
     }
 
     private func rowIDs(_ app: XCUIApplication, kind: String) -> [String] {
@@ -216,28 +227,70 @@ final class TextNotebookUITests: XCTestCase {
             .allElementsBoundByIndex.map(\.identifier)
     }
 
-    private func allRowIDs(_ app: XCUIApplication, kind: String) -> Set<String> {
-        var ids = Set(rowIDs(app, kind: kind))
-        guard let list = foregroundList(app) else { return ids }
-        for down in [true, false] {
-            var previous = ""
-            for _ in 0..<24 {
-                let rows = list.cells.allElementsBoundByIndex.map { "\($0.label):\($0.frame)" }.joined(separator: "|")
-                if rows == previous { break }
-                previous = rows
-                let bars = list.otherElements.matching(NSPredicate(format: "label BEGINSWITH %@", "Vertical scroll bar"))
-                if bars.allElementsBoundByIndex.contains(where: { ($0.value as? String) == (down ? "0%" : "100%") }) { break }
-                if down { list.swipeDown() } else { list.swipeUp() }
-                ids.formUnion(rowIDs(app, kind: kind))
+    private func allRowIDs(_ app: XCUIApplication, kind: String,
+                           file: StaticString = #filePath, line: UInt = #line) -> Set<String> {
+        guard let list = foregroundList(app) else {
+            XCTFail("Missing list while collecting all \(kind) IDs", file: file, line: line)
+            return []
+        }
+        var directions = [true, false]
+        if kind == "pitch", app.buttons["Jump to Pitches"].exists, app.buttons["Jump to Pitches"].isHittable {
+            app.buttons["Jump to Pitches"].tap()
+            let first = list.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND value BEGINSWITH %@",
+                "text-pitch-", "Position 1 of ")).firstMatch
+            if first.exists, first.isHittable,
+               first.frame.intersection(list.frame.intersection(viewport(app))).height >= min(30, first.frame.height) {
+                // A visible first pitch establishes the section start without traversing long General prose.
+                directions = [false]
             }
+        }
+        var ids = Set<String>()
+        for down in directions {
+            var previous: String?
+            var completed = false
+            for _ in 0..<24 {
+                let snapshot: XCUIElementSnapshot
+                do {
+                    snapshot = try list.snapshot()
+                } catch {
+                    XCTFail("Cannot snapshot \(kind) list: \(error)", file: file, line: line)
+                    return ids
+                }
+                // One fresh UI snapshot supplies IDs and geometry from the same scroll position.
+                var pending = Array(snapshot.children.reversed())
+                var descendants: [XCUIElementSnapshot] = []
+                while let child = pending.popLast() {
+                    descendants.append(child)
+                    pending.append(contentsOf: child.children.reversed())
+                }
+                let currentIDs = descendants.filter { $0.elementType == .button && $0.identifier.hasPrefix("text-\(kind)-") }
+                    .map(\.identifier)
+                ids.formUnion(currentIDs)
+                let rows = currentIDs.joined(separator: "|") + "|"
+                    + descendants.filter { $0.elementType == .cell }.map { "\($0.label):\($0.frame)" }.joined(separator: "|")
+                let bars = descendants.filter { $0.elementType == .other && $0.label.hasPrefix("Vertical scroll bar") }
+                if bars.contains(where: { $0.label == "Vertical scroll bar, 1 page"
+                    || ($0.value as? String) == (down ? "0%" : "100%") }) {
+                    completed = true
+                    break
+                }
+                if rows == previous {
+                    // An unchanged interior scrollbar is a blocked gesture, not an endpoint.
+                    completed = bars.isEmpty
+                    break
+                }
+                previous = rows
+                if down { list.swipeDown() } else { list.swipeUp() }
+            }
+            XCTAssertTrue(completed, "Incomplete \(kind) ID traversal toward \(down ? "top" : "bottom") after 24 swipes",
+                          file: file, line: line)
         }
         return ids
     }
 
     @discardableResult
     private func create(_ app: XCUIApplication, kind: String, name: String) -> String {
-        reveal(addButton(app, kind: kind), in: app)
-        let previous = Set(rowIDs(app, kind: kind))
+        let previous = allRowIDs(app, kind: kind)
         beginName(app, action: "Add \(kind.capitalized)", name: name)
         tap(app.buttons["Add"], in: app)
         assertClosed(app)
@@ -255,7 +308,18 @@ final class TextNotebookUITests: XCTestCase {
 
     private func actions(_ app: XCUIApplication, kind: String, action: String) {
         tap(app.buttons["\(kind) Actions"], in: app)
-        tap(app.buttons["\(action) \(kind)"], in: app)
+        tapMenuItem(app, title: "\(action) \(kind)")
+    }
+
+    private func tapMenuItem(_ app: XCUIApplication, title: String) {
+        let item = app.buttons[title]
+        XCTAssertTrue(item.waitForExistence(timeout: 3))
+        XCTAssertTrue(item.isHittable)
+        // Called only after opening a native actions menu, never for page or Form content.
+        let container = app.collectionViews.allElementsBoundByIndex.last { $0.buttons[title].exists }
+        let bounds = (container?.frame ?? app.frame).intersection(app.frame)
+        XCTAssertGreaterThanOrEqual(item.frame.intersection(bounds).height, min(30, item.frame.height))
+        item.tap()
     }
 
     private func rename(_ app: XCUIApplication, kind: String, name: String) {
@@ -294,14 +358,15 @@ final class TextNotebookUITests: XCTestCase {
     private func order(_ app: XCUIApplication, kind: String, ids: [String], names: [String]) {
         XCTAssertEqual(ids.count, names.count)
         beginOrder(app, kind: kind)
+        let form = app.collectionViews["textEditorForm"]
         for (index, id) in ids.enumerated() {
-            let form = app.collectionViews["textEditorForm"]
             let anyRow = form.descendants(matching: .any).matching(identifier: "order-\(recordID(id))").firstMatch
             reveal(anyRow, in: app)
             XCTAssertTrue(anyRow.exists)
             let title = "\(index + 1). \(names[index])"
-            XCTAssertEqual(anyRow.label, title)
-            XCTAssertEqual(Array(anyRow.label.utf8), Array(title.utf8))
+            let label = anyRow.label
+            XCTAssertEqual(label, title)
+            XCTAssertEqual(Array(label.utf8), Array(title.utf8))
             XCTAssertEqual(anyRow.value as? String, "Position \(index + 1) of \(ids.count)")
             let up = form.buttons["move-up-\(recordID(id))"]
             let down = form.buttons["move-down-\(recordID(id))"]
@@ -315,8 +380,12 @@ final class TextNotebookUITests: XCTestCase {
     }
 
     private func beginOrder(_ app: XCUIApplication, kind: String) {
-        if kind != "Area" { tap(app.buttons[kind == "Route" ? "Area Actions" : "Route Actions"], in: app) }
-        tap(app.buttons["Edit \(kind) Order"], in: app)
+        if kind != "Area" {
+            tap(app.buttons[kind == "Route" ? "Area Actions" : "Route Actions"], in: app)
+            tapMenuItem(app, title: "Edit \(kind) Order")
+        } else {
+            tap(app.buttons["Edit Area Order"], in: app)
+        }
     }
 
     private func assertFailure(_ app: XCUIApplication) {
@@ -355,8 +424,9 @@ final class TextNotebookUITests: XCTestCase {
                 }
                 let general = app.staticTexts["textGeneralNotes"]
                 reveal(general, in: app)
-                XCTAssertEqual(general.label, route.notes.isEmpty ? "No General notes entered" : route.notes)
-                XCTAssertEqual(Array(general.label.utf8), Array((route.notes.isEmpty ? "No General notes entered" : route.notes).utf8))
+                let generalText = general.label
+                XCTAssertEqual(generalText, route.notes.isEmpty ? "No General notes entered" : route.notes)
+                XCTAssertEqual(Array(generalText.utf8), Array((route.notes.isEmpty ? "No General notes entered" : route.notes).utf8))
                 XCTAssertFalse(app.textViews["textNoteEditor"].exists)
                 if !route.pitches.isEmpty {
                     tap(app.buttons["Jump to Pitches"], in: app)
@@ -369,9 +439,10 @@ final class TextNotebookUITests: XCTestCase {
                     reveal(row, in: app)
                     XCTAssertTrue(row.label.contains("\(index + 1). \(pitch.name)"), row.label)
                     tap(row, in: app)
-                    XCTAssertEqual(app.staticTexts["textPitchNotes"].label,
+                    let pitchText = app.staticTexts["textPitchNotes"].label
+                    XCTAssertEqual(pitchText,
                                    pitch.notes.isEmpty ? "No notes entered" : pitch.notes)
-                    XCTAssertEqual(Array(app.staticTexts["textPitchNotes"].label.utf8),
+                    XCTAssertEqual(Array(pitchText.utf8),
                                    Array((pitch.notes.isEmpty ? "No notes entered" : pitch.notes).utf8))
                     XCTAssertEqual(app.buttons["Previous Pitch"].isEnabled, index != 0)
                     XCTAssertEqual(app.buttons["Next Pitch"].isEnabled, index != route.pitches.count - 1)
@@ -512,7 +583,7 @@ final class TextNotebookUITests: XCTestCase {
         capture(app, "Single-area process readback")
     }
 
-    func testCanceledAndTerminatedNotesRenameAndAllOrderDraftsRetainAcknowledgedGraph() {
+    func testCanceledAndTerminatedGeneralNotesRetainAcknowledgedGraph() {
         let app = application()
         app.launch()
         assertLibrary(app)
@@ -532,34 +603,124 @@ final class TextNotebookUITests: XCTestCase {
         app.buttons["Keep Editing"].tap()
         XCTAssertEqual(app.textViews["textNoteEditor"].value as? String, "Discard this note")
         discard(app)
+        let acknowledged = app.staticTexts["textGeneralNotes"].label
+        XCTAssertEqual(acknowledged, route.notes)
+        XCTAssertEqual(Array(acknowledged.utf8), Array(route.notes.utf8))
         editNotes(app, action: "Edit General Notes", text: "Terminated note", save: false)
         relaunch(app)
-        tap(app.buttons[areaID], in: app)
-        tap(app.buttons[route.id], in: app)
-        XCTAssertEqual(app.staticTexts["textGeneralNotes"].label, route.notes)
-        beginOrder(app, kind: "Pitch")
-        move(app, id: first.id, direction: "down")
+        verify(app, areas: [Area(id: areaID, name: "Retained area", routes: [route, other]), empty])
+    }
+
+    func testCanceledAndTerminatedPitchNotesRetainAcknowledgedGraph() {
+        let app = application()
+        app.launch()
+        assertLibrary(app)
+        let area = create(app, kind: "area", name: "Retained area")
+        tap(app.buttons[area], in: app)
+        let route = create(app, kind: "route", name: "Retained route")
+        tap(app.buttons[route], in: app)
+        let pitch = Pitch(id: create(app, kind: "pitch", name: "Retained pitch"), name: "Retained pitch",
+                          notes: "Prior acknowledged pitch\nCafe\u{301}, \u{96ea}, and trailing spaces  ")
+        tap(app.buttons[pitch.id], in: app)
+        editNotes(app, action: "Edit Notes", text: pitch.notes)
+        editNotes(app, action: "Edit Notes", text: "Discard this pitch note", save: false)
+        tap(app.buttons["Cancel"], in: app)
+        app.buttons["Keep Editing"].tap()
+        XCTAssertEqual(app.textViews["textNoteEditor"].value as? String, "Discard this pitch note")
         discard(app)
-        beginOrder(app, kind: "Pitch")
-        move(app, id: first.id, direction: "down")
+        XCTAssertEqual(Array(app.staticTexts["textPitchNotes"].label.utf8), Array(pitch.notes.utf8))
+        editNotes(app, action: "Edit Notes", text: "Terminated pitch note", save: false)
         relaunch(app)
-        tap(app.buttons[areaID], in: app)
-        beginOrder(app, kind: "Route")
-        move(app, id: route.id, direction: "down")
-        discard(app)
-        beginOrder(app, kind: "Route")
-        move(app, id: route.id, direction: "down")
-        relaunch(app)
-        tap(app.buttons[areaID], in: app)
-        actions(app, kind: "Area", action: "Rename")
+        verify(app, areas: [Area(id: area, name: "Retained area", routes: [
+            Route(id: route, name: "Retained route", pitches: [pitch])
+        ])])
+    }
+
+    func testCanceledAndTerminatedAreaRenameRetainsAcknowledgedGraph() {
+        checkCanceledAndTerminatedRename(kind: "Area")
+    }
+
+    func testCanceledAndTerminatedRouteRenameRetainsAcknowledgedGraph() {
+        checkCanceledAndTerminatedRename(kind: "Route")
+    }
+
+    func testCanceledAndTerminatedPitchRenameRetainsAcknowledgedGraph() {
+        checkCanceledAndTerminatedRename(kind: "Pitch")
+    }
+
+    private func checkCanceledAndTerminatedRename(kind: String) {
+        let app = application()
+        app.launch()
+        assertLibrary(app)
+        let area = create(app, kind: "area", name: "Retained area")
+        tap(app.buttons[area], in: app)
+        let route = create(app, kind: "route", name: "Retained route")
+        tap(app.buttons[route], in: app)
+        let pitch = Pitch(id: create(app, kind: "pitch", name: "Retained pitch"), name: "Retained pitch")
+        if kind == "Area" { back(app) }
+        if kind == "Pitch" { tap(app.buttons[pitch.id], in: app) }
+        actions(app, kind: kind, action: "Rename")
         fill(nameField(app), with: "Unsaved rename", in: app)
         discard(app)
-        back(app)
-        beginOrder(app, kind: "Area")
-        move(app, id: areaID, direction: "down")
+        actions(app, kind: kind, action: "Rename")
+        XCTAssertEqual(nameField(app).value as? String, "Retained \(kind.lowercased())")
+        fill(nameField(app), with: "Terminated rename", in: app)
+        assertState(app, "Unsaved changes")
+        relaunch(app)
+        verify(app, areas: [Area(id: area, name: "Retained area", routes: [
+            Route(id: route, name: "Retained route", pitches: [pitch])
+        ])])
+    }
+
+    func testCanceledAndTerminatedAreaOrderRetainsAcknowledgedGraph() {
+        checkCanceledAndTerminatedOrder(kind: "Area")
+    }
+
+    func testCanceledAndTerminatedRouteOrderRetainsAcknowledgedGraph() {
+        checkCanceledAndTerminatedOrder(kind: "Route")
+    }
+
+    func testCanceledAndTerminatedPitchOrderRetainsAcknowledgedGraph() {
+        checkCanceledAndTerminatedOrder(kind: "Pitch")
+    }
+
+    private func checkCanceledAndTerminatedOrder(kind: String) {
+        let app = application()
+        app.launch()
+        assertLibrary(app)
+        let areaID = create(app, kind: "area", name: "Retained area")
+        let empty = Area(id: create(app, kind: "area", name: "Empty area"), name: "Empty area")
+        tap(app.buttons[areaID], in: app)
+        var route = Route(id: create(app, kind: "route", name: "Retained route"), name: "Retained route")
+        let other = Route(id: create(app, kind: "route", name: "Other route"), name: "Other route")
+        tap(app.buttons[route.id], in: app)
+        route.notes = "Prior acknowledged General\nDo not replace."
+        editNotes(app, action: "Edit General Notes", text: route.notes)
+        let first = Pitch(id: create(app, kind: "pitch", name: "First"), name: "First")
+        let last = Pitch(id: create(app, kind: "pitch", name: "Last"), name: "Last")
+        route.pitches = [first, last]
+        if kind != "Pitch" { back(app) }
+        if kind == "Area" { back(app) }
+        let id = kind == "Area" ? areaID : (kind == "Route" ? route.id : first.id)
+        beginOrder(app, kind: kind)
+        move(app, id: id, direction: "down")
         discard(app)
-        beginOrder(app, kind: "Area")
-        move(app, id: areaID, direction: "down")
+        let ids = kind == "Area" ? [areaID, empty.id] : (kind == "Route" ? [route.id, other.id] : [first.id, last.id])
+        let names = kind == "Area" ? ["Retained area", empty.name] : (kind == "Route" ? [route.name, other.name] : [first.name, last.name])
+        order(app, kind: kind, ids: ids, names: names)
+        beginOrder(app, kind: kind)
+        move(app, id: id, direction: "down")
+        let form = app.collectionViews["textEditorForm"]
+        for (index, originalIndex) in ids.indices.reversed().enumerated() {
+            let row = form.descendants(matching: .any).matching(identifier: "order-\(recordID(ids[originalIndex]))").firstMatch
+            reveal(row, in: app)
+            let expected = "\(index + 1). \(names[originalIndex])"
+            let label = row.label
+            XCTAssertEqual(label, expected)
+            XCTAssertEqual(Array(label.utf8), Array(expected.utf8))
+            XCTAssertEqual(row.value as? String, "Position \(index + 1) of \(ids.count)")
+        }
+        assertState(app, "Unsaved changes")
         relaunch(app)
         verify(app, areas: [Area(id: areaID, name: "Retained area", routes: [route, other]), empty])
     }
@@ -1015,17 +1176,48 @@ final class TextNotebookUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["textPitchNotes"].label, "First UUID notes")
     }
 
-    func testDefaultAccessibilityAuditOfEmptyLibraryAndAreaCreation() throws {
+    func testDefaultAccessibilityAuditOfEmptyLibrary() throws {
         let app = application()
         app.launch()
         assertLibrary(app)
         capture(app, "Empty library default accessibility audit")
         if #available(iOS 17.0, *) { try app.performAccessibilityAudit() }
+    }
+
+    func testDefaultAccessibilityAuditOfAreaCreationEditor() throws {
+        let app = application()
+        app.launch()
+        assertLibrary(app)
         beginName(app, action: "Add Area", name: "Accessible synthetic area")
         capture(app, "Area creation default accessibility audit")
         if #available(iOS 17.0, *) { try app.performAccessibilityAudit() }
         discard(app)
         XCTAssertTrue(rowIDs(app, kind: "area").isEmpty)
+    }
+
+    func testLibraryStatusColdLaunchDynamicTypeScalingEvidence() {
+        let app = application()
+        let categories = ["XS", "S", "M", "L", "XL", "XXL", "XXXL",
+                          "AccessibilityM", "AccessibilityL", "AccessibilityXL", "AccessibilityXXL", "AccessibilityXXXL"]
+        var measurements: [String] = []
+        var smallestHeight: CGFloat = 0
+        for category in categories {
+            app.launchArguments = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategory\(category)"]
+            app.launch()
+            assertLibrary(app)
+            let status = app.staticTexts["textSaveStatus"]
+            reveal(status, in: app)
+            XCTAssertEqual(status.label, "Loaded from this device")
+            measurements.append("\(category): \(status.frame)")
+            if category == "XS" { smallestHeight = status.frame.height }
+            if category == "AccessibilityXXXL" { XCTAssertGreaterThan(status.frame.height, smallestHeight) }
+            capture(app, "Library status cold launch \(category)")
+            app.terminate()
+        }
+        let attachment = XCTAttachment(string: measurements.joined(separator: "\n"))
+        attachment.name = "Status AX frames across twelve cold-launch categories; live scaling remains separate"
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     private func checkReadingAndKeyboard(accessibility: Bool, dark: Bool) {

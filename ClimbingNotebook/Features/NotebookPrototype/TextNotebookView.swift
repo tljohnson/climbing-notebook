@@ -84,9 +84,9 @@ struct TextNotebookView: View {
                                 .accessibilityIdentifier("textSaveStatus")
                         } header: {
                             Text(notebook.source == .notebook ? "Notebook" : "Example Notebook")
-                                .textCase(nil)
                                 .accessibilityIdentifier("sourceLabel")
                         }
+                        .textCase(nil)
                         Section("Areas (\(notebook.areas.count))") {
                             if notebook.areas.isEmpty {
                                 ContentUnavailableView("No areas entered", systemImage: "mountain.2", description: Text("Add an area, then a route and its notes."))
