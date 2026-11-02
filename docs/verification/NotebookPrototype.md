@@ -120,6 +120,20 @@ Historical static reviews prompted exact-byte reopened assertions and stale dele
 
 #### Consolidated Final Disposition
 
+##### Known Bugs and Verification Limits
+
+Owner decision,2026-11-02: temporarily deprioritize older-iOS accessibility-specific defects affecting visually impaired users. Retain them visibly as known bugs, with existing tests active and failures reported. iOS27 accessibility standards, including unrestricted audits, remain unchanged. This is prioritization, not resolution, a blanket accessibility waiver or runtime qualification.
+
+| Issue | Affected runtime/evidence | Practical scope and priority |
+| --- | --- | --- |
+| Actions-menu accessibility hit-testing |17.5 v46 and18.6 v34/v37/v40: visible Area/Route/Pitch Actions report invalid hitpoints. | Accessibility interaction/automation is blocked. Its accessibility-specific component is temporarily lower priority on older iOS; ordinary-touch rename/delete/order access remains unverified and must be checked before calling this accessibility-only. |
+| Dynamic Type audit |17.5 v35 and27 v42 library failures; earlier editor/tablet findings vary. Cold-launch text growth passes, live changes unverified. | Older-iOS accessibility-specific remediation temporarily lower priority. The27 audit remains an active quality blocker; no exclusion or false-positive conclusion. |
+| Cancel contrast audit |27 v42 editor; retained dark crop measures about9.41:1, audit gives no evaluated pair. | Unresolved27 audit finding, not deprioritized. Insufficient rendered contrast is not established by the available crop. |
+| Injected automation crash |17.5 reports: null-address SIGSEGV in XCTest runtime-issue logging callback; isolated direct workflow passes v36. | Qualification/tooling limitation, not a proven ordinary-use crash or persistence defect. Not classified as a visually impaired-user feature defect. |
+| Migration lifetime barriers | Two unchanged MigrationFeasibilityTests fail in historical full suites and targeted17.5/18.6 comparisons. | Separate migration/recovery limitation, not waived or reprioritized by this decision; paused research stays paused. |
+
+Full17.5 suites/combined coverage and physical-device ordinary-touch/accessibility checks remain unrun. Fixed helper timeouts, subpixel geometry and tablet menu targeting are recorded below as corrected, not outstanding bugs. CF-07E remains blocked by unresolved core-interaction qualification and27 audits; owner acceptance and sole-copy personal-data safety are not established.
+
 ##### Focused Diagnosis and Fixes, 2026-11-02
 
 Minimum17.5 remains **provisional**; no persistence/schema/runtime-floor change was made. The exact v35 direct five-pitch crash attachment is retained at `.build/CF07E-v35-direct-crash-20261102.ips`. Its main-thread stack is `SIGSEGV`/null-address `_platform_strcmp` -> `runtime_issue_os_log_fault_callback` in injected `XCTAutomationSupport`, reached through logging quarantine and accessibility snapshot identifier evaluation. Available17.5 crash reports on both iPhone models share this callback signature, including v35 lost-connection PID23713. This diagnoses an automation-injected process crash, not the historical17.0 Core Data relationship exception or proven ordinary persistence defect. The underlying excessive-log trigger remains unknown; no runtime-issue suppression or settings change was used. The unchanged direct workflow passes in isolated v36; this does not prove crashes cannot recur in a longer suite.

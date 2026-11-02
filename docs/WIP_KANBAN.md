@@ -9,7 +9,7 @@
 - [ ] `CF-07E` Deliver the complete text-first notebook milestone
   - Priority: P0
   - Owner: Kilo/local
-  - Blocked by: Phone native-menu hit-testing and active audits unresolved after bounded fixes;17.5 full qualification unrun. See [focused diagnosis](verification/NotebookPrototype.md#focused-diagnosis-and-fixes-2026-11-02).
+  - Blocked by: Phone core-action touch access unverified,27 audits unresolved and17.5 qualification unrun; older-iOS accessibility-specific fixes temporarily deprioritized. See [known bugs](verification/NotebookPrototype.md#known-bugs-and-verification-limits).
   - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.6
   - Done when: TN-01 through TN-10 verified with honest baseline/unrun limits, coherent implementation review and device handoff complete, then owner accepts.
 
