@@ -1,6 +1,6 @@
 # Climbing Notebook
 
-Updated: 2026-11-02
+Updated: 2026-11-03
 
 Native, iPhone-primary climbing notebook for iOS 17.5+ with minimal iPad support. Product requirements and integrity contracts are in the [approved plan](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md).
 
@@ -12,7 +12,7 @@ Historical prototype: CF-07A's owner-accepted synthetic-data browsing/explicit e
 
 CF-07C shows full General notes, Jump to Pitches and pinned adjacent-pitch navigation. Historical CF-07D adds name-only Add/Cancel route drafts in existing fixture areas; its verification remains paused with tests retained and owner acceptance pending. The new notebook carries creation/cancel/retry requirements forward without retroactively accepting CF-07D; see [current results](docs/verification/NotebookPrototype.md#cf-07d-current-results). Neither slice establishes automatic saving or full-product completion.
 
-Add, Save, Finish Editing, Done and confirmed Delete save on this device before closing. Cancel confirms discard when changed. Unsaved drafts/edits can be lost if the app closes; failures retain the editor for retry. The complete text hierarchy is implemented but not accepted; media intake, share delivery, URL copying and backup/restore are not implemented. M1 remains incomplete; archive research is paused, not a prerequisite for ordinary notebook increments. See the [Kanban](docs/WIP_KANBAN.md) and [verification references](#verification-references) for actual status and remaining gaps.
+Save commits creation, names, notes and ordering on this device before closing; confirmed Delete remains separate. Cancel confirms discard when changed. Unsaved drafts/edits can be lost if the app closes; failures retain the editor for retry. The retained legacy test flow keeps its historical labels. The complete text hierarchy is implemented but not accepted; media intake, share delivery, URL copying and backup/restore are not implemented. M1 remains incomplete; archive research is paused, not a prerequisite for ordinary notebook increments. See the [Kanban](docs/WIP_KANBAN.md) and [verification references](#verification-references) for actual status and remaining gaps.
 
 ## Prerequisites
 
@@ -43,10 +43,10 @@ xcodebuild -resolvePackageDependencies -project ClimbingNotebook.xcodeproj -sche
 
 ## Try the Text Notebook
 
-1. Start in the empty notebook, choose Add Area, enter a replaceable name and Add. Open it and Add Route, then create five pitches with distinct names.
-2. Edit General and each pitch's notes. Hide Keyboard changes focus only; Finish Editing explicitly saves.
+1. Start in the empty notebook, choose Add Area, enter a replaceable name and Save. Open it and Add Route, then create five pitches with distinct names. Area and route names are marked required; pitch names are optional.
+2. Edit General and each pitch's notes. Hide Keyboard changes focus only; Save explicitly saves.
 3. Read full notes and use Jump to Pitches and Previous/Next. Navigation never reorders or saves.
-4. Rename or reorder areas, routes and pitches using their separate editors. Save/Done commits the complete change; Cancel confirms discard when changed.
+4. Rename or reorder areas, routes and pitches using their separate editors. Save commits the complete change; Cancel confirms discard when changed.
 5. Try canceled and confirmed deletion. Nonempty areas cannot be deleted; route deletion removes its General note and pitches.
 6. Terminate/relaunch to inspect acknowledged content. Unacknowledged edits may be lost. Open Examples is separate; Retained Prototype is read-only and never initializes an absent legacy root. These are development checks, not a claim that the blocked iOS17 workflow is reliable.
 

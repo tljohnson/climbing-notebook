@@ -108,6 +108,20 @@ final class TextNotebookStateTests: XCTestCase {
         XCTAssertEqual(untouched.text, "")
     }
 
+    func testEditorActionsUseSaveAndNamesIdentifyRequiredFields() throws {
+        let fixture = try populated()
+        for kind in kinds(fixture) {
+            let draft = try XCTUnwrap(fixture.state.draft(kind))
+            XCTAssertEqual(draft.completion, draft.isDeletion ? "Delete" : "Save")
+            switch kind {
+            case .addArea, .addRoute, .renameArea, .renameRoute:
+                XCTAssertTrue(draft.nameRequired)
+            default:
+                XCTAssertFalse(draft.nameRequired)
+            }
+        }
+    }
+
     func testEveryCreationPublishesOnlyAfterSaveAcknowledgmentAndKeepsAllocatedIDs() throws {
         let fixture = try populated(), state = fixture.state
         for kind in [TextNotebookDraft.Kind.addArea, .addRoute(fixture.areas[0]), .addPitch(fixture.routes[0])] {

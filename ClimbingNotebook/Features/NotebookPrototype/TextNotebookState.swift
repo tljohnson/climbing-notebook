@@ -58,7 +58,13 @@ struct TextNotebookDraft: Identifiable {
         }
     }
     var completion: String {
-        isCreation ? "Add" : isDeletion ? "Delete" : isOrder ? "Done" : isNotes ? "Finish Editing" : "Save"
+        isDeletion ? "Delete" : "Save"
+    }
+    var nameRequired: Bool {
+        switch kind {
+        case .addArea, .addRoute, .renameArea, .renameRoute: true
+        default: false
+        }
     }
     var command: TextNotebookStore.Command {
         switch kind {

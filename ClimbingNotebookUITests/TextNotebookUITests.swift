@@ -212,7 +212,16 @@ final class TextNotebookUITests: XCTestCase {
         tap(action == "Add Area" ? library(app).buttons[action] : app.buttons[action], in: app)
         let field = nameField(app)
         XCTAssertTrue(field.waitForExistence(timeout: 3))
+        XCTAssertEqual(field.label, action == "Add Pitch" ? "Name, optional" : "Name, required")
+        assertConciseSaveEditor(app)
         fill(field, with: name, in: app)
+    }
+
+    private func assertConciseSaveEditor(_ app: XCUIApplication) {
+        XCTAssertTrue(app.navigationBars.buttons["Save"].exists)
+        XCTAssertFalse(app.buttons["Finish Editing"].exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "metadata is unchanged")).firstMatch.exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Only ")).firstMatch.exists)
     }
 
     private func nameField(_ app: XCUIApplication) -> XCUIElement {
@@ -292,7 +301,7 @@ final class TextNotebookUITests: XCTestCase {
     private func create(_ app: XCUIApplication, kind: String, name: String) -> String {
         let previous = allRowIDs(app, kind: kind)
         beginName(app, action: "Add \(kind.capitalized)", name: name)
-        tap(app.buttons["Add"], in: app)
+        tap(app.buttons["Save"], in: app)
         assertClosed(app)
         if kind == "pitch" { tap(app.buttons["Jump to Pitches"], in: app) }
         reveal(addButton(app, kind: kind), in: app)
@@ -332,10 +341,11 @@ final class TextNotebookUITests: XCTestCase {
     private func editNotes(_ app: XCUIApplication, action: String, text: String, save: Bool = true) {
         tap(app.buttons[action], in: app)
         XCTAssertTrue(app.textViews["textNoteEditor"].waitForExistence(timeout: 3))
+        assertConciseSaveEditor(app)
         fill(app.textViews["textNoteEditor"], with: text, in: app)
         assertState(app, "Unsaved changes")
         if save {
-            tap(app.buttons["Finish Editing"], in: app)
+            tap(app.buttons["Save"], in: app)
             assertClosed(app)
         }
     }
@@ -477,7 +487,7 @@ final class TextNotebookUITests: XCTestCase {
         beginOrder(app, kind: "Pitch")
         move(app, id: route.pitches[4].id, direction: "up")
         move(app, id: route.pitches[1].id, direction: "up")
-        tap(app.buttons["Done"], in: app)
+        tap(app.buttons["Save"], in: app)
         assertClosed(app)
         route.pitches.swapAt(3, 4)
         route.pitches.swapAt(0, 1)
@@ -517,7 +527,7 @@ final class TextNotebookUITests: XCTestCase {
         beginOrder(app, kind: "Pitch")
         move(app, id: pitches[4].id, direction: "up")
         move(app, id: pitches[1].id, direction: "up")
-        tap(app.buttons["Done"], in: app)
+        tap(app.buttons["Save"], in: app)
         assertClosed(app)
         pitches.swapAt(3, 4)
         pitches.swapAt(0, 1)
@@ -532,14 +542,14 @@ final class TextNotebookUITests: XCTestCase {
         app.launch()
         assertLibrary(app)
         tap(app.buttons["Add Area"], in: app)
-        tap(app.buttons["Add"], in: app)
+        tap(app.buttons["Save"], in: app)
         assertState(app, "Not saved - retry")
         tap(app.buttons["Cancel"], in: app)
         assertClosed(app)
         XCTAssertFalse(app.buttons["Discard Changes"].exists)
         for name in ["   ", String(repeating: "x", count: 501)] {
             beginName(app, action: "Add Area", name: name)
-            tap(app.buttons["Add"], in: app)
+            tap(app.buttons["Save"], in: app)
             assertState(app, "Not saved - retry")
             XCTAssertEqual(nameField(app).value as? String, name)
             tap(app.buttons["Cancel"], in: app)
@@ -803,7 +813,7 @@ final class TextNotebookUITests: XCTestCase {
         app.launch()
         assertLibrary(app)
         beginName(app, action: "Add Area", name: "Retry area")
-        tap(app.buttons["Add"], in: app)
+        tap(app.buttons["Save"], in: app)
         assertFailure(app)
         XCTAssertEqual(nameField(app).value as? String, "Retry area")
         tap(app.buttons["Retry"], in: app)
@@ -813,7 +823,7 @@ final class TextNotebookUITests: XCTestCase {
         relaunch(app, failSave: true)
         tap(app.buttons[areas[0]], in: app)
         beginName(app, action: "Add Route", name: "Retry route")
-        tap(app.buttons["Add"], in: app)
+        tap(app.buttons["Save"], in: app)
         assertFailure(app)
         XCTAssertEqual(nameField(app).value as? String, "Retry route")
         tap(app.buttons["Retry"], in: app)
@@ -824,7 +834,7 @@ final class TextNotebookUITests: XCTestCase {
         tap(app.buttons[areas[0]], in: app)
         tap(app.buttons[routes[0]], in: app)
         beginName(app, action: "Add Pitch", name: "Retry pitch")
-        tap(app.buttons["Add"], in: app)
+        tap(app.buttons["Save"], in: app)
         assertFailure(app)
         XCTAssertEqual(nameField(app).value as? String, "Retry pitch")
         tap(app.buttons["Retry"], in: app)
@@ -851,7 +861,7 @@ final class TextNotebookUITests: XCTestCase {
         tap(app.buttons[area], in: app)
         tap(app.buttons[route], in: app)
         editNotes(app, action: "Edit General Notes", text: "Failed buffer retained", save: false)
-        tap(app.buttons["Finish Editing"], in: app)
+        tap(app.buttons["Save"], in: app)
         assertFailure(app)
         XCTAssertEqual(app.textViews["textNoteEditor"].value as? String, "Failed buffer retained")
         tap(app.buttons["Reload Saved Version"], in: app)
@@ -861,7 +871,7 @@ final class TextNotebookUITests: XCTestCase {
         app.buttons["Reload and Discard Changes"].tap()
         assertState(app, "No unsaved changes")
         XCTAssertEqual(app.textViews["textNoteEditor"].value as? String, saved)
-        tap(app.buttons["Finish Editing"], in: app)
+        tap(app.buttons["Save"], in: app)
         assertClosed(app)
         relaunch(app, failLoad: true)
         XCTAssertTrue(app.staticTexts["Notebook unavailable"].waitForExistence(timeout: 10))
@@ -924,7 +934,7 @@ final class TextNotebookUITests: XCTestCase {
             if kind == "Pitch" { tap(app.buttons[route], in: app) }
             beginOrder(app, kind: kind)
             move(app, id: id, direction: "down")
-            tap(app.buttons["Done"], in: app)
+            tap(app.buttons["Save"], in: app)
             assertFailure(app)
             let row = app.collectionViews["textEditorForm"].descendants(matching: .any).matching(identifier: "order-\(recordID(id))").firstMatch
             reveal(app.collectionViews["textEditorForm"].buttons["move-up-\(recordID(id))"], in: app)
@@ -953,7 +963,7 @@ final class TextNotebookUITests: XCTestCase {
         tap(app.buttons[route], in: app)
         tap(app.buttons[pitch], in: app)
         editNotes(app, action: "Edit Notes", text: "Pitch retry exact\nSecond line.", save: false)
-        tap(app.buttons["Finish Editing"], in: app)
+        tap(app.buttons["Save"], in: app)
         assertFailure(app)
         XCTAssertEqual(app.textViews["textNoteEditor"].value as? String, "Pitch retry exact\nSecond line.")
         tap(app.buttons["Retry"], in: app)
@@ -1008,7 +1018,7 @@ final class TextNotebookUITests: XCTestCase {
         tap(app.buttons[route], in: app)
         let text = "General failure retry\nExact retained second line."
         editNotes(app, action: "Edit General Notes", text: text, save: false)
-        tap(app.buttons["Finish Editing"], in: app)
+        tap(app.buttons["Save"], in: app)
         assertFailure(app)
         XCTAssertEqual(app.textViews["textNoteEditor"].value as? String, text)
         tap(app.buttons["Retry"], in: app)
@@ -1042,8 +1052,9 @@ final class TextNotebookUITests: XCTestCase {
         let end = destinationCell.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.05))
         start.press(forDuration: 1, thenDragTo: end)
         assertState(app, "Unsaved changes")
-        capture(app, "Native area drag before explicit Done")
-        tap(app.buttons["Done"], in: app)
+        assertConciseSaveEditor(app)
+        capture(app, "Native area drag before explicit Save")
+        tap(app.buttons["Save"], in: app)
         assertClosed(app)
         relaunch(app)
         verify(app, areas: [second, first])
@@ -1110,7 +1121,7 @@ final class TextNotebookUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["textPitchRouteIdentity"].label, routeName)
         XCTAssertTrue(app.buttons["Next Pitch"].isHittable)
         tap(app.buttons["Edit Notes"], in: app)
-        for label in ["Dismiss keyboard", "Finish Editing", "Cancel"] {
+        for label in ["Dismiss keyboard", "Save", "Cancel"] {
             reveal(app.buttons[label], in: app)
             XCTAssertTrue(app.buttons[label].isHittable)
         }
@@ -1464,7 +1475,7 @@ final class TextNotebookUITests: XCTestCase {
             heights.append(Int((status.frame.height * scale).rounded()))
             measurements.append("Editor observed \(category): \(status.frame), backing-pixel height \(heights.last!), identity \(draftIdentity)")
             XCTAssertTrue(app.buttons["Cancel"].isHittable)
-            XCTAssertTrue(app.buttons["Add"].isHittable)
+            XCTAssertTrue(app.buttons["Save"].isHittable)
             capture(app, "Live same-dirty-editor \(category)")
         }
         XCTAssertGreaterThan(heights[1], heights[0])

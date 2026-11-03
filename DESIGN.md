@@ -1,6 +1,6 @@
 # Climbing Notebook Design Baseline
 
-Updated: 2026-10-30
+Updated: 2026-11-03
 
 Status: Owner-approved design baseline (2026-10-30). Implementation remains bounded by the approved feature plan and separately assigned packets.
 
@@ -40,6 +40,8 @@ For each optional module, show its entry point, enabled workflow, and the same s
 **Native utility over decoration.** Favor clear iOS navigation, readable text, compact route identity, and predictable controls. Avoid dashboards, oversized hero imagery, promotional copy, and repeated status banners.
 
 **Keep ownership understandable.** Pitch notes stay with their pitch when it moves. Imported originals and received text remain distinguishable from authored notes. Destructive actions explain exactly what will be removed.
+
+**Write for the person using the notebook.** Prioritize their notes and immediate task, not implementation rules or developer verification. Familiar controls should explain themselves; reserve guidance for surprising behavior, consequential risks and recovery.
 
 ## 3. Information Architecture
 
@@ -94,6 +96,8 @@ Search belongs near the top of lists. Results show area context so duplicate rou
 - Reordering preserves authored names, IDs, notes, and selection identity. Save the whole sequence together. Do not combine reorder with pitch insertion or deletion in this mockup round.
 
 ## 5. Save and Dismissal Contract
+
+**Current text-first milestone override, owner-directed 2026-11-03:** §21.6 uses buffered explicit saves. Label every non-destructive commit **Save**, including creation, rename, note editing and ordering; use **Cancel** to abandon the draft and **Delete** for confirmed deletion. Add Area/Add Route/Add Pitch remain entry actions, not alternate save labels. This changes wording, not persistence behavior. Do not add tutorial paragraphs explaining that keyboard dismissal or navigation does not save. The automatic-saving target-product direction below remains future-facing, not current behavior.
 
 **Target-product baseline: buffered automatic saving for existing fields, with Done/Back.** Design the planned v1 experience rather than inheriting the fixture implementation's explicit-save limitation.
 
@@ -183,6 +187,16 @@ Sizes are references at the default content size, not fixed constraints. Map to 
 - Use SF Symbols in the native app. Icons supplement labels; unfamiliar icon-only actions require visible names. Do not simulate an app-owned badge inside the operating system status bar.
 
 ## 8. Language and Trust
+
+### User-First Copy Rules
+
+- Put the user's content first. Every persistent sentence must help complete the current task, explain an unusual outcome or prevent a consequential mistake; internal implementation detail belongs in documentation.
+- Label required name fields with `Name *` and an accessible `Name, required` label. Label optional names `Name (optional)`. Do not rely on red alone or make screen-reader users infer an asterisk's meaning.
+- Show constraints when actionable: explain an empty required name or an exceeded limit at validation, retaining the entered text. Do not list every rule, duplicate-name policy or unchanged metadata on every form.
+- Use one consistent verb for the same outcome. In the current explicit-save milestone that verb is Save, not Finish Editing, Done or Add. Keep destructive Delete distinct; do not rename it Save.
+- Keep meaningful state feedback such as Saving, Unsaved changes and Not saved with Retry. Avoid repeating descriptions of standard keyboard, navigation and cancel behavior beneath every editor.
+- Disclose missing backup/recovery once, concisely, at the library. Keep precise deletion counts, conflict explanations, retained-file errors and discard confirmation at the affected action. Reducing repetition must not hide a real risk or promise safety.
+- Review ordinary and largest-text screenshots for content-to-chrome balance. Remove redundant explanation before reducing text size or tap targets. Ask whether a first-time user can identify the task, field and primary action without reading a paragraph.
 
 | Prefer | Avoid |
 | --- | --- |

@@ -1,6 +1,6 @@
 # Notebook Prototype Verification
 
-Updated: 2026-11-02
+Updated: 2026-11-03
 
 ## Conclusion
 
@@ -119,6 +119,10 @@ Historical static reviews prompted exact-byte reopened assertions and stale dele
 ### CF-07E Blocked Handoff
 
 #### Consolidated Final Disposition
+
+**Owner hands-on feedback,2026-11-03:** creation, editing, saving, reordering, deletion and reopening of synthetic notes passed. Owner reports accessibility worked as expected and no issues were found. Device/runtime, tested accessibility settings and assistive technologies were not specified, so do not infer a complete physical-device/VoiceOver/settings matrix. This is a successful human-observed workflow check, not an automated audit pass or blanket release/milestone acceptance. Owner identified excessive developer-oriented editor copy and inconsistent commit labels; the approved refinement uses Save for all non-destructive text-notebook editor commits, required/optional field labels instead of repeated rule paragraphs, and one concise library backup warning. Delete, validation/retry, source context and dirty-discard safeguards remain. Retained legacy mutation-test screens keep historical wording. User-first copy/review rules now live in DESIGN.md.
+
+UX refinement verification on iPhone18Pro/iOS27,2026-11-03: `CF07E-ux-core-v69-iOS27-20261103.xcresult` passes20/20 (all18 state tests plus direct complete five-pitch/duplicate-route/notes/order process readback and invalid-name/discard/termination UI). `CF07E-ux-layout-v70-iOS27-20261103.xcresult` passes3/5: creation failures/retry, native area drag/save/reopen and largest-text reading/keyboard/order/process readback pass; unchanged unrestricted library Dynamic Type and editor Contrast audits fail. Zero skipped/expected failures in either. The initial v68 run ended without finalized Info.plist and is incomplete, not a test result. Updated UI assertions check Save, required/optional field accessibility and absence of repeated tutorial copy; original exact-byte/graph/error assertions remain. Visual inspection of `.build/CF07E-v70-editor-final/F57F5960-E2C1-4A32-B3C0-DACBD61F889F.png` confirms concise Name * and Save, with retained unsaved/context feedback; audit crop still identifies Cancel. Independent scoped review found no defects. Full suites, combined coverage, older runtimes and tablet checks were not repeated for this refinement; historical totals below remain historical, not current UX qualification. Unrelated owner Xcode/project/scheme changes were preserved.
 
 Latest complete runs include five additional diagnostic methods (161 total). Both complete suites remain Failed; focused results never retroactively replace their outcomes:
 

@@ -105,7 +105,7 @@ struct TextNotebookView: View {
                 } else {
                     List {
                         Section {
-                            Text(notebook.source == .notebook ? "Development notebook. Explicit saves stay on this device. Backup and recovery are not available; keep another copy of important notes." : "Example Notebook. Fictional content only, not climbing guidance. Changes stay separate from your notebook and retained prototype.")
+                            Text(notebook.source == .notebook ? "No backup or recovery. Keep another copy of important notes." : "Example Notebook. Fictional content only, not climbing guidance. Changes stay separate from your notebook and retained prototype.")
                                 .font(.subheadline)
                             Text(notebook.saveStatus).font(.body)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -469,8 +469,10 @@ private struct TextNotebookEditor: View {
                         Section {
                             TextField("Name", text: $draft.text, axis: .vertical).focused($focused)
                                 .accessibilityIdentifier("textNameEditor")
-                        } header: { Text("Name") } footer: {
-                            Text("Area and route names are required. Pitch names are optional. Duplicate names are allowed. Maximum 500 characters; metadata is unchanged.")
+                                .accessibilityLabel(draft.nameRequired ? "Name, required" : "Name, optional")
+                        } header: {
+                            Text(draft.nameRequired ? "Name *" : "Name (optional)")
+                                .accessibilityLabel(draft.nameRequired ? "Name, required" : "Name, optional")
                         }
                     }
                     Section {
@@ -481,8 +483,6 @@ private struct TextNotebookEditor: View {
                             Button("Retry") { finish() }.frame(minHeight: 44)
                             Button("Reload Saved Version") { reload = true }.frame(minHeight: 44)
                         }
-                    } footer: {
-                        Text("Only \(draft.completion) saves on this device. Unsaved changes are lost if the app closes. Hide Keyboard and navigation do not save.")
                     }
                     Section("Editing") {
                         Text(draft.context).font(.headline).fixedSize(horizontal: false, vertical: true)
