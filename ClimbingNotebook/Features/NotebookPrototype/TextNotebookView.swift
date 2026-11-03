@@ -26,6 +26,32 @@ private struct TextNotebookListStyle: ViewModifier {
     }
 }
 
+private struct TextSizeDiagnosticControl: UIViewRepresentable {
+    @Environment(\.dynamicTypeSize) private var size
+    var identity = ""
+    func makeUIView(context: Context) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setTitle("Cycle Test Text Size", for: .normal)
+        button.accessibilityIdentifier = identity.isEmpty ? "cycleTestTextSize" : "cycleEditorTestTextSize"
+        button.addTarget(context.coordinator, action: #selector(Coordinator.cycle(_:)), for: .touchUpInside)
+        return button
+    }
+
+    func updateUIView(_ view: UIButton, context: Context) {
+        view.accessibilityValue = String(describing: size) + (identity.isEmpty ? "" : "|" + identity)
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator: NSObject {
+        private var index = 0
+        @objc func cycle(_ sender: UIButton) {
+            let categories: [UIContentSizeCategory] = [.extraSmall, .large, .accessibilityExtraExtraExtraLarge, .large]
+            sender.window?.windowScene?.traitOverrides.preferredContentSizeCategory = categories[index]
+            index = (index + 1) % categories.count
+        }
+    }
+}
+
 struct TextNotebookView: View {
     @State private var notebook: TextNotebookState
     @State private var draft: TextNotebookDraft?
@@ -48,6 +74,8 @@ struct TextNotebookView: View {
     private var colorScheme: ColorScheme? {
         if _isDebugAssertConfiguration(), notebook.testNamespace,
            ProcessInfo.processInfo.environment["NOTEBOOK_TEST_DARK"] == "1" { return .dark }
+        if _isDebugAssertConfiguration(), notebook.testNamespace,
+           ProcessInfo.processInfo.environment["NOTEBOOK_TEST_LIGHT"] == "1" { return .light }
         return nil
     }
 
@@ -127,6 +155,11 @@ struct TextNotebookView: View {
         .environment(notebook)
         .tint(TextNotebookPalette.action)
         .preferredColorScheme(colorScheme)
+        .safeAreaInset(edge: .bottom) {
+            if _isDebugAssertConfiguration(), notebook.testNamespace, ProcessInfo.processInfo.environment["NOTEBOOK_TEST_LIVE_SIZE"] == "1" {
+                TextSizeDiagnosticControl().frame(height: 44)
+            }
+        }
         .task { if notebook.snapshot == nil { notebook.load() } }
         .fullScreenCover(item: $draft) { TextNotebookEditor(draft: $0).environment(notebook) }
         .fullScreenCover(isPresented: $examples) {
@@ -272,6 +305,7 @@ private struct TextRouteView: View {
                         if !route.pitches.isEmpty { Button("Edit Pitch Order") { draft = notebook.draft(.pitches(routeID)) } }
                         Button("Delete Route", role: .destructive) { draft = notebook.draft(.deleteRoute(route.areaID, routeID)) }
                     }
+                    .accessibilityValue(_isDebugAssertConfiguration() && notebook.testNamespace && ProcessInfo.processInfo.environment["NOTEBOOK_TEST_MENU_SIZE"] == "1" ? String(describing: dynamicTypeSize) : "")
                 }
             } else {
                 ContentUnavailableView("Route no longer available", systemImage: "mountain.2", description: Text("Return to its area to review the saved routes."))
@@ -476,6 +510,12 @@ private struct TextNotebookEditor: View {
             }
         }
         .tint(TextNotebookPalette.action)
+        .safeAreaInset(edge: .bottom) {
+            if _isDebugAssertConfiguration(), notebook.testNamespace, ProcessInfo.processInfo.environment["NOTEBOOK_TEST_LIVE_SIZE"] == "1" {
+                TextSizeDiagnosticControl(identity: "\(draft.id)|\(draft.recordID)|\(draft.generalNoteID)|\(draft.sourceToken)")
+                    .frame(height: 44)
+            }
+        }
         .interactiveDismissDisabled(draft.dirty || saving)
         .alert("Discard unsaved changes?", isPresented: $discard) {
             Button("Discard Changes", role: .destructive) { dismiss() }

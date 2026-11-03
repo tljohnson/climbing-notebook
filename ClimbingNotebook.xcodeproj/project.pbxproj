@@ -388,6 +388,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ACG7GNSFYD;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Climbing Notebook";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Built at Novacoast.";
@@ -405,6 +406,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ACG7GNSFYD;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ClimbingNotebookShare/Info.plist;
 				MARKETING_VERSION = 0.1;

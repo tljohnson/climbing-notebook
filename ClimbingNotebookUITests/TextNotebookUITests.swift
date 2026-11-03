@@ -1184,6 +1184,200 @@ final class TextNotebookUITests: XCTestCase {
         if #available(iOS 17.0, *) { try app.performAccessibilityAudit() }
     }
 
+    func testOrdinaryTouchActionsMenusAtDefaultTextDiagnostic() {
+        checkOrdinaryTouchActionsMenus(accessibility: false)
+    }
+
+    func testOrdinaryTouchActionsMenusAtLargestTextDiagnostic() {
+        checkOrdinaryTouchActionsMenus(accessibility: true)
+    }
+
+    func testRouteMenuThresholdAtStandardTextSizesDiagnostic() {
+        checkRouteMenuThreshold(categories: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"])
+    }
+
+    func testRouteMenuThresholdAtAccessibilityTextSizesDiagnostic() {
+        checkRouteMenuThreshold(categories: ["AccessibilityM", "AccessibilityL", "AccessibilityXL", "AccessibilityXXL", "AccessibilityXXXL"])
+    }
+
+    private func checkRouteMenuThreshold(categories: [String]) {
+        let app = application()
+        app.launchEnvironment["NOTEBOOK_TEST_MENU_SIZE"] = "1"
+        let observedCategories = ["XS": "xSmall", "S": "small", "M": "medium", "L": "large", "XL": "xLarge", "XXL": "xxLarge", "XXXL": "xxxLarge",
+                                  "AccessibilityM": "accessibility1", "AccessibilityL": "accessibility2", "AccessibilityXL": "accessibility3", "AccessibilityXXL": "accessibility4", "AccessibilityXXXL": "accessibility5"]
+        var measurements: [String] = []
+        defer {
+            let attachment = XCTAttachment(string: measurements.joined(separator: "\n"))
+            attachment.name = "Exact text categories and ordinary menu scroll counts"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+        for category in categories {
+            app.launchArguments = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategory\(category)"]
+            app.launch()
+            assertLibrary(app)
+            tap(app.buttons["Open Examples"], in: app)
+            tap(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
+                                                 "text-area-", "Example Granite")).firstMatch, in: app)
+            tap(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
+                                                 "text-route-", "Paper Skyline")).firstMatch, in: app)
+            let button = app.buttons["Route Actions"]
+            XCTAssertEqual(button.value as? String, observedCategories[category], "Assert actual route category, not just requested launch argument")
+            let frame = button.frame
+            XCTAssertFalse(frame.isEmpty)
+            XCTAssertTrue(app.navigationBars.allElementsBoundByIndex.contains { $0.frame.contains(frame) })
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+            measurements.append("\(category): toolbar \(frame); " + touchDiagnosticMenuItem(app, title: "Delete Route", category: category))
+            XCTAssertTrue(app.collectionViews["textEditorForm"].waitForExistence(timeout: 3))
+            XCTAssertTrue(app.navigationBars["Delete Route"].exists)
+            capture(app, "\(category) deletion editor reached")
+            tap(app.buttons["Cancel"], in: app)
+            assertClosed(app)
+            app.terminate()
+        }
+    }
+
+    @discardableResult
+    private func touchDiagnosticMenuItem(_ app: XCUIApplication, title: String, category: String) -> String {
+        let item = app.buttons[title]
+        XCTAssertTrue(item.waitForExistence(timeout: 3))
+        // Native menu collections can extend below their clipping ancestors. Require two
+        // distinct menu items to exclude moving row wrappers, then intersect all ancestors.
+        let companion: String
+        switch title {
+        case "Rename Area": companion = "Delete Area"
+        case "Delete Area", "Edit Route Order": companion = "Rename Area"
+        case "Rename Route": companion = "Delete Route"
+        case "Delete Route", "Edit Pitch Order": companion = "Rename Route"
+        case "Rename Pitch": companion = "Delete Pitch"
+        default: companion = "Rename Pitch"
+        }
+        let containers = app.otherElements.containing(.button, identifier: title).allElementsBoundByIndex
+            .filter { !$0.frame.isEmpty && $0.buttons[companion].exists }
+        guard !containers.isEmpty else {
+            XCTFail("No foreground native menu clipping ancestor for \(title)")
+            return "missing menu ancestor"
+        }
+        func viewport() -> CGRect { containers.reduce(app.frame) { $0.intersection($1.frame) } }
+        let initial = item.frame
+        let initialClip = viewport()
+        XCTAssertFalse(initialClip.isEmpty)
+        capture(app, "\(category) \(title) before menu scrolling")
+        var scrolls = 0
+        while !viewport().contains(item.frame), scrolls < 4 {
+            let clip = viewport()
+            guard !clip.isEmpty else { XCTFail("Empty foreground menu viewport"); return "empty viewport" }
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: clip.midX, dy: clip.minY + clip.height * 0.8))
+                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: clip.midX, dy: clip.minY + clip.height * 0.25)))
+            scrolls += 1
+            capture(app, "\(category) \(title) after menu scroll \(scrolls)")
+        }
+        XCTAssertTrue(viewport().contains(item.frame), "Menu item must be inside foreground clipping bounds")
+        let frame = item.frame
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+        return "initial item \(initial), clipping ancestor \(initialClip), scrolls \(scrolls), final item \(frame)"
+    }
+
+    func testLargestTextRouteMenuScrollDiagnostic() {
+        let app = application(accessibility: true)
+        app.launch()
+        assertLibrary(app)
+        tap(app.buttons["Open Examples"], in: app)
+        tap(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
+                                             "text-area-", "Example Granite")).firstMatch, in: app)
+        tap(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
+                                             "text-route-", "Paper Skyline")).firstMatch, in: app)
+        let frame = app.buttons["Route Actions"].frame
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+        XCTAssertTrue(app.buttons["Delete Route"].waitForExistence(timeout: 3))
+        let evidence = XCTAttachment(string: app.debugDescription)
+        evidence.name = "AX5 native route menu before scrolling"
+        evidence.lifetime = .keepAlways
+        add(evidence)
+        capture(app, "AX5 route menu before ordinary scrolling")
+        let top = app.buttons.matching(identifier: "Add Pitch").allElementsBoundByIndex.last!.frame
+        let lower = app.buttons["Edit Pitch Order"].frame
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: lower.midX, dy: lower.midY))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: top.midX, dy: top.midY)))
+        capture(app, "AX5 route menu after one ordinary scroll")
+        let after = XCTAttachment(string: app.debugDescription)
+        after.name = "AX5 native route menu after scrolling"
+        after.lifetime = .keepAlways
+        add(after)
+        let item = app.buttons["Delete Route"].frame
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: item.midX, dy: item.midY)).tap()
+        XCTAssertTrue(app.collectionViews["textEditorForm"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.navigationBars["Delete Route"].exists)
+        capture(app, "AX5 route deletion editor reached after ordinary menu scroll")
+        tap(app.buttons["Cancel"], in: app)
+        assertClosed(app)
+    }
+
+    private func checkOrdinaryTouchActionsMenus(accessibility: Bool) {
+        let app = application(accessibility: accessibility)
+        app.launch()
+        assertLibrary(app)
+        tap(app.buttons["Open Examples"], in: app)
+        let area = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
+                                                  "text-area-", "Example Granite")).firstMatch
+        tap(area, in: app)
+        for kind in ["Area", "Route", "Pitch"] {
+            if kind == "Route" {
+                tap(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
+                                                     "text-route-", "Paper Skyline")).firstMatch, in: app)
+            }
+            if kind == "Pitch" {
+                tap(app.buttons["Jump to Pitches"], in: app)
+                tap(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
+                                                     "text-pitch-", "Opening slab")).firstMatch, in: app)
+            }
+            var titles = ["Rename \(kind)", "Delete \(kind)"]
+            if kind != "Pitch" { titles.append(kind == "Area" ? "Edit Route Order" : "Edit Pitch Order") }
+            for title in titles {
+                var button = app.buttons["\(kind) Actions"]
+                let bars = app.navigationBars.allElementsBoundByIndex
+                if !button.exists || button.frame.isEmpty || !bars.contains(where: { $0.frame.contains(button.frame) }) {
+                    let overflow = app.navigationBars.buttons["More"]
+                    XCTAssertTrue(overflow.exists)
+                    capture(app, "Native toolbar overflow before \(title)")
+                    let frame = overflow.frame
+                    XCTAssertFalse(frame.isEmpty)
+                    XCTAssertTrue(bars.contains { $0.frame.contains(frame) })
+                    XCTAssertTrue(app.frame.contains(frame))
+                    app.coordinate(withNormalizedOffset: .zero)
+                        .withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+                    button = app.buttons["\(kind) Actions"]
+                }
+                XCTAssertTrue(button.waitForExistence(timeout: 3))
+                let frame = button.frame
+                XCTAssertFalse(frame.isEmpty)
+                XCTAssertTrue(app.frame.contains(frame))
+                if kind != "Pitch" || app.navigationBars.buttons["\(kind) Actions"].exists {
+                    XCTAssertTrue(app.navigationBars.allElementsBoundByIndex.contains { $0.frame.contains(frame) })
+                }
+                let evidence = XCTAttachment(string: "\(kind) Actions: frame=\(frame), AX hittable=\(button.isHittable). Diagnostic visible-center coordinate tap only; not an accessibility pass.")
+                evidence.name = "Ordinary-touch diagnostic \(title)"
+                evidence.lifetime = .keepAlways
+                add(evidence)
+                capture(app, "Before ordinary-touch \(title)")
+                // Deliberately separate from tap/actions: never substitute this for AX acceptance.
+                app.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+                let menuEvidence = XCTAttachment(string: touchDiagnosticMenuItem(app, title: title, category: accessibility ? "AX5" : "default"))
+                menuEvidence.name = "Coordinate menu visibility \(title)"
+                menuEvidence.lifetime = .keepAlways
+                add(menuEvidence)
+                XCTAssertTrue(app.collectionViews["textEditorForm"].waitForExistence(timeout: 3))
+                XCTAssertTrue(app.navigationBars[title].exists)
+                capture(app, "Ordinary-touch reached \(title)")
+                tap(app.buttons["Cancel"], in: app)
+                assertClosed(app)
+            }
+        }
+    }
+
     func testDefaultAccessibilityAuditOfAreaCreationEditor() throws {
         let app = application()
         app.launch()
@@ -1218,6 +1412,86 @@ final class TextNotebookUITests: XCTestCase {
         attachment.name = "Status AX frames across twelve cold-launch categories; live scaling remains separate"
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    func testLiveSceneDynamicTypeStatusAndDirtyEditorDiagnostic() {
+        let app = application()
+        app.launchEnvironment["NOTEBOOK_TEST_LIVE_SIZE"] = "1"
+        app.launchEnvironment["NOTEBOOK_TEST_LIGHT"] = "1"
+        app.launch()
+        assertLibrary(app)
+        var heights: [Int] = []
+        var measurements: [String] = []
+        let screen = app.screenshot().image
+        let scale = CGFloat(screen.cgImage!.height) / app.frame.height
+        defer {
+            let evidence = XCTAttachment(string: measurements.joined(separator: "\n"))
+            evidence.name = "Live category frames, backing-pixel heights and retained draft identity"
+            evidence.lifetime = .keepAlways
+            add(evidence)
+        }
+        for category in ["xSmall", "large", "accessibility5", "large"] {
+            app.buttons["cycleTestTextSize"].tap()
+            let observed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", category),
+                                                    object: app.buttons["cycleTestTextSize"])
+            XCTAssertEqual(XCTWaiter.wait(for: [observed], timeout: 3), .completed)
+            let status = app.staticTexts["textSaveStatus"]
+            reveal(status, in: app)
+            XCTAssertEqual(status.label, "Loaded from this device")
+            heights.append(Int((status.frame.height * scale).rounded()))
+            measurements.append("Library observed \(category): \(status.frame), backing-pixel height \(heights.last!)")
+            capture(app, "Live same-library status \(category)")
+        }
+        XCTAssertGreaterThan(heights[1], heights[0])
+        XCTAssertGreaterThan(heights[2], heights[1])
+        XCTAssertEqual(heights[1], heights[3])
+        beginName(app, action: "Add Area", name: "Live draft Cafe\u{301}  ")
+        let draftIdentity = (app.buttons["cycleEditorTestTextSize"].value as? String ?? "")
+            .split(separator: "|", maxSplits: 1).dropFirst().joined(separator: "|")
+        XCTAssertFalse(draftIdentity.isEmpty)
+        heights = []
+        for category in ["xSmall", "large", "accessibility5", "large"] {
+            let editorControl = app.buttons["cycleEditorTestTextSize"]
+            editorControl.tap()
+            let observed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", category + "|" + draftIdentity),
+                                                    object: editorControl)
+            XCTAssertEqual(XCTWaiter.wait(for: [observed], timeout: 3), .completed)
+            XCTAssertEqual(Array((nameField(app).value as? String ?? "").utf8), Array("Live draft Cafe\u{301}  ".utf8))
+            XCTAssertEqual(editorControl.value as? String, category + "|" + draftIdentity)
+            assertState(app, "Unsaved changes")
+            let status = app.staticTexts["textEditorSaveState"]
+            reveal(status, in: app)
+            heights.append(Int((status.frame.height * scale).rounded()))
+            measurements.append("Editor observed \(category): \(status.frame), backing-pixel height \(heights.last!), identity \(draftIdentity)")
+            XCTAssertTrue(app.buttons["Cancel"].isHittable)
+            XCTAssertTrue(app.buttons["Add"].isHittable)
+            capture(app, "Live same-dirty-editor \(category)")
+        }
+        XCTAssertGreaterThan(heights[1], heights[0])
+        XCTAssertGreaterThan(heights[2], heights[1])
+        XCTAssertEqual(heights[1], heights[3])
+        discard(app)
+        XCTAssertTrue(rowIDs(app, kind: "area").isEmpty)
+    }
+
+    func testExplicitLightCreationEditorUnrestrictedAuditDiagnostic() throws {
+        try checkCreationEditorAppearanceAudit(dark: false)
+    }
+
+    func testExplicitDarkCreationEditorUnrestrictedAuditDiagnostic() throws {
+        try checkCreationEditorAppearanceAudit(dark: true)
+    }
+
+    private func checkCreationEditorAppearanceAudit(dark: Bool) throws {
+        let app = application(dark: dark)
+        if !dark { app.launchEnvironment["NOTEBOOK_TEST_LIGHT"] = "1" }
+        app.launch()
+        assertLibrary(app)
+        beginName(app, action: "Add Area", name: "Appearance audit draft")
+        capture(app, "Explicit \(dark ? "dark" : "light") editor before unrestricted audit")
+        defer { capture(app, "Explicit \(dark ? "dark" : "light") editor after unrestricted audit") }
+        try app.performAccessibilityAudit()
+        discard(app)
     }
 
     private func checkReadingAndKeyboard(accessibility: Bool, dark: Bool) {
