@@ -1,10 +1,10 @@
 # Climbing Notebook System Documentation Index
 
-Updated: 2026-11-02
+Updated: 2026-11-03
 
 ## Reading Workflow
 
-Read this index first, then task-relevant references and cross-cutting contracts below. Follow [.kilo/AGENTS.md](.kilo/AGENTS.md) for repository workflow and preservation rules. Inspect actual source, configuration and test evidence before planning or editing; documentation is not a substitute for source verification. Do not recursively load every linked reference.
+Read this index first, then task-relevant references and cross-cutting contracts below. Follow local `.kilo/AGENTS.md` guidance when present; it is not required in a fresh checkout. Inspect actual source, configuration and test evidence before planning or editing; documentation is not a substitute for source verification. Do not recursively load every linked reference.
 
 ## Architecture Overview
 
@@ -42,7 +42,7 @@ Plan links below define approved requirements and contracts, not completed funct
 | Task | Read first |
 |---|---|
 | UI / navigation / editing | [screen specifications](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#4-screen-and-interaction-specifications), [prototype scope](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2144-owner-approved-prototype-first-reset), [prototype evidence](docs/verification/NotebookPrototype.md) |
-| UI design / bounded reading alignment | [approved design baseline and Stitch reference index](DESIGN.md), [CF-07C scope](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2146-cf-07c-approved-bounded-reading-and-navigation-alignment); design approval does not change functional/save/data contracts |
+| UI design / layout / controls / copy / review | Load [native-interface-design](.kilo/skills/native-interface-design/SKILL.md), then [product design rules and visual references](DESIGN.md) and the assigned plan section; read the skill file directly if not tool-discovered. Design guidance does not change functional/save/data contracts. |
 | Persistence / schema / migrations / managed files | [architecture](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#5-architecture-and-technology-decisions), [data model](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#6-logical-data-model), [service contracts](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#7-contracts-and-api-boundaries), [data integrity](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#8-media-storage-and-data-integrity) |
 | Archives / backup / replace-restore / generation recovery | [data integrity](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#8-media-storage-and-data-integrity), [backup and restore contract](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#9-complete-backup-and-replace-restore-contract), [archive evidence](docs/verification/Archives.md), [persistence evidence](docs/verification/Persistence.md) |
 | Intake / share extension / URL copying | [intake and review](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#46-intake-inbox-and-review), [mailbox contract](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#72-share-extension-mailbox-contract), [privacy and safety](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#11-privacy-accessibility-and-safety), [URL-policy finding](docs/verification/Persistence.md#url-policy-finding) |
