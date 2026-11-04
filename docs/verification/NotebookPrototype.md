@@ -1,6 +1,6 @@
 # Notebook Prototype Verification
 
-Updated: 2026-11-03
+Updated: 2026-11-04
 
 ## Conclusion
 
@@ -119,6 +119,8 @@ Historical static reviews prompted exact-byte reopened assertions and stale dele
 ### CF-07E Blocked Handoff
 
 #### Consolidated Final Disposition
+
+**Owner focused review,2026-11-04:** owner reports successful addition/removal of areas, routes, pitches and notes (General and pitch notes), plus pitch renaming and reordering, in both light and dark mode. Accessibility settings were tested at regular and maximum text sizes; all navigation buttons remained visible, no drafts were lost and no visual issues were reported. **VoiceOver was not tested.** Build, device model, physical-device versus simulator environment and OS version were not supplied; do not infer runtime/device coverage, keyboard-specific checks, live Settings-transition preservation or measured contrast compliance. This establishes successful owner-observed workflows at the reported appearances/text sizes, not an automated audit pass, a false-positive diagnosis, an audit-standard waiver or blanket milestone/release acceptance. Unrestricted Dynamic Type/Contrast failures, older-runtime automation limits and separate migration barriers remain open. Earlier statements that device/accessibility checks are unrun describe the recorded automated qualification or checks beyond this bounded owner report.
 
 **Owner hands-on feedback,2026-11-03:** creation, editing, saving, reordering, deletion and reopening of synthetic notes passed. Owner reports accessibility worked as expected and no issues were found. Device/runtime, tested accessibility settings and assistive technologies were not specified, so do not infer a complete physical-device/VoiceOver/settings matrix. This is a successful human-observed workflow check, not an automated audit pass or blanket release/milestone acceptance. Owner identified excessive developer-oriented editor copy and inconsistent commit labels; the approved refinement uses Save for all non-destructive text-notebook editor commits, required/optional field labels instead of repeated rule paragraphs, and one concise library backup warning. Delete, validation/retry, source context and dirty-discard safeguards remain. Retained legacy mutation-test screens keep historical wording. User-first copy/review rules now live in DESIGN.md.
 
