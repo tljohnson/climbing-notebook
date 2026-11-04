@@ -38,10 +38,10 @@ final class TextNotebookUITests: XCTestCase {
         // Allocate once per test; every terminate/launch below reuses this exact namespace.
         app.launchEnvironment["NOTEBOOK_TEST_STORE"] = UUID().uuidString
         app.launchEnvironment["NOTEBOOK_TEXT_TEST"] = "1"
-        if dark { app.launchEnvironment["NOTEBOOK_TEST_DARK"] = "1" }
-        if accessibility {
-            app.launchArguments = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
-        }
+        app.launchEnvironment["NOTEBOOK_TEST_DARK"] = dark ? "1" : "0"
+        app.launchEnvironment["NOTEBOOK_TEST_LIGHT"] = dark ? "0" : "1"
+        app.launchArguments = ["-UIPreferredContentSizeCategoryName",
+                               accessibility ? "UICTContentSizeCategoryAccessibilityXXXL" : "UICTContentSizeCategoryL"]
         return app
     }
 
@@ -403,6 +403,7 @@ final class TextNotebookUITests: XCTestCase {
         let message = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Synthetic save failure")).firstMatch
         reveal(message, in: app)
         XCTAssertTrue(message.exists)
+        reveal(app.buttons["Retry"], in: app)
         XCTAssertTrue(app.buttons["Retry"].isEnabled)
         XCTAssertFalse(app.staticTexts["Saved on this device"].isHittable)
         capture(app, "Retained synthetic save failure")

@@ -6,13 +6,6 @@
 
 ## Blocked
 
-- [ ] `CF-07E` Deliver the complete text-first notebook milestone
-  - Priority: P0
-  - Owner: Kilo/local
-  - Blocked by: Define/run explicit MVP core cohort in test configuration and CI; owner milestone acceptance remains separate. Audit flags are non-gating under approved §21.6.8.
-  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §§21.6,21.6.8
-  - Done when: Current notebook functionality and saved-data integrity pass the named MVP gate, relevant UI checks and honest limits are recorded, then owner accepts.
-
 - [ ] `CF-07D` Add routes with explicit drafts and retained General notes
   - Priority: P0
   - Owner: Kilo/local
@@ -49,6 +42,14 @@
   - Done when: Test-only synthetic migration preserves IDs, Unicode and relationships after explicit save/reopen; deterministic failure preserves an independent closed generation including sidecars, supports recovery/retry without empty-library fallback, and full minimum/current simulator suites and coverage pass with documented limits.
 
 ## Review
+
+- [ ] `CF-07E` Deliver the complete text-first notebook milestone
+  - Priority: P0
+  - Owner: Kilo/local
+  - Depends on: Owner milestone acceptance; hosted CI execution remains unverified. Audit flags are non-gating under §21.6.8.
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §§21.6,21.6.8
+  - Done when: Current notebook functionality and saved-data integrity pass the named MVP gate, relevant UI checks and honest limits are recorded, then owner accepts.
+  - Evidence: [Core gate](verification/NotebookPrototype.md#conclusion)100/100 on27, coverage76.78%; shared allowlist/CI aligned, deterministic UI launch and Retry helper fix; owner light/dark regular/maximum-text workflows passed, VoiceOver untested.
 
 - [ ] `CF-07B` Plan and deliver bounded durable fixture notes and pitch order
   - Priority: P0

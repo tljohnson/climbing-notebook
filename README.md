@@ -27,17 +27,19 @@ The supported minimum is iOS17.5, with qualification limits retained in [current
 Open `ClimbingNotebook.xcodeproj`, select the ClimbingNotebook scheme and a simulator, then Run. For signing-free unit/UI tests and combined first-party coverage:
 
 ```sh
-SIMULATOR_ID="installed-simulator-UUID" bash Scripts/test-ios.sh -quiet -test-timeouts-enabled YES -maximum-test-execution-time-allowance 300 -collect-test-diagnostics never
+SIMULATOR_ID="installed-simulator-UUID" bash Scripts/test-ios.sh --suite core -quiet -test-timeouts-enabled YES -maximum-test-execution-time-allowance 300
 bash Scripts/check-coverage.sh <result.xcresult>
 bash Scripts/check-coverage.sh --self-test
 git diff --check
 ```
 
-The command above still runs the historical **all-tests** selection, including research/audits; it is not a named MVP gate. The owner-approved policy separates core regressions from opt-in research, but the runner, shared scheme and CI cohort split is not yet implemented. Do not claim a green core gate until its explicit selection is defined and actually run.
+`Scripts/test-ios.sh` defaults to `--suite core`. Its shared allowlist, `Scripts/mvp-core-tests.txt`, selects four complete current/retained-format persistence and state classes plus25 current UI workflows covering creation, notes, all mutation families, cancellation/termination, retry/reload, examples isolation, retained reading, native reorder and representative large-text/dark reading. New core functionality must extend this list when adding UI methods or new test classes. Unit methods added to selected classes join core automatically. Assertions are unchanged; this is test selection, not a suppression mechanism.
 
-During development append `-only-testing:<target>/<class-or-method>` for affected functional tests on one available approved simulator. Expand for shared-code impact or a concrete regression, not an automatic device matrix. Reuse unaffected recent evidence; docs-only edits need no simulator run. `RESULT_BUNDLE_PATH` selects a new bundle path; otherwise the script chooses one. Reverify simulator availability and do not provision/change settings implicitly. The existing >=70% gate combines app/extension Swift lines, excluding dependencies, tests and generated sources; preserve it for applicable quality runs. Neither coverage nor a focused pass relabels a failed full suite. Preserve research/audit assertions and findings separately, without chasing them for unrelated MVP features.
+Use `--suite qualification` for the complementary audits, framework diagnostics, legacy extra regressions and future-feature research; use `--suite all` for the historical entire scheme. Both are opt-in and can still fail on recorded findings. `--suite core --list` prints the shared selection without requiring a simulator. Xcode's unchanged shared scheme still runs all tests when invoked directly or with Test in Xcode; the script and CI apply the named selections.
 
-For example, text-notebook persistence/state checks use `-only-testing:ClimbingNotebookTests/TextNotebookPersistenceTests -only-testing:ClimbingNotebookTests/TextNotebookStateTests`; select affected UI workflow methods explicitly rather than the entire UI target with its diagnostic methods. This example is not the complete future core cohort. UI relaunch checks use a generated test-store UUID retained across launches, not a launch-time reset. Resolve the approved dependency with native tooling when needed:
+During development use `--suite all -only-testing:<target>/<class-or-method>` for affected functional tests on one available approved simulator. Named cohorts reject additional include/exclude selectors so a partial run cannot masquerade as the full core gate. Expand for shared-code impact or a concrete regression, not an automatic device matrix. Reuse unaffected recent evidence; docs-only edits need no simulator run. `RESULT_BUNDLE_PATH` selects a new bundle path; otherwise the script chooses one. Reverify simulator availability and do not provision/change settings implicitly. Verbose sysdiagnose collection is disabled by default, not screenshots/audit findings. The existing >=70% gate combines app/extension Swift lines, excluding dependencies, tests and generated sources; its denominator is unchanged. Neither coverage nor a focused pass relabels a failed full suite.
+
+For example, append `--suite all -only-testing:ClimbingNotebookTests/TextNotebookPersistenceTests -only-testing:ClimbingNotebookTests/TextNotebookStateTests` directly after the script name for focused persistence/state checks. UI relaunch checks use a generated test-store UUID retained across launches, not a launch-time reset. Resolve the approved dependency with native tooling when needed:
 
 ```sh
 xcodebuild -resolvePackageDependencies -project ClimbingNotebook.xcodeproj -scheme ClimbingNotebook
@@ -64,7 +66,7 @@ ZIPFoundation 0.9.20 is resolved at `22787ffb59de99e5dc1fbfe80b19c97a904ad48d` i
 
 ## CI and Distribution
 
-GitHub Actions runs on pull requests/main using `macos-15`, read-only permissions, a pinned checkout Action, cancellation of superseded runs and a 30-minute timeout. It uses the runner's Xcode/simulator and uploads no artifacts or caches. Hosted CI has not been verified from this local work. Signing, permanent identifiers, releases and support/privacy URLs remain owner-controlled release prerequisites; no publication or repository-setting change is authorized by implementation approval.
+GitHub Actions runs the explicit MVP core cohort and unchanged first-party coverage gate on pull requests/main using `macos-15`, read-only permissions, a pinned checkout Action, cancellation of superseded runs and a 90-minute timeout (the complete local core run took about61 minutes). It uses the runner's Xcode/simulator and uploads no artifacts or caches. Qualification is opt-in locally, not a required CI job. Hosted execution has not been verified from this local work. Signing, permanent identifiers, releases and support/privacy URLs remain owner-controlled release prerequisites; no publication or repository-setting change is authorized by implementation approval.
 
 ## Verification References
 
