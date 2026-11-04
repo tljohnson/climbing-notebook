@@ -26,6 +26,80 @@ private struct TextNotebookListStyle: ViewModifier {
     }
 }
 
+// Isolated audit controls: no notebook state, persistence or ordinary-entry routing.
+struct AccessibilityAuditReproducer: View {
+    static let variants = ["status-plain", "status-list", "status-styled", "editor-native", "editor-tinted", "editor-styled"]
+    let variant: String
+    @State private var editor = false
+    @State private var name = "Accessible synthetic area"
+
+    private var appearance: ColorScheme? {
+        let environment = ProcessInfo.processInfo.environment
+        if environment["NOTEBOOK_TEST_DARK"] == "1" { return .dark }
+        if environment["NOTEBOOK_TEST_LIGHT"] == "1" { return .light }
+        return nil
+    }
+
+    private var status: some View {
+        Text("Loaded from this device").font(.body)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("auditReproducerStatus")
+    }
+
+    private var statusList: some View {
+        List { Section("Notebook") { status } }
+    }
+
+    private var editorForm: some View {
+        Form {
+            Section("Name *") {
+                TextField("Name", text: $name, axis: .vertical)
+                    .accessibilityLabel("Name, required")
+            }
+        }
+    }
+
+    private var editorNavigation: some View {
+        NavigationStack {
+            Group {
+                if variant == "editor-styled" { editorForm.modifier(TextNotebookListStyle()) }
+                else { editorForm }
+            }
+            .navigationTitle("Add Area").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", role: .cancel) { editor = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { editor = false }
+                }
+            }
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                switch variant {
+                case "status-plain": status
+                case "status-list": statusList
+                case "status-styled": statusList.modifier(TextNotebookListStyle())
+                default: Button("Open Audit Editor") { editor = true }
+                }
+            }
+            .navigationTitle("Audit Reproducer")
+        }
+        .preferredColorScheme(appearance)
+        .fullScreenCover(isPresented: $editor) {
+            Group {
+                if variant == "editor-native" { editorNavigation }
+                else { editorNavigation.tint(TextNotebookPalette.action) }
+            }
+            .preferredColorScheme(appearance)
+        }
+    }
+}
+
 private struct TextSizeDiagnosticControl: UIViewRepresentable {
     @Environment(\.dynamicTypeSize) private var size
     var identity = ""

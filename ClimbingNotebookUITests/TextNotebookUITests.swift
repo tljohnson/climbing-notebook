@@ -1187,6 +1187,47 @@ final class TextNotebookUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["textPitchNotes"].label, "First UUID notes")
     }
 
+    private func auditReproducer(_ variant: String, dark: Bool = false) throws {
+        let app = application(dark: dark)
+        app.launchEnvironment["NOTEBOOK_TEST_AUDIT_REPRO"] = variant
+        app.launchEnvironment["NOTEBOOK_TEST_LIGHT"] = dark ? "0" : "1"
+        app.launchEnvironment["NOTEBOOK_TEST_DARK"] = dark ? "1" : "0"
+        app.launchArguments = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryL"]
+        app.launch()
+        if variant.hasPrefix("editor-") {
+            let open = app.buttons["Open Audit Editor"]
+            XCTAssertTrue(open.waitForExistence(timeout: 5))
+            open.tap()
+            XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.buttons["Save"].exists)
+        } else {
+            XCTAssertTrue(app.staticTexts["auditReproducerStatus"].waitForExistence(timeout: 5))
+        }
+        let label = "\(variant) \(dark ? "dark" : "light")"
+        capture(app, "Minimal audit before: \(label)")
+        defer { capture(app, "Minimal audit after: \(label)"); app.terminate() }
+        let previous = continueAfterFailure
+        continueAfterFailure = true
+        defer { continueAfterFailure = previous }
+        try app.performAccessibilityAudit { issue in
+            let detail = XCTAttachment(string: "\(label): \(issue)\nType: \(issue.auditType)\nElement: \(String(describing: issue.element))\n\(issue.compactDescription)\n\(issue.detailedDescription)")
+            detail.name = "Unfiltered minimal audit issue"
+            detail.lifetime = .keepAlways
+            self.add(detail)
+            return false
+        }
+    }
+
+    func testMinimalAuditPlainStatus() throws { try auditReproducer("status-plain") }
+    func testMinimalAuditListStatus() throws { try auditReproducer("status-list") }
+    func testMinimalAuditStyledStatus() throws { try auditReproducer("status-styled") }
+    func testMinimalAuditNativeEditorLight() throws { try auditReproducer("editor-native") }
+    func testMinimalAuditNativeEditorDark() throws { try auditReproducer("editor-native", dark: true) }
+    func testMinimalAuditTintedEditorLight() throws { try auditReproducer("editor-tinted") }
+    func testMinimalAuditTintedEditorDark() throws { try auditReproducer("editor-tinted", dark: true) }
+    func testMinimalAuditStyledEditorLight() throws { try auditReproducer("editor-styled") }
+    func testMinimalAuditStyledEditorDark() throws { try auditReproducer("editor-styled", dark: true) }
+
     func testDefaultAccessibilityAuditOfEmptyLibrary() throws {
         let app = application()
         app.launch()

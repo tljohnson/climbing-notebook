@@ -9,7 +9,7 @@
 - [ ] `CF-07E` Deliver the complete text-first notebook milestone
   - Priority: P0
   - Owner: Kilo/local
-  - Blocked by: Unresolved unrestricted27 audits and remaining qualification; owner hands-on checks pass and concise Save UX is verified in [canonical evidence](verification/NotebookPrototype.md#consolidated-final-disposition), no audit waiver.
+  - Blocked by: Minimal native toolbar reproduces audit failures on27/26.4; needs supported remedy or further framework diagnostic capability and remaining qualification. See [canonical evidence](verification/NotebookPrototype.md#consolidated-final-disposition); no waiver.
   - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.6
   - Done when: TN-01 through TN-10 verified with honest baseline/unrun limits, coherent implementation review and device handoff complete, then owner accepts.
 
