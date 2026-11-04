@@ -9,9 +9,9 @@
 - [ ] `CF-07E` Deliver the complete text-first notebook milestone
   - Priority: P0
   - Owner: Kilo/local
-  - Blocked by: Minimal native toolbar reproduces audit failures on27/26.4; needs supported remedy or further framework diagnostic capability and remaining qualification. See [canonical evidence](verification/NotebookPrototype.md#consolidated-final-disposition); no waiver.
-  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §21.6
-  - Done when: TN-01 through TN-10 verified with honest baseline/unrun limits, coherent implementation review and device handoff complete, then owner accepts.
+  - Blocked by: Define/run explicit MVP core cohort in test configuration and CI; owner milestone acceptance remains separate. Audit flags are non-gating under approved §21.6.8.
+  - Plan: `../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md` §§21.6,21.6.8
+  - Done when: Current notebook functionality and saved-data integrity pass the named MVP gate, relevant UI checks and honest limits are recorded, then owner accepts.
 
 - [ ] `CF-07D` Add routes with explicit drafts and retained General notes
   - Priority: P0

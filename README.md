@@ -1,12 +1,12 @@
 # Climbing Notebook
 
-Updated: 2026-11-03
+Updated: 2026-11-04
 
 Native, iPhone-primary climbing notebook for iOS 17.5+ with minimal iPad support. Product requirements and integrity contracts are in the [approved plan](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md).
 
 ## Current Capabilities
 
-The owner-approved complete text-notebook milestone (§21.6) is **blocked, not implementation-complete or acceptance-ready**. Implementation opens an initially empty ordered notebook with area/route/pitch creation, rename, reorder and confirmed deletion, General/pitch text notes, isolated examples and retained read-only prototype access. Historical complete suites passed **149/156 iOS27** and **112/156 iOS17.0**; their actual combined coverage gates pass at **98.00%** and **77.00%**, respectively. Current cancellation/termination, complete five-pitch relaunch, maximum-name and failed-write workflows pass, but neither coverage nor implemented functionality waives failures. The [verified disposition](docs/verification/NotebookPrototype.md#consolidated-final-disposition) records focused fixes, exact bundles, TN-01 through TN-10, historical versus observed blockers and the physical-device checklist. The older accepted baseline is not acceptance of this milestone. Use only replaceable content; backup/recovery remain unavailable.
+The text notebook opens an initially empty ordered library with area/route/pitch creation, rename, reorder and confirmed deletion, General/pitch notes, isolated examples and retained read-only prototype access. Save commits before closing; Cancel protects changed drafts. Owner testing passed light/dark workflows at regular/maximum text with no draft loss; VoiceOver was not tested. Backup/restore, media and intake remain unimplemented. Keep another copy of important notes.
 
 Historical prototype: CF-07A's owner-accepted synthetic-data browsing/explicit editing and CF-07C reading/navigation are preserved. The retained ordinary-entry reader is read-only; legacy mutation tests remain active separately. CF-07B's explicit durable note/order saves still have separate owner acceptance pending. Do not enter personal climbing data.
 
@@ -16,7 +16,7 @@ Save commits creation, names, notes and ordering on this device before closing; 
 
 ## Prerequisites
 
-Owner updated the minimum runtime to iOS17.5 on 2026-11-01 and keeps it provisional. Failing-only revalidation passed all eight previously failing non-migration unit methods. Focused diagnosis identifies injected XCTest automation crash stacks, not a proven17.5 persistence defect; direct five-pitch relaunch and affected legacy reading/creation pass isolated17.5 checks. Current largest-text reading and tablet dark-menu workflows now pass focused checks; phone17.5 menu hit-testing and active audits remain unresolved. Earlier minimum full-suite totals above refer to iOS17.0, not the new floor; full17.5 suites/combined coverage remain unrun. See [current disposition](docs/verification/NotebookPrototype.md#consolidated-final-disposition).
+The supported minimum is iOS17.5, with qualification limits retained in [current evidence](docs/verification/NotebookPrototype.md#consolidated-final-disposition). Historical full suites ran on17.5 and27:129/161 and153/161 passed, with coverage97.12% and98.08%. These are failed full-suite results, not a current MVP-core result. Known automation/audit findings and paused migration research are classified separately under the [MVP policy](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2168-mvp-delivery-and-verification-policy).
 
 - macOS, Xcode and installed iOS Simulator runtimes; verify using `xcodebuild -version` and `xcrun simctl list devices available`.
 - Git and network access for the approved Swift Package Manager dependency.
@@ -33,9 +33,11 @@ bash Scripts/check-coverage.sh --self-test
 git diff --check
 ```
 
-The test script prints a unique result path by default. To choose one, set `RESULT_BUNDLE_PATH` to a new `.xcresult` path. During development, run only affected focused tests on iPhone 18 Pro. At final phase acceptance, run the full unit/UI suite once on iPhone 15 and once on iPhone 18 Pro; a completed full run supersedes a separate focused run on unchanged code. After fixes, rerun affected checks and invalidate only acceptance results affected by the changes. Reserve iterative iPad checks for layout-related changes. The selected Device Hub matrix is iPhone 15 / iOS 17.5 (`5640612A-EEF9-4B4D-828F-38EE8BDCC984`), iPhone 18 Pro / iOS 27.0 (`087CDB20-DD15-43C5-8CBB-69D32A5A7478`), and iPad (10th generation) / iOS 26.4 (`A6DB0B3A-AD70-435D-AC6C-46B370A06BA7`), verified 2026-11-01. Reverify availability before execution; iPhone Duo is excluded from future suites. Do not create destinations or change simulator settings implicitly. The >=70% coverage gate combines app and extension Swift lines, excluding dependencies, tests and generated sources. Coverage does not override failing behavior tests. Current suites have two unresolved migration failures; do not skip them or weaken their assertions.
+The command above still runs the historical **all-tests** selection, including research/audits; it is not a named MVP gate. The owner-approved policy separates core regressions from opt-in research, but the runner, shared scheme and CI cohort split is not yet implemented. Do not claim a green core gate until its explicit selection is defined and actually run.
 
-Focus durable-slice checks by adding `-only-testing:ClimbingNotebookTests/NotebookPersistenceTests -only-testing:ClimbingNotebookTests/NotebookPrototypeTests -only-testing:ClimbingNotebookUITests`. UI relaunch checks use a generated test-store UUID retained across launches, not a launch-time reset. Resolve the approved dependency with native tooling when needed:
+During development append `-only-testing:<target>/<class-or-method>` for affected functional tests on one available approved simulator. Expand for shared-code impact or a concrete regression, not an automatic device matrix. Reuse unaffected recent evidence; docs-only edits need no simulator run. `RESULT_BUNDLE_PATH` selects a new bundle path; otherwise the script chooses one. Reverify simulator availability and do not provision/change settings implicitly. The existing >=70% gate combines app/extension Swift lines, excluding dependencies, tests and generated sources; preserve it for applicable quality runs. Neither coverage nor a focused pass relabels a failed full suite. Preserve research/audit assertions and findings separately, without chasing them for unrelated MVP features.
+
+For example, text-notebook persistence/state checks use `-only-testing:ClimbingNotebookTests/TextNotebookPersistenceTests -only-testing:ClimbingNotebookTests/TextNotebookStateTests`; select affected UI workflow methods explicitly rather than the entire UI target with its diagnostic methods. This example is not the complete future core cohort. UI relaunch checks use a generated test-store UUID retained across launches, not a launch-time reset. Resolve the approved dependency with native tooling when needed:
 
 ```sh
 xcodebuild -resolvePackageDependencies -project ClimbingNotebook.xcodeproj -scheme ClimbingNotebook
@@ -48,7 +50,7 @@ xcodebuild -resolvePackageDependencies -project ClimbingNotebook.xcodeproj -sche
 3. Read full notes and use Jump to Pitches and Previous/Next. Navigation never reorders or saves.
 4. Rename or reorder areas, routes and pitches using their separate editors. Save commits the complete change; Cancel confirms discard when changed.
 5. Try canceled and confirmed deletion. Nonempty areas cannot be deleted; route deletion removes its General note and pitches.
-6. Terminate/relaunch to inspect acknowledged content. Unacknowledged edits may be lost. Open Examples is separate; Retained Prototype is read-only and never initializes an absent legacy root. These are development checks, not a claim that the blocked iOS17 workflow is reliable.
+6. Terminate/relaunch to inspect acknowledged content. Unacknowledged edits may be lost. Open Examples is separate; Retained Prototype is read-only and never initializes an absent legacy root. These checks do not establish minimum-runtime qualification or milestone acceptance.
 
 ## Architecture and Data
 

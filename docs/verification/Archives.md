@@ -1,8 +1,10 @@
 # Archive Feasibility Verification
 
-Updated: 2026-10-29
+Updated: 2026-11-04
 
 ## Conclusion and Boundary
+
+**MVP routing:** [§21.6.8](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2168-mvp-delivery-and-verification-policy) keeps this work as preserved opt-in research, not a notebook feature-delivery prerequisite. Read this topic only for assigned archive/restore work; do not repeat its tests for unrelated MVP changes. No existing assertion or measured finding is waived.
 
 Archive research is **paused** under [plan §21.4.4](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2144-owner-approved-prototype-first-reset). Do not resume CF-05G without explicit reprioritization. Bounded ZIP64 interoperability works on the host, but complete hostile-archive inspection, exact extraction consumption and compatibility guarantees remain unproven. These gate production restore, not the transient notebook or ordinary save/relaunch. [Kanban](../WIP_KANBAN.md) retains separate Review/Blocked statuses; no CF-05/M1 acceptance is implied.
 

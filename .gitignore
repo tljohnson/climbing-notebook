@@ -1,9 +1,13 @@
 .kilo/*
+!.kilo/AGENTS.md
 !.kilo/skills/
 .kilo/skills/*
 !.kilo/skills/native-interface-design/
 .kilo/skills/native-interface-design/*
 !.kilo/skills/native-interface-design/SKILL.md
+!.kilo/skills/wip-kanban/
+.kilo/skills/wip-kanban/*
+!.kilo/skills/wip-kanban/SKILL.md
 .DS_Store
 .build/
 DerivedData/

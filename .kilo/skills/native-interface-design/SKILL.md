@@ -13,7 +13,7 @@ For review-only work, return findings without edits or running checks unless req
 
 ## Before Editing
 
-State briefly: **person/task**, **primary content**, **secondary controls**, **behavior preserved**. Identify what can be removed, grouped or moved before inventing another component. Use existing product intent; do not demand owner approval for routine decisions already in scope.
+Identify the task, primary content, secondary controls and behavior to preserve. Explain only consequential tradeoffs to the owner; no ritual design report is required. Remove or group unnecessary chrome before inventing components. Do not demand approval for routine decisions already in scope.
 
 Inspect the actual screen and source. Ask: can the user identify the task, location and primary action without reading a paragraph? Preserve complete authored content; compress app chrome, not notes, text size or touch targets.
 
@@ -25,14 +25,14 @@ Inspect the actual screen and source. Ask: can the user identify the task, locat
 
 ## Inspect and Exercise
 
-Select affected states/checks under the approved verification contract. Inspect default/largest text, actual light/dark and keyboard open/closed where relevant; cover long/duplicate names, long notes, empty/error states as affected. Use synthetic fixtures; do not change device settings implicitly.
+Use the plan's current MVP delivery policy, not historical exhaustive qualification gates. Inspect the changed screen in default/largest text, actual light/dark and with the keyboard where relevant. Select representative long/empty/error states for the change, not every historical matrix. Use replaceable content; do not change device settings implicitly.
 
-Exercise affected entry, edit, Save, Cancel/discard, failure/retry, order/delete and fresh reopening paths. Check VoiceOver labels/order and target reachability where affected; screenshots alone prove neither. Run focused existing regressions and unrestricted audits when affected; preserve their assertions. Record unavailable checks rather than claiming completion.
+Run focused regressions for affected core actions, saving/reopening and draft preservation. Keep native accessible labels and reachable controls; fix demonstrated clipping or blocked actions. Automated audits and VoiceOver review are supplemental MVP checks, not mandatory on every UI edit. Preserve their findings without claiming compliance, suppressing failures or starting repeated diagnostics. Record unavailable checks only when relevant to the result.
 
 Critique the result: does content lead, does every container earn its space, and can context/error text still be read? Within authorized implementation, revise the weakest part before reporting. Never fix density by truncating notes, hiding essential errors or shrinking targets.
 
 ## Report Evidence, Not Taste
 
-Give exact executed results and remaining limits. For interaction failures record device/runtime, appearance, observed text category, setup, action, outcome and extra gestures; bound thresholds with adjacent settings. Distinguish ordinary touch, AX automation and audit findings. Human success or a workaround does not clear failed audits; never weaken checks.
+Report actual checks and material limits concisely. For a reproducible interaction defect, record enough environment/setup/actions to reproduce it; no category-threshold sweep unless needed to fix that defect. Distinguish ordinary use, automation targeting and audit findings. Human success does not turn a failed audit green, but an unresolved audit alone does not block MVP feature delivery.
 
 Keep reusable product decisions in `DESIGN.md`, results in existing verification docs. Follow repository reporting rules; do not create a parallel design system or session report.

@@ -1,10 +1,12 @@
 # Climbing Notebook Design
 
-Updated: 2026-11-03
+Updated: 2026-11-04
 
 ## Authority and Intent
 
 Product design rules for a native, iPhone-primary notebook with minimal iPad support. The [approved plan](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md), especially §21.6, owns scope, data and behavior. [README](README.md) describes what exists; [verification](docs/verification/NotebookPrototype.md) records evidence. This document guides presentation, not feature authorization or release acceptance.
+
+For MVP delivery, follow [§21.6.8](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2168-mvp-delivery-and-verification-policy): fix concrete usability/data defects and run focused affected checks. The accessibility/design targets below remain goals; unresolved automated audit flags alone are non-gating for the pre-production MVP. Do not replace native controls or add diagnostic infrastructure merely to chase a flag.
 
 Preserve the owner-approved Alpine Technical Notebook direction (2026-10-30), refined by the user-first/Save direction (2026-11-03). Native UI review follows [native-interface-design](.kilo/skills/native-interface-design/SKILL.md).
 

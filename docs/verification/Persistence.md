@@ -1,8 +1,10 @@
 # Persistence and URL Policy Verification
 
-Updated: 2026-11-02
+Updated: 2026-11-04
 
 ## Conclusion
+
+**MVP routing:** apply [§21.6.8](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2168-mvp-delivery-and-verification-policy). Current save/ownership/exact-text regressions remain core checks; migration/generation/URL feasibility is separate opt-in research. Historical escalation and exhaustive qualification suggestions below are not assignments to resume investigation. Preserve the evidence and safe-filesystem boundaries; revisit only for an explicitly assigned dependent feature or a concrete new core defect.
 
 The diagnostic `LibraryStore`/generation components remain feasibility harnesses, not a production library or restore service. CF-07B separately implements a bounded ordinary SwiftData save/relaunch slice for synthetic route notes, pitch notes and pitch order. CF-04A established bounded in-process recovery behavior; CF-04B migration preservation and independent closed-generation recovery remain unproven. Ordinary-slice results do not accept migration, generation replacement or valuable-data safety. [Plan §§6.4, 9.5 and 21](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md) own contracts and sequencing; [Kanban](../WIP_KANBAN.md) owns status.
 
@@ -71,7 +73,7 @@ Recorded CF-04A evidence (2026-10-28, Xcode 27.1): 19/19 unit/UI tests on iOS 17
 
 ## Migration Blocker
 
-`MigrationFeasibilityTests.swift` uses related synthetic schemas, stable IDs, byte-exact Unicode and relationships, explicit post-migration saves/reopens, deterministic migration rejection and whole-generation preservation/recovery/retry assertions. Keep every assertion active:
+`MigrationFeasibilityTests.swift` uses related synthetic schemas, stable IDs, byte-exact Unicode and relationships, explicit post-migration saves/reopens, deterministic migration rejection and whole-generation preservation/recovery/retry assertions. Preserve every assertion in the research cohort, not the ordinary MVP gate:
 
 - `testFailedMigrationRecoversAndRetriesFromIndependentClosedGeneration`
 - `testOnDiskSyntheticMigrationPreservesRelationshipsAndSavedChangesAfterReopen`
