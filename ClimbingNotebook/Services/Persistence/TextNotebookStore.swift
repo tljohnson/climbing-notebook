@@ -150,7 +150,11 @@ final class TextNotebookStore {
         let pitches: [TextNotebookSchemaV1.Pitch] = try fetch()
         let notes: [TextNotebookSchemaV1.NoteSection] = try fetch()
         let markers: [TextNotebookSchemaV1.NotebookState] = try fetch()
-        let ids = areas.map(\.id) + routes.map(\.id) + pitches.map(\.id) + notes.map(\.id) + markers.map(\.id)
+        var ids: [UUID] = areas.map(\.id)
+        ids.append(contentsOf: routes.map(\.id))
+        ids.append(contentsOf: pitches.map(\.id))
+        ids.append(contentsOf: notes.map(\.id))
+        ids.append(contentsOf: markers.map(\.id))
         guard Set(ids).count == ids.count, markers.count == 1, let marker = markers.first,
               marker.format == Self.format + ":" + mode.rawValue, marker.revision >= 0,
               areas.map(\.order).sorted() == Array(0..<areas.count),
@@ -230,7 +234,11 @@ final class TextNotebookStore {
             let notes: [TextNotebookSchemaV1.NoteSection] = try fetch()
             let markers: [TextNotebookSchemaV1.NotebookState] = try fetch()
             guard let marker = markers.first else { throw Failure.invalid }
-            let used = Set(areas.map(\.id) + routes.map(\.id) + pitches.map(\.id) + notes.map(\.id) + [marker.id])
+            var used = Set<UUID>(areas.map(\.id))
+            used.formUnion(routes.map(\.id))
+            used.formUnion(pitches.map(\.id))
+            used.formUnion(notes.map(\.id))
+            used.insert(marker.id)
             func area(_ id: UUID) throws -> TextNotebookSchemaV1.Area {
                 guard let value = areas.first(where: { $0.id == id }) else { throw Failure.unavailable }
                 return value

@@ -168,7 +168,11 @@ final class NotebookStore {
             func exact(_ actual: [UUID], _ expected: [UUID]) -> Bool {
                 actual.count == expected.count && Set(actual).count == actual.count && Set(actual) == Set(expected)
             }
-            let allIDs = areas.map(\.id) + routes.map(\.id) + pitches.map(\.id) + notes.map(\.id) + markers.map(\.id)
+            var allIDs: [UUID] = areas.map(\.id)
+            allIDs.append(contentsOf: routes.map(\.id))
+            allIDs.append(contentsOf: pitches.map(\.id))
+            allIDs.append(contentsOf: notes.map(\.id))
+            allIDs.append(contentsOf: markers.map(\.id))
             let originalRoutes = fixtures.flatMap(\.routes)
             guard Set(allIDs).count == allIDs.count, !allIDs.contains(Self.sliceID),
                    markers.count == 1, markers[0].id == Self.fixtureUUID(for: "state"),
