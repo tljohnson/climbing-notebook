@@ -83,12 +83,20 @@ final class TextNotebookUITests: XCTestCase {
     }
 
     private func foregroundList(_ app: XCUIApplication) -> XCUIElement? {
-        let editor = app.collectionViews["textEditorForm"]
-        if editor.exists { return editor }
-        let examples = app.collectionViews["textExamplesLibrary"]
-        if examples.exists { return examples }
-        return app.collectionViews.allElementsBoundByIndex.last
-            ?? app.scrollViews.allElementsBoundByIndex.last { $0.isHittable }
+        // Identifier queries re-resolve after navigation/modal transitions; captured indexes do not.
+        let identifiers = ["textEditorForm", "textRoutePitches", "textAreaRoutes", "textExamplesLibrary", "textLibrary"]
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            identifiers.contains { identifier in
+                let list = app.collectionViews[identifier]
+                return list.exists
+            }
+        }, object: app)
+        _ = XCTWaiter.wait(for: [ready], timeout: 5)
+        for identifier in identifiers {
+            let list = app.collectionViews[identifier]
+            if list.exists { return list }
+        }
+        return nil
     }
 
     private func library(_ app: XCUIApplication) -> XCUIElement {

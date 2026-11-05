@@ -287,6 +287,7 @@ private struct TextAreaView: View {
                             .frame(minHeight: 48)
                     }
                 }
+                .accessibilityIdentifier("textAreaRoutes")
                 .navigationTitle(area.name)
                 .toolbar {
                     Menu("Area Actions") {
@@ -368,6 +369,7 @@ private struct TextRouteView: View {
                                 }
                             } header: { Text("Pitches (\(route.pitches.count))").id("pitches") }
                         }
+                        .accessibilityIdentifier("textRoutePitches")
                         .modifier(TextNotebookListStyle())
                     }
                 }
