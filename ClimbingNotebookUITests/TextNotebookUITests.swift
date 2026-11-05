@@ -206,6 +206,13 @@ final class TextNotebookUITests: XCTestCase {
         let actual = field.value as? String ?? ""
         XCTAssertEqual(actual == field.placeholderValue ? "" : actual, text)
         tap(app.buttons["Dismiss keyboard"], in: app)
+        let committedInput = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in
+                let value = field.value as? String ?? ""
+                return (value == field.placeholderValue ? "" : value) == text
+            }, object: field)
+        XCTAssertEqual(XCTWaiter.wait(for: [committedInput], timeout: 5), .completed,
+                       "Editor must retain the exact input after keyboard dismissal, before Save or Cancel")
     }
 
     private func beginName(_ app: XCUIApplication, action: String, name: String) {
@@ -592,6 +599,8 @@ final class TextNotebookUITests: XCTestCase {
         let pitch = create(app, kind: "pitch", name: "Smoke pitch")
         tap(app.buttons[pitch], in: app)
         editNotes(app, action: "Edit Notes", text: "Saved pitch note")
+        XCTAssertEqual(app.staticTexts["textPitchNotes"].label, "Saved pitch note",
+                       "Saved pitch note must be exact before testing discarded edits")
         editNotes(app, action: "Edit Notes", text: "Discard this draft", save: false)
         discard(app)
         XCTAssertEqual(app.staticTexts["textPitchNotes"].label, "Saved pitch note")
