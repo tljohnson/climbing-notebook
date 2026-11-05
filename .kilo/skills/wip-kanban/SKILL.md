@@ -44,3 +44,4 @@ Use `Blocked by:` rather than `Depends on:` only when the card is in
 - Non-gating audit flags and paused future-feature research do not block an unrelated MVP feature card. Preserve them in their existing evidence/card; block only on a concrete dependency under the current policy.
 - Keep **In Progress** limited to independently actionable work with independently verifiable done conditions. Avoid claiming work that cannot be actively progressed or accurately maintained.
 - The lead agent periodically archives completed cards in a dated section or archive document. Do not delete completion evidence.
+- Owner-authorized superseded/deferred cards may also be moved to a dated archive with explicit dispositions, preserving original criteria/evidence. They are not Done and must not silently return as active blockers. Current archive: `docs/WIP_KANBAN_ARCHIVE_2026-11-05.md`.
