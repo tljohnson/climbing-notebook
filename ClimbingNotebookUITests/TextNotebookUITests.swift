@@ -219,8 +219,12 @@ final class TextNotebookUITests: XCTestCase {
                 let value = field.value as? String ?? ""
                 return (value == field.placeholderValue ? "" : value) == text
             }, object: field)
-        XCTAssertEqual(XCTWaiter.wait(for: [committedInput], timeout: 5), .completed,
-                       "Editor must retain the exact input after keyboard dismissal, before Save or Cancel")
+        let result = XCTWaiter.wait(for: [committedInput], timeout: 5)
+        let dismissedValue = field.value as? String ?? ""
+        let dismissedText = dismissedValue == field.placeholderValue ? "" : dismissedValue
+        XCTAssertEqual(result, .completed,
+                       "Editor \(field.identifier) changed after keyboard dismissal, before Save or Cancel. " +
+                       "Expected: \(String(reflecting: text)); actual: \(String(reflecting: dismissedText))")
     }
 
     private func beginName(_ app: XCUIApplication, action: String, name: String) {
