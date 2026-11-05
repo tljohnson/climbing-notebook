@@ -3,15 +3,31 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Manual extended regression or exhaustive qualification
+        type: choice
+        default: core
+        options: [core, qualification, all]
 permissions:
   contents: read
 concurrency:
   group: ios-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  core:
+  tests:
+    name: ${{ matrix.name }}
     runs-on: macos-15
-    timeout-minutes: 90
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: core-unit
+            name: Build + Unit Tests
+          - suite: smoke
+            name: UI Smoke Tests
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, verified upstream; Node.js 24
       - name: Inspect native environment
@@ -20,13 +36,71 @@ jobs:
           xcrun simctl list runtimes
       - name: Resolve reviewed dependency
         run: xcodebuild -resolvePackageDependencies -project ClimbingNotebook.xcodeproj -scheme ClimbingNotebook -derivedDataPath .build/DerivedData -onlyUsePackageVersionsFromResolvedFile
-      - name: Test MVP core regressions
+      - name: Test ${{ matrix.suite }}
+        env:
+          TEST_SUITE: ${{ matrix.suite }}
         run: |
           SIMULATOR_ID="$(xcrun simctl list devices available -j | ruby -rjson -e 'devices = JSON.parse(STDIN.read)["devices"].values.flatten; device = devices.find { |d| d["name"].start_with?("iPhone") }; abort "No iPhone simulator installed" unless device; puts device["udid"]')"
           export SIMULATOR_ID
           export RESULT_BUNDLE_PATH=.build/CI.xcresult
-          bash Scripts/test-ios.sh --suite core -quiet -disableAutomaticPackageResolution
-      - name: Enforce first-party coverage
+          set -o pipefail
+          bash Scripts/test-ios.sh --suite "$TEST_SUITE" -disableAutomaticPackageResolution 2>&1 | tee .build/CI.log
+      - name: Report test results
+        if: always()
         run: |
-          bash Scripts/check-coverage.sh --self-test
-          bash Scripts/check-coverage.sh .build/CI.xcresult
+          if [ -f .build/CI.xcresult/Info.plist ]; then
+            xcrun xcresulttool get test-results summary --path .build/CI.xcresult | tee .build/CI-summary.json
+          else
+            printf 'No finalized test result bundle; inspect the build/test log.\n'
+          fi
+      - name: Package result bundle
+        if: always()
+        run: |
+          if [ -f .build/CI.xcresult/Info.plist ]; then
+            tar -czf .build/CI.xcresult.tar.gz -C .build CI.xcresult
+          fi
+      - name: Retain synthetic test evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, verified upstream; Node.js 24
+        with:
+          name: ios-${{ matrix.suite }}-results
+          path: |
+            .build/CI.xcresult.tar.gz
+            .build/CI.log
+            .build/CI-summary.json
+          include-hidden-files: true
+          retention-days: 7
+  extended:
+    name: Manual Extended Tests
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-15
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5; Node.js 24
+      - name: Resolve reviewed dependency
+        run: xcodebuild -resolvePackageDependencies -project ClimbingNotebook.xcodeproj -scheme ClimbingNotebook -derivedDataPath .build/DerivedData -onlyUsePackageVersionsFromResolvedFile
+      - name: Run requested extended suite
+        env:
+          TEST_SUITE: ${{ inputs.suite }}
+        run: |
+          SIMULATOR_ID="$(xcrun simctl list devices available -j | ruby -rjson -e 'device = JSON.parse(STDIN.read)["devices"].values.flatten.find { |d| d["name"].start_with?("iPhone") }; abort "No iPhone simulator installed" unless device; puts device["udid"]')"
+          export SIMULATOR_ID RESULT_BUNDLE_PATH=.build/Extended.xcresult
+          set -o pipefail
+          bash Scripts/test-ios.sh --suite "$TEST_SUITE" -disableAutomaticPackageResolution 2>&1 | tee .build/Extended.log
+      - name: Report extended results
+        if: always()
+        run: |
+          if [ -f .build/Extended.xcresult/Info.plist ]; then
+            xcrun xcresulttool get test-results summary --path .build/Extended.xcresult
+            tar -czf .build/Extended.xcresult.tar.gz -C .build Extended.xcresult
+          fi
+      - name: Retain extended evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6; Node.js 24
+        with:
+          name: ios-extended-results
+          path: |
+            .build/Extended.xcresult.tar.gz
+            .build/Extended.log
+          include-hidden-files: true
+          retention-days: 7

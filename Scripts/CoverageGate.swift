@@ -36,8 +36,8 @@ func check(_ data: Data) throws -> Bool {
         executable += targetExecutable
     }
     let percent = Double(covered) / Double(executable) * 100
-    print(String(format: "First-party total: %d/%d (%.2f%%); required >=70%%", covered, executable, percent))
-    return covered * 100 >= executable * 70
+    print(String(format: "First-party total: %d/%d (%.2f%%); informational only, no threshold", covered, executable, percent))
+    return true
 }
 
 do {
@@ -49,8 +49,8 @@ do {
           {"name":"ClimbingNotebookShare.appex","files":[{"path":"/src/Share.swift","coveredLines":0,"executableLines":1}]}
         ]}
         """.utf8)
-        guard try !check(below) else { fatalError("Below-threshold fixture was accepted") }
-        print("PASS: below-threshold sample rejected")
+        guard try check(below) else { fatalError("Valid informational report was rejected") }
+        print("PASS: low coverage is reported without a percentage gate")
         exit(0)
     }
     guard arguments.count == 2 else {

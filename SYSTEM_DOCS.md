@@ -6,7 +6,7 @@ Updated: 2026-11-04
 
 Read the shared [agent workflow](.kilo/AGENTS.md), then use this index to select only the task-relevant source and contract. Do not recursively load linked plans or historical evidence. Inspect source before claiming behavior.
 
-**Current MVP authority:** [plan §21.6.8](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2168-mvp-delivery-and-verification-policy) supersedes historical exhaustive test matrices, audit blockers and repeated diagnostic/review instructions. Deliver features with focused core/data-integrity checks. Preserve research evidence without restarting it. The script/CI default to the explicit core allowlist; qualification and all-tests modes remain opt-in. Xcode's direct shared-scheme Test still runs all tests. Report each cohort honestly; core success never means the historical full suite passed.
+**Current MVP authority:** [plan §21.6.8](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2168-mvp-delivery-and-verification-policy) supersedes generic Novacoast development defaults, historical coverage gates, exhaustive matrices and audit blockers. Follow repository contracts, not the generic remote checklist. Script default is `fast`; CI separates75 unit tests from two UI smoke workflows, with no coverage gate/merge job. Extended `core`, qualification and all-tests modes are explicit/manual; direct Xcode Test still runs all. Run affected extended tests when warranted and exhaustive checks before major releases. Preserve findings honestly; a fast pass does not clear historical failures.
 
 ## Architecture Overview
 

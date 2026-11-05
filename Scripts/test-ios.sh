@@ -2,11 +2,11 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-SUITE=core
+SUITE=fast
 LIST_ONLY=0
 if [[ "${1:-}" == "--suite" ]]; then
   if [[ $# -lt 2 ]]; then
-    printf 'Missing suite name: core, qualification or all.\n' >&2
+    printf 'Missing suite name: fast, smoke, core, core-unit, core-ui, qualification or all.\n' >&2
     exit 2
   fi
   SUITE="${2:-}"
@@ -17,17 +17,26 @@ if [[ "${1:-}" == "--list" ]]; then
   shift
 fi
 case "$SUITE" in
-  core|qualification|all) ;;
-  *) printf 'Usage: bash Scripts/test-ios.sh [--suite core|qualification|all] [--list] [xcodebuild arguments]\n' >&2; exit 2 ;;
+  fast|smoke|core|core-unit|core-ui|qualification|all) ;;
+  *) printf 'Usage: bash Scripts/test-ios.sh [--suite fast|smoke|core|core-unit|core-ui|qualification|all] [--list] [xcodebuild arguments]\n' >&2; exit 2 ;;
 esac
 SELECTION=()
 while IFS= read -r test || [[ -n "$test" ]]; do
   [[ -z "$test" || "$test" == \#* ]] && continue
   case "$SUITE" in
     core) SELECTION+=("-only-testing:$test") ;;
+    core-unit) [[ "$test" != ClimbingNotebookTests/* ]] || SELECTION+=("-only-testing:$test") ;;
+    fast) [[ "$test" != ClimbingNotebookTests/* ]] || SELECTION+=("-only-testing:$test") ;;
+    core-ui) [[ "$test" != ClimbingNotebookUITests/* ]] || SELECTION+=("-only-testing:$test") ;;
     qualification) SELECTION+=("-skip-testing:$test") ;;
   esac
 done < "$ROOT/Scripts/mvp-core-tests.txt"
+if [[ "$SUITE" == fast || "$SUITE" == smoke ]]; then
+  while IFS= read -r test || [[ -n "$test" ]]; do
+    [[ -z "$test" || "$test" == \#* ]] && continue
+    SELECTION+=("-only-testing:$test")
+  done < "$ROOT/Scripts/mvp-smoke-tests.txt"
+fi
 if [[ "$SUITE" != all ]]; then
   for argument in "$@"; do
     case "$argument" in

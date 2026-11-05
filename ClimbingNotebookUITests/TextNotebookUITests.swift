@@ -579,6 +579,30 @@ final class TextNotebookUITests: XCTestCase {
         order(app, kind: "Pitch", ids: [pitch], names: ["Pitch 1"])
     }
 
+    func testHierarchyNotesSaveCancelAndRelaunchSmoke() {
+        let app = application()
+        app.launch()
+        assertLibrary(app)
+        XCTAssertTrue(rowIDs(app, kind: "area").isEmpty)
+        let area = create(app, kind: "area", name: "Smoke area")
+        tap(app.buttons[area], in: app)
+        let route = create(app, kind: "route", name: "Smoke route")
+        tap(app.buttons[route], in: app)
+        editNotes(app, action: "Edit General Notes", text: "Saved General note")
+        let pitch = create(app, kind: "pitch", name: "Smoke pitch")
+        tap(app.buttons[pitch], in: app)
+        editNotes(app, action: "Edit Notes", text: "Saved pitch note")
+        editNotes(app, action: "Edit Notes", text: "Discard this draft", save: false)
+        discard(app)
+        XCTAssertEqual(app.staticTexts["textPitchNotes"].label, "Saved pitch note")
+        relaunch(app)
+        tap(app.buttons[area], in: app)
+        tap(app.buttons[route], in: app)
+        XCTAssertEqual(app.staticTexts["textGeneralNotes"].label, "Saved General note")
+        tap(app.buttons[pitch], in: app)
+        XCTAssertEqual(app.staticTexts["textPitchNotes"].label, "Saved pitch note")
+    }
+
     func testSingleAreaCreationAndProcessRelaunchSmoke() {
         let app = application()
         app.launch()
