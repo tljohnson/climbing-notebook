@@ -211,10 +211,16 @@ final class TextNotebookUITests: XCTestCase {
             field.typeText(XCUIKeyboardKey.delete.rawValue)
         }
         func assertInput(_ expected: String, stage: String) -> Bool {
-            let received = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                let value = field.value as? String ?? ""
-                return (value == field.placeholderValue ? "" : value) == expected
-            }, object: field)
+            // A native empty field may expose nil, an empty value or its placeholder.
+            // Evaluate one snapshot directly rather than querying value/placeholder inside a block.
+            let predicate: NSPredicate
+            if expected.isEmpty {
+                predicate = NSPredicate(format: "value == nil OR value == %@ OR value == %@",
+                                        "", field.placeholderValue ?? "")
+            } else {
+                predicate = NSPredicate(format: "value == %@", expected)
+            }
+            let received = XCTNSPredicateExpectation(predicate: predicate, object: field)
             guard XCTWaiter.wait(for: [received], timeout: 5) == .completed else {
                 let evidence = XCTAttachment(string: "Stage: \(stage)\nField: \(field.debugDescription)\n" +
                     "Expected: \(String(reflecting: expected))\nActual: \(String(reflecting: field.value))\n" +
