@@ -55,7 +55,7 @@ The owner's explicit answers supersede handoff scope ambiguities. In particular,
 - Foundation/SwiftData APIs must remain within the approved iOS 17 deployment target. Do not use newer SwiftData inheritance or custom-store APIs for v1.
 - SwiftData selected only after the foundation proof of concept passes migration, snapshot, and generation-switch recovery tests. Core Data is the fallback if concrete failures cannot be resolved, not a second implementation maintained in parallel.
 - Minimal structured import: review manually, optionally copy unstructured text into selected sections. No heuristic name/grade/pitch extraction until the post-v1 import phase.
-- Owner approved MIT as the starting first-party code license on 2026-10-28, superseding the earlier GPLv3 selection. Code licensing never licenses user-imported material. Preserve dependency notices and confirm the copyright holder before finalizing the license notice; release ownership and Novacoast builder attribution do not independently establish copyright ownership.
+- Owner approved MIT as the starting first-party code license on 2026-10-28, superseding the earlier GPLv3 selection. Code licensing never licenses user-imported material. Preserve dependency notices and confirm the copyright holder before finalizing the license notice; release ownership and builder attribution do not independently establish copyright ownership.
 - Approved dependency direction: ZIPFoundation through Swift Package Manager with reviewed stable-release updates and committed Package.resolved for reproducibility. Native resolution and the narrow reproducibility exceptions are included in the owner's subsequent plan approval. No dependency installation occurs in this planning session.
 
 ### 2.3 Approval Gates
@@ -434,7 +434,7 @@ The repository now contains a partial M0/M1 Xcode foundation, disposable noteboo
 
 Future only: `Services/Import/OCRService.swift`, `HeuristicParser.swift`, their fixtures/tests, and an updated review UI. Do not create OCR stubs, CloudKit adapters, or empty future feature directories in v1.
 
-No `.env` or server `config.yaml` is needed for this local app. If signing automation later uses credentials, document placeholder CI variable names, keep actual values outside the repository and agent access, and add `.env.example` only if an environment file genuinely becomes part of setup. Include `Built at Novacoast.` in supported app/extension manifest description metadata and About/license information; this attribution does not decide trademark or App Store seller ownership.
+No `.env` or server `config.yaml` is needed for this local app. If signing automation later uses credentials, document placeholder CI variable names, keep actual values outside the repository and agent access, and add `.env.example` only if an environment file genuinely becomes part of setup. Include `Built by Leif Digital.` in supported app/extension manifest description metadata and About/license information; this attribution does not decide trademark or App Store seller ownership.
 
 ## 13. Test Strategy and Release Acceptance
 
@@ -536,7 +536,7 @@ Each row can become a GitHub issue in the confirmed GitHub repository. GitHub pu
 
 ### 16.1 Applicable Standards and Exceptions
 
-The owner approved a native local app instead of a service. Do not add Go, PostgreSQL, OIDC, Docker, HTTP endpoints or API docs merely to satisfy unrelated service defaults. Apply secret protection, unit coverage, provenance, documentation, Novacoast manifest attribution, and explicit review gates.
+The owner approved a native local app instead of a service. Do not add Go, PostgreSQL, OIDC, Docker, HTTP endpoints or API docs merely to satisfy unrelated service defaults. Apply secret protection, unit coverage, provenance, documentation, manifest attribution, and explicit review gates.
 
 **Dependency direction, approved with the plan:** use ZIPFoundation [S11], a free MIT-licensed Swift library, through Swift Package Manager. Select a reviewed stable release rather than a moving development branch; commit the Xcode project's shared Package.resolved and make CI honor that resolution without silently updating it. The owner approved the plan after receiving this recommendation, including its narrow exceptions permitting native Xcode/SPM resolution on the MBP and GitHub macOS runners and reproducible dependency versions/lockfiles for this app. Docker cannot supply the native iOS SDK build environment. These exceptions do not authorize unrelated dependency installations.
 
@@ -603,7 +603,7 @@ The owner subsequently stated, `Plan is approved. GitHub branch has been publish
 
 ### Before Public Release
 
-6. Permanent registration of bundle/UTType/App Group identities, final display branding, and App Store seller/Novacoast attribution placement. Development identifiers rooted at `com.climbingnotebook.foundation` remain provisional; future marketing names should not drive technical-identifier changes.
+6. Permanent registration of bundle/UTType/App Group identities, final display branding, and App Store seller attribution placement. Development identifiers rooted at `com.climbingnotebook.foundation` remain provisional; future marketing names should not drive technical-identifier changes.
 7. MIT is selected as the starting code license. Confirm copyright ownership and finalize license text/notices, contributor agreement/DCO if desired, issue/code review governance, and backup maintainer. The earlier GPLv3-only versus GPLv3-or-later question no longer applies.
 8. Leif Johnson is the confirmed signing/release/support/privacy owner. Confirm Apple team authority, review cadence and long-term membership continuity. Build support/privacy pages on owner-controlled leifdigital.com; final page URLs are not yet selected or live.
 9. Retention until explicit deletion is confirmed, with no automatic expiry of ready deliveries or saved drafts. Validate the detailed retention UX and user-visible warnings before release.
@@ -652,7 +652,7 @@ Inspect the actual environment, repository and current feasibility evidence rath
 - VS Code is the preferred editor; Xcode and its tools remain the native build/test environment. Validate toolchain/runtime availability and use a real installed simulator identifier. Do not invent successful builds, test device names, package versions, Action SHAs, or coverage numbers.
 - No OCR, sync, nested areas, merge restore, weather/maps, paid services, analytics, LLM calls, or automatic route-field extraction. URL copying is explicit one-page user action, not reference-only and not unattended crawling.
 - No commits, pushes, PR creation, repository visibility/billing/protection changes, signing credential access, developer-portal registrations, real-site scraping probes, or App Store publishing without separate owner authorization. Use signing-free simulator builds. A provisional reverse-DNS namespace is acceptable for a simulator-only spike if clearly labeled, not registered or presented as final.
-- Do not choose a permanent license or invent Novacoast/App Store legal ownership. Record unresolved license/release identity items without blocking local simulator work; do not distribute a dependency without preserving its required notices.
+- Do not choose a permanent license or invent App Store legal ownership. Record unresolved license/release identity items without blocking local simulator work; do not distribute a dependency without preserving its required notices.
 - Do not use real personal route libraries or third-party copyrighted guidebooks as fixtures. Use synthetic/generated test data and permitted originals. Never report saved/local status before files and metadata are durably acknowledged.
 - Keep changes small and executable. No empty feature scaffolds, placeholder success paths, disabled tests, in-memory-only integrity validation, generic sync layers, or permissive ZIP extraction hidden behind a convenience API.
 - If a foundation spike disproves the approved design, report the precise failing test/API behavior and the smallest proposed alternative. Do not silently switch to Core Data, reduce backup guarantees/limits, remove URL-copy capability, or weaken the destination policy. Independent safe work may continue, but dependent implementation must stop.

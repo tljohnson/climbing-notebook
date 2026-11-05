@@ -136,7 +136,7 @@ final class FoundationLaunchTests: XCTestCase {
         XCTAssertEqual(notice.label, "Synthetic notebook - explicit saves stay on this device. Not for personal data; backup/restore unavailable.")
         XCTAssertTrue(app.buttons["area-granite"].label.contains("Example Granite"))
         XCTAssertTrue(app.buttons["area-meadow"].label.contains("Example Meadow"))
-        XCTAssertTrue(app.staticTexts["Built at Novacoast."].exists)
+        XCTAssertTrue(app.staticTexts["Built by Leif Digital."].exists)
         XCTAssertFalse(app.staticTexts["Saved on this device"].exists)
         XCTAssertFalse(app.staticTexts["Prototype - changes reset on relaunch"].exists)
     }

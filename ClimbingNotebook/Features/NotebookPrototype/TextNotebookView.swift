@@ -213,7 +213,7 @@ struct TextNotebookView: View {
                                 sourceActions
                             }.listRowBackground(TextNotebookPalette.surface)
                         }
-                        Text("Built at Novacoast.").font(.footnote).foregroundStyle(TextNotebookPalette.secondary)
+                        Text("Built by Leif Digital.").font(.footnote).foregroundStyle(TextNotebookPalette.secondary)
                     }
                     .accessibilityIdentifier(notebook.source == .notebook ? "textLibrary" : "textExamplesLibrary")
                     .modifier(TextNotebookListStyle())

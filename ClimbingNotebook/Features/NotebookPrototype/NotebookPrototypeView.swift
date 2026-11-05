@@ -68,7 +68,7 @@ struct NotebookPrototypeView: View {
                     } header: { Text("Areas") } footer: {
                         Text(readOnly ? "Original examples and any saved edits are retained here. Their importance is unknown. This view cannot change them; transfer and backup are unavailable." : "Synthetic examples only. Not climbing guidance. Explicit saves stay on this device; backup/restore unavailable. Do not enter personal data.")
                     }
-                    Text("Built at Novacoast.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Built by Leif Digital.").font(.footnote).foregroundStyle(.secondary)
                 }
                 .navigationTitle(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Climbing Notebook")
             }.environment(notebook).environment(\.retainedNotebookReadOnly, readOnly) }
