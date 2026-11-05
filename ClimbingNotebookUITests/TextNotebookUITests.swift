@@ -210,21 +210,31 @@ final class TextNotebookUITests: XCTestCase {
             selectAll.tap()
             field.typeText(XCUIKeyboardKey.delete.rawValue)
         }
-        if !text.isEmpty { field.typeText(text) }
-        let actual = field.value as? String ?? ""
-        XCTAssertEqual(actual == field.placeholderValue ? "" : actual, text)
-        tap(app.buttons["Dismiss keyboard"], in: app)
-        let committedInput = XCTNSPredicateExpectation(
-            predicate: NSPredicate { _, _ in
+        func assertInput(_ expected: String, stage: String) -> Bool {
+            let received = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                 let value = field.value as? String ?? ""
-                return (value == field.placeholderValue ? "" : value) == text
+                return (value == field.placeholderValue ? "" : value) == expected
             }, object: field)
-        let result = XCTWaiter.wait(for: [committedInput], timeout: 5)
-        let dismissedValue = field.value as? String ?? ""
-        let dismissedText = dismissedValue == field.placeholderValue ? "" : dismissedValue
-        XCTAssertEqual(result, .completed,
-                       "Editor \(field.identifier) changed after keyboard dismissal, before Save or Cancel. " +
-                       "Expected: \(String(reflecting: text)); actual: \(String(reflecting: dismissedText))")
+            guard XCTWaiter.wait(for: [received], timeout: 5) == .completed else {
+                let evidence = XCTAttachment(string: "Stage: \(stage)\nField: \(field.debugDescription)\n" +
+                    "Expected: \(String(reflecting: expected))\nActual: \(String(reflecting: field.value))\n" +
+                    "Keyboard: \(app.keyboards.debugDescription)")
+                evidence.name = "Text input delivery failure"
+                evidence.lifetime = .keepAlways
+                add(evidence)
+                XCTFail("\(stage): \(field.identifier) expected \(String(reflecting: expected)); " +
+                        "actual \(String(reflecting: field.value))")
+                return false
+            }
+            return true
+        }
+        guard assertInput("", stage: "After clearing") else { return }
+        if !text.isEmpty { field.typeText(text) }
+        // typeText returning is not an accessibility-value publication barrier.
+        // Await delivery without adding keystrokes, repairing text or retrying the test.
+        guard assertInput(text, stage: "After typing, before keyboard dismissal") else { return }
+        tap(app.buttons["Dismiss keyboard"], in: app)
+        _ = assertInput(text, stage: "After keyboard dismissal, before Save or Cancel")
     }
 
     private func beginName(_ app: XCUIApplication, action: String, name: String) {
