@@ -37,9 +37,12 @@ final class TextNotebookPersistenceTests: XCTestCase {
                 XCTAssertEqual(Array(area.name.utf8), Array(expectedArea.name.utf8), file: file, line: line)
                 for (route, expectedRoute) in zip(area.routes, expectedArea.routes) {
                     XCTAssertEqual(Array(route.name.utf8), Array(expectedRoute.name.utf8), file: file, line: line)
+                    XCTAssertEqual(Array(route.grade.utf8), Array(expectedRoute.grade.utf8), file: file, line: line)
+                    XCTAssertEqual(Array(route.style.utf8), Array(expectedRoute.style.utf8), file: file, line: line)
                     XCTAssertEqual(Array(route.notes.utf8), Array(expectedRoute.notes.utf8), file: file, line: line)
                     for (pitch, expectedPitch) in zip(route.pitches, expectedRoute.pitches) {
                         XCTAssertEqual(Array(pitch.name.utf8), Array(expectedPitch.name.utf8), file: file, line: line)
+                        XCTAssertEqual(Array(pitch.grade.utf8), Array(expectedPitch.grade.utf8), file: file, line: line)
                         XCTAssertEqual(Array(pitch.notes.utf8), Array(expectedPitch.notes.utf8), file: file, line: line)
                     }
                 }
@@ -64,6 +67,9 @@ final class TextNotebookPersistenceTests: XCTestCase {
         XCTAssertTrue(bounded.contains("fetch Route:"))
         XCTAssertEqual(bounded.components(separatedBy: "Layer (2)").count - 1, 8)
         XCTAssertFalse(bounded.contains("134020"))
+        XCTAssertFalse(diagnostic.contains("Free space"))
+        let full = NSError(domain: "SwiftData", code: 1, userInfo: [NSUnderlyingErrorKey: CocoaError(.fileWriteOutOfSpace)])
+        XCTAssertTrue(TextNotebookStore.storeFailure(full, at: "save command").localizedDescription.contains("Free space, then retry"))
     }
 
     func testOriginalCreatesRouteWhileSecondSameRootContainerIsRetained() throws {
@@ -138,7 +144,7 @@ final class TextNotebookPersistenceTests: XCTestCase {
         XCTAssertEqual(initial.revision, 0)
         XCTAssertFalse(notebook.context.autosaveEnabled)
         XCTAssertFalse(notebook.container.mainContext.autosaveEnabled)
-        XCTAssertEqual(try notebook.context.fetch(FetchDescriptor<TextNotebookSchemaV1.NotebookState>()).count, 1)
+        XCTAssertEqual(try notebook.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>()).count, 1)
         try assertReopen(notebook, initial)
         let examples = try TextNotebookStore(root: root(), mode: .examples)
         var seeded = try examples.load()
@@ -151,7 +157,8 @@ final class TextNotebookPersistenceTests: XCTestCase {
         XCTAssertEqual(try notebook.load(), initial)
         XCTAssertThrowsError(try TextNotebookStore(root: examples.root))
         XCTAssertEqual(TextNotebookSchemaV1.models.count, 5)
-        XCTAssertTrue(TextNotebookMigrationPlan.stages.isEmpty)
+        XCTAssertEqual(TextNotebookSchemaV2.models.count, 7)
+        XCTAssertEqual(TextNotebookMigrationPlan.stages.count, 1)
     }
 
     func testExistingEmptyIncompleteAndSymlinkRootsFailClosed() throws {
@@ -241,10 +248,10 @@ final class TextNotebookPersistenceTests: XCTestCase {
             try assertSubmittedBytes(reopened.load(), renamed: true)
         }
         let fresh = ModelContext(store.container)
-        let areas = try fresh.fetch(FetchDescriptor<TextNotebookSchemaV1.Area>())
-        let routes = try fresh.fetch(FetchDescriptor<TextNotebookSchemaV1.Route>())
-        let pitches = try fresh.fetch(FetchDescriptor<TextNotebookSchemaV1.Pitch>())
-        let notes = try fresh.fetch(FetchDescriptor<TextNotebookSchemaV1.NoteSection>())
+        let areas = try fresh.fetch(FetchDescriptor<TextNotebookSchemaV2.Area>())
+        let routes = try fresh.fetch(FetchDescriptor<TextNotebookSchemaV2.Route>())
+        let pitches = try fresh.fetch(FetchDescriptor<TextNotebookSchemaV2.Pitch>())
+        let notes = try fresh.fetch(FetchDescriptor<TextNotebookSchemaV2.NoteSection>())
         XCTAssertEqual(areas.count, 2)
         XCTAssertEqual(routes.count, 2)
         XCTAssertEqual(pitches.count, 2)
@@ -483,18 +490,18 @@ final class TextNotebookPersistenceTests: XCTestCase {
         try run(store, .createPitch(routeID: route, id: secondPitch, name: "Survivor"))
         try run(store, .createArea(id: secondArea, name: "Survivor"))
         try run(store, .deletePitch(routeID: route, id: pitch))
-        XCTAssertEqual(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.Pitch>()).map(\.order), [0])
+        XCTAssertEqual(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.Pitch>()).map(\.order), [0])
         let afterRoute = try run(store, .deleteRoute(areaID: area, id: route))
         XCTAssertEqual(afterRoute.areas[0].routes.map(\.id), [secondRoute])
-        XCTAssertEqual(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.Route>()).map(\.order), [0])
-        XCTAssertTrue(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.Pitch>()).isEmpty)
-        XCTAssertEqual(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.NoteSection>()).count, 1)
+        XCTAssertEqual(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.Route>()).map(\.order), [0])
+        XCTAssertTrue(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.Pitch>()).isEmpty)
+        XCTAssertEqual(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NoteSection>()).count, 1)
         try assertReopen(store, afterRoute)
         try run(store, .deleteRoute(areaID: area, id: secondRoute))
         let afterArea = try run(store, .deleteArea(id: area))
         XCTAssertEqual(afterArea.areas.map(\.id), [secondArea])
-        XCTAssertEqual(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.Area>()).map(\.order), [0])
-        XCTAssertTrue(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.NoteSection>()).isEmpty)
+        XCTAssertEqual(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.Area>()).map(\.order), [0])
+        XCTAssertTrue(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NoteSection>()).isEmpty)
         let empty = try run(store, .deleteArea(id: secondArea))
         XCTAssertTrue(empty.areas.isEmpty)
         try assertReopen(store, empty)
@@ -573,7 +580,7 @@ final class TextNotebookPersistenceTests: XCTestCase {
         let shifted = try run(store, .deleteRoute(areaID: area, id: secondRoute))
         XCTAssertEqual(shifted.areas[0].routes.map(\.id), [thirdRoute])
         XCTAssertEqual(shifted.areas[0].routes[0].revision, 1, "Renumbered surviving route increments exactly once")
-        XCTAssertEqual(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.Route>()).map(\.order), [0])
+        XCTAssertEqual(try store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.Route>()).map(\.order), [0])
         try assertReopen(store, shifted)
     }
 
@@ -603,34 +610,34 @@ final class TextNotebookPersistenceTests: XCTestCase {
     func testCorruptMarkersOrdersOrphansAndCrossKindIDsAreRejected() throws {
         let corruptions: [(TextNotebookStore) throws -> Void] = [
             { store in
-                let marker = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.NotebookState>()).first)
+                let marker = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>()).first)
                 marker.format = "unknown"
             },
             { store in
-                let marker = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.NotebookState>()).first)
+                let marker = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>()).first)
                 store.context.delete(marker)
             },
             { store in
-                store.context.insert(TextNotebookSchemaV1.NotebookState(id: UUID(), format: TextNotebookStore.format + ":notebook"))
+                store.context.insert(TextNotebookSchemaV2.NotebookState(id: UUID(), format: TextNotebookStore.format + ":notebook"))
             },
             { store in
-                let area = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.Area>()).first)
+                let area = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.Area>()).first)
                 area.order = 2
             },
             { store in
-                store.context.insert(TextNotebookSchemaV1.Pitch(id: UUID(), name: "Orphan", order: 0))
+                store.context.insert(TextNotebookSchemaV2.Pitch(id: UUID(), name: "Orphan", order: 0))
             },
             { store in
-                let area = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.Area>()).first)
-                let pitch = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.Pitch>()).first)
+                let area = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.Area>()).first)
+                let pitch = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.Pitch>()).first)
                 pitch.id = area.id
             },
             { store in
-                let note = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.NoteSection>()).first)
+                let note = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NoteSection>()).first)
                 note.kind = "pitch"
             },
             { store in
-                let route = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.Route>()).first)
+                let route = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.Route>()).first)
                 route.revision = -1
             }
         ]
@@ -646,15 +653,15 @@ final class TextNotebookPersistenceTests: XCTestCase {
 
     func testRevisionOverflowRejectsWithoutPersistingStagedChanges() throws {
         let (store, area, route, _) = try populated()
-        let marker = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.NotebookState>()).first)
+        let marker = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>()).first)
         marker.revision = Int.max
         try store.context.save()
         let saved = try store.load()
         XCTAssertThrowsError(try run(store, .renameArea(id: area, name: "Overflow")))
         XCTAssertEqual(try store.load(), saved)
-        let marker2 = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.NotebookState>()).first)
+        let marker2 = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>()).first)
         marker2.revision = 10
-        let record = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV1.Route>()).first)
+        let record = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.Route>()).first)
         record.revision = Int.max
         try store.context.save()
         let routeOverflow = try store.load()
@@ -670,5 +677,171 @@ final class TextNotebookPersistenceTests: XCTestCase {
         XCTAssertThrowsError(try run(store, .createPitch(routeID: route, id: UUID(), name: "")))
         XCTAssertEqual(try store.load(), saved)
         try assertReopen(store, saved)
+    }
+
+    // This writer intentionally knows only the frozen V1 schema, not the current store/migration plan.
+    private func writeV1(at root: URL, mode: TextNotebookStore.Mode, populated: Bool,
+                         invalid: Bool = false) throws -> TextNotebookSnapshot {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        let schema = Schema(versionedSchema: TextNotebookSchemaV1.self)
+        let configuration = ModelConfiguration(schema: schema, url: root.appendingPathComponent("notebook.store"), cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+        let marker = TextNotebookSchemaV1.NotebookState(id: UUID(), format: "TextNotebook-1:" + mode.rawValue, revision: 37)
+        context.insert(marker)
+        var result: [TextArea] = []
+        if populated {
+            let exact = "  \u{5ca9} \u{00e9} e\u{0301}\n\nTail  \n"
+            for areaOrder in 0..<2 {
+                let area = TextNotebookSchemaV1.Area(id: UUID(), name: "Area " + exact, order: areaOrder)
+                context.insert(area)
+                var routeValues: [TextRoute] = []
+                for routeOrder in 0..<2 {
+                    let route = TextNotebookSchemaV1.Route(id: UUID(), name: "Route " + exact, grade: "5.9 " + exact, style: "Trad " + exact, order: routeOrder)
+                    let note = TextNotebookSchemaV1.NoteSection(id: UUID(), body: "General " + exact)
+                    route.revision = 19 + routeOrder
+                    context.insert(route)
+                    context.insert(note)
+                    route.area = area
+                    note.route = route
+                    var pitchValues: [TextPitch] = []
+                    for pitchOrder in 0..<2 {
+                        let pitch = TextNotebookSchemaV1.Pitch(id: UUID(), name: "Pitch " + exact, grade: "5.8 " + exact, notes: "Notes " + exact, order: pitchOrder)
+                        context.insert(pitch)
+                        pitch.route = route
+                        pitchValues.append(TextPitch(id: pitch.id, name: pitch.name, grade: pitch.grade, notes: pitch.notes))
+                    }
+                    routeValues.append(TextRoute(id: route.id, areaID: area.id, generalNoteID: note.id, name: route.name,
+                                                 grade: route.grade, style: route.style, notes: note.body, pitches: pitchValues, revision: route.revision))
+                }
+                result.append(TextArea(id: area.id, name: area.name, routes: routeValues))
+            }
+        }
+        if invalid { marker.format = "future-format" }
+        try context.save()
+        return TextNotebookSnapshot(sourceToken: "\(mode.rawValue):\(root.standardizedFileURL.path):\(marker.id.uuidString)", revision: marker.revision, areas: result)
+    }
+
+    func testNamedV1UpgradePreservesEmptyAndEditedNotebookAndExamplesExactly() throws {
+        for mode in [TextNotebookStore.Mode.notebook, .examples] {
+            for populated in [false, true] {
+                let path = root()
+                let expected = try writeV1(at: path, mode: mode, populated: populated)
+                let current = try TextNotebookStore(root: path, mode: mode)
+                XCTAssertEqual(try current.load(), expected)
+                try assertReopen(current, expected)
+                let markers = try current.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>())
+                XCTAssertEqual(markers.count, 1)
+                XCTAssertEqual(markers[0].format, "TextNotebook-2:" + mode.rawValue)
+                XCTAssertEqual(markers[0].id, current.sourceMarker)
+                XCTAssertEqual(markers[0].revision, 37)
+                XCTAssertTrue(try current.context.fetch(FetchDescriptor<TextNotebookSchemaV2.ImageAsset>()).isEmpty)
+                XCTAssertTrue(try current.context.fetch(FetchDescriptor<TextNotebookSchemaV2.ImageAttachment>()).isEmpty)
+                for route in try current.load().areas.flatMap(\.routes) {
+                    XCTAssertTrue(route.images.isEmpty)
+                    XCTAssertTrue(route.pitches.allSatisfy { $0.images.isEmpty })
+                }
+            }
+        }
+    }
+
+    func testRejectedV1UpgradeRetainsOriginalFormatAndCanRetryWithoutReset() throws {
+        let path = root()
+        let expected = try writeV1(at: path, mode: .notebook, populated: true, invalid: true)
+        XCTAssertThrowsError(try TextNotebookStore(root: path))
+        XCTAssertThrowsError(try TextNotebookStore(root: path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: path.appendingPathComponent("notebook.store").path))
+        let schema = Schema(versionedSchema: TextNotebookSchemaV1.self)
+        let configuration = ModelConfiguration(schema: schema, url: path.appendingPathComponent("notebook.store"), cloudKitDatabase: .none)
+        let v1 = try ModelContainer(for: schema, configurations: [configuration])
+        let context = ModelContext(v1)
+        context.autosaveEnabled = false
+        let marker = try XCTUnwrap(context.fetch(FetchDescriptor<TextNotebookSchemaV1.NotebookState>()).first)
+        XCTAssertEqual(marker.format, "future-format")
+        XCTAssertEqual(marker.revision, expected.revision)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<TextNotebookSchemaV1.Route>()).count, 4)
+        marker.format = "TextNotebook-1:notebook"
+        try context.save()
+        let retried = try TextNotebookStore(root: path)
+        XCTAssertEqual(try retried.load(), expected)
+        try assertReopen(retried, expected)
+    }
+
+    func testDidMigrateMarkerSaveFailureRetriesSameStoreWithExactGraphAndSource() throws {
+        for mode in [TextNotebookStore.Mode.notebook, .examples] {
+            let path = root()
+            let expected = try writeV1(at: path, mode: mode, populated: true)
+            let markerID = try XCTUnwrap(UUID(uuidString: String(try XCTUnwrap(expected.sourceToken.split(separator: ":").last))))
+            try TextNotebookMigrationPlan.withMarkerSaveFailure(markerID: markerID) {
+                XCTAssertThrowsError(try TextNotebookStore(root: path, mode: mode))
+                XCTAssertTrue(TextNotebookMigrationPlan.didReachMarkerSaveFailure(markerID: markerID), "Failure must occur after didMigrate stages the V2 marker, not in V1 preflight")
+            }
+            func assertPendingGraph() throws {
+                let schema = Schema(versionedSchema: TextNotebookSchemaV2.self)
+                let configuration = ModelConfiguration(schema: schema, url: path.appendingPathComponent("notebook.store"), cloudKitDatabase: .none)
+                let container = try ModelContainer(for: schema, configurations: [configuration])
+                let context = ModelContext(container)
+                context.autosaveEnabled = false
+                let marker = try XCTUnwrap(context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>()).first)
+                XCTAssertEqual(marker.id, markerID)
+                XCTAssertEqual(marker.format, "TextNotebook-1:" + mode.rawValue)
+                XCTAssertEqual(marker.revision, expected.revision)
+                let areas = try context.fetch(FetchDescriptor<TextNotebookSchemaV2.Area>()).sorted { $0.order < $1.order }
+                XCTAssertEqual(areas.map(\.id), expected.areas.map(\.id))
+                for (area, expectedArea) in zip(areas, expected.areas) {
+                    XCTAssertEqual(Array(area.name.utf8), Array(expectedArea.name.utf8))
+                    let routes = area.routes.sorted { $0.order < $1.order }
+                    XCTAssertEqual(routes.map(\.id), expectedArea.routes.map(\.id))
+                    for (route, expectedRoute) in zip(routes, expectedArea.routes) {
+                        XCTAssertTrue(route.area === area)
+                        XCTAssertEqual(route.revision, expectedRoute.revision)
+                        XCTAssertEqual(Array(route.name.utf8), Array(expectedRoute.name.utf8))
+                        XCTAssertEqual(Array(route.grade.utf8), Array(expectedRoute.grade.utf8))
+                        XCTAssertEqual(Array(route.style.utf8), Array(expectedRoute.style.utf8))
+                        XCTAssertEqual(route.notes.count, 1)
+                        let note = try XCTUnwrap(route.notes.first)
+                        XCTAssertEqual(note.id, expectedRoute.generalNoteID)
+                        XCTAssertTrue(note.route === route)
+                        XCTAssertEqual(Array(note.body.utf8), Array(expectedRoute.notes.utf8))
+                        let pitches = route.pitches.sorted { $0.order < $1.order }
+                        XCTAssertEqual(pitches.map(\.id), expectedRoute.pitches.map(\.id))
+                        for (pitch, expectedPitch) in zip(pitches, expectedRoute.pitches) {
+                            XCTAssertTrue(pitch.route === route)
+                            XCTAssertEqual(Array(pitch.name.utf8), Array(expectedPitch.name.utf8))
+                            XCTAssertEqual(Array(pitch.grade.utf8), Array(expectedPitch.grade.utf8))
+                            XCTAssertEqual(Array(pitch.notes.utf8), Array(expectedPitch.notes.utf8))
+                        }
+                    }
+                }
+                XCTAssertTrue(try context.fetch(FetchDescriptor<TextNotebookSchemaV2.ImageAsset>()).isEmpty)
+                XCTAssertTrue(try context.fetch(FetchDescriptor<TextNotebookSchemaV2.ImageAttachment>()).isEmpty)
+            }
+            try assertPendingGraph()
+            let wrongMode: TextNotebookStore.Mode = mode == .notebook ? .examples : .notebook
+            XCTAssertThrowsError(try TextNotebookStore(root: path, mode: wrongMode))
+            for _ in 0..<2 {
+                var reachedMarkerSave = false
+                XCTAssertThrowsError(try TextNotebookStore(root: path, mode: mode, beforeSave: {
+                    reachedMarkerSave = true
+                    throw CocoaError(.fileWriteOutOfSpace)
+                }))
+                XCTAssertTrue(reachedMarkerSave)
+                try assertPendingGraph()
+            }
+            // Reopen the same namespace without any repair, replacement, reseed or marker mutation.
+            // This checks a thrown didMigrate transaction boundary, not arbitrary process/power loss.
+            let retried = try TextNotebookStore(root: path, mode: mode)
+            XCTAssertEqual(retried.sourceMarker, markerID)
+            XCTAssertEqual(try retried.load(), expected)
+            try assertReopen(retried, expected)
+            let markers = try retried.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>())
+            XCTAssertEqual(markers.count, 1)
+            XCTAssertEqual(markers[0].id, markerID)
+            XCTAssertEqual(markers[0].format, "TextNotebook-2:" + mode.rawValue)
+            XCTAssertEqual(markers[0].revision, expected.revision)
+            XCTAssertTrue(try retried.context.fetch(FetchDescriptor<TextNotebookSchemaV2.ImageAsset>()).isEmpty)
+            XCTAssertTrue(try retried.context.fetch(FetchDescriptor<TextNotebookSchemaV2.ImageAttachment>()).isEmpty)
+        }
     }
 }

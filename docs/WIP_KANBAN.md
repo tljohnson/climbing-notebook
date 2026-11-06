@@ -12,13 +12,13 @@ Historical prototype cards, completed work and deferred archive/migration invest
 
 ## Review
 
-- [ ] `TN-IMAGE-01` Plan image-supported route and pitch notebooks
+- [ ] `TN-IMAGE-02` Implement image-supported route and pitch notebooks
   - Priority: P1
   - Owner: Kilo/local
-  - Depends on: None; owner-authorized planning and Stitch exploration only.
-  - Plan: [Image-Supported-Notebooks-FeaturePlan.md](../Image-Supported-Notebooks-FeaturePlan.md) §§1–6 (proposed, unapproved)
-  - Done when: Source-grounded image/storage/Save contract and visually reviewed Stitch journey are ready for explicit owner approval before implementation.
-  - Evidence: [Proposed image contract](../Image-Supported-Notebooks-FeaturePlan.md#1-selected-journey-and-scope), [Stitch comparison/references](../Image-Supported-Notebooks-FeaturePlan.md#6-proposed-image-notebook-exploration); documentation checks passed; owner approval pending, no app implementation.
+  - Depends on: TN-IMAGE-01 approved contract.
+  - Plan: [Image-Supported-Notebooks-FeaturePlan.md](../Image-Supported-Notebooks-FeaturePlan.md) §§1–6
+  - Done when: Approved image journey and V1-preserving file/data lifecycle pass focused checks and independent internal review; current behavior and honest limits documented.
+  - Evidence: [Image implementation handoff](verification/NotebookPrototype.md#image-implementation-handoff-2026-11-06);124/124 core units17.5; image smoke/manage27 and maximum-text/dark phone+iPad17.5 passed; independent review fixes verified; baseline long smoke automation crash and actual Photos/device/VoiceOver limits preserved.
 
 - [ ] `CF-07E` Deliver the complete text-first notebook milestone
   - Priority: P0
@@ -29,6 +29,15 @@ Historical prototype cards, completed work and deferred archive/migration invest
   - Evidence: [Notebook verification](verification/NotebookPrototype.md#conclusion); [hosted run42130921302](https://github.com/tljohnson/climbing-notebook/actions/runs/42130921302) at `d742ea6`, both routine jobs passed; local fast77/77 and subsequent smoke2/2; owner light/dark regular/maximum-text workflows passed. VoiceOver untested; no backup/restore; milestone acceptance pending.
 
 ## Done
+
+- [x] `TN-IMAGE-01` Plan image-supported route and pitch notebooks
+  - Priority: P1
+  - Owner: Kilo/local
+  - Depends on: None; owner-authorized planning and Stitch exploration only.
+  - Plan: [Image-Supported-Notebooks-FeaturePlan.md](../Image-Supported-Notebooks-FeaturePlan.md) §§1–6
+  - Done when: Source-grounded image/storage/Save contract and visually reviewed Stitch journey are ready for explicit owner approval before implementation.
+  - Completed: 2026-11-06
+  - Evidence: Source-grounded contract and Stitch comparison; documentation checks passed; owner explicitly approved plan and implementation on2026-11-06.
 
 - [x] `TN-EXPORT-01` Plan a bounded text-only notebook export
   - Priority: P1

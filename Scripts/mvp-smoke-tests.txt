@@ -1,3 +1,4 @@
 # Short end-to-end checks; extended variants remain in mvp-core-tests.txt.
 ClimbingNotebookUITests/TextNotebookUITests/testSingleAreaCreationAndProcessRelaunchSmoke
 ClimbingNotebookUITests/TextNotebookUITests/testHierarchyNotesSaveCancelAndRelaunchSmoke
+ClimbingNotebookUITests/TextNotebookUITests/testSyntheticRouteAndPitchImagesReaderNotesAndRelaunchSmoke

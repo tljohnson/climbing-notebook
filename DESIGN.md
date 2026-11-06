@@ -26,11 +26,15 @@ Preserve the owner-approved Alpine Technical Notebook direction (2026-10-30), re
 | Library / Area | Named rows and entered counts; distinct empty, loading and unavailable states | Specific Add Area/Add Route entry actions; less frequent actions in a labeled menu |
 | Route | Route/area identity, complete General notes, ordered pitches | Edit Notes, Jump to Pitches, labeled actions menu; a pitch is reachable with a jump and tap |
 | Pitch | Position, authored name if present, complete notes | Pinned Previous/Next with disabled boundaries; Edit Notes and actions menu |
+| Route/pitch images | Owner-labeled caption/order index with uncropped identification previews; one image opens the original reader | Native Photos selection and separate review/Save; manage captions/order/removal separately; no gallery dashboard or required taxonomy |
+| Image reader | Unmodified original pixels, readable zoom/pan and complete notes in a read-only sheet | Done, explicit adjacent-image navigation, Fit Image/Width and accessible zoom/pan; controls outside original viewport |
 | Name editor | Task title, compact owner context, one field | `Name *` with accessible `Name, required`; pitch `Name (optional)`; validation at the field when needed |
 | Note editor | Owner + field identity, generous plain-text editing surface | Save/Cancel and keyboard dismissal remain reachable; no permanent content-sized row for keyboard dismissal |
 | Order editor | Full names, positions, drag handles | Target-labeled Move Up/Down alternative, disabled boundaries; one Save for the sequence |
 
 Keep note editing, naming, ordering and deletion separate. Back returns to the actual originating context. Reading and Previous/Next never mutate order or save. Pitch fallback titles such as Pitch 2 are presentation, not authored names. Never replace an unreadable library with an empty-library screen.
+
+The [approved image contract](Image-Supported-Notebooks-FeaturePlan.md) adds route-owned images before General/pitches with section jumps; pitch notes stay first with their own image jump and distinct route-reference link. No images retains the existing content with a quiet Add Images action. Previews are aspect-fit and identify content, never substitute for full-original reading. Dynamic Type scales notes/controls, not raster text; provide native zoom alternatives. Dark mode changes chrome, never original image colors. Keep missing originals visible with Retry/return rather than silently dropping attachments. Photos removal remains outside app attachment removal. Feature exploration and proposal history belong in the feature plan, not this rules document.
 
 ### Editor Hierarchy
 

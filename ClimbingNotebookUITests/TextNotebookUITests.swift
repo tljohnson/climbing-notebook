@@ -199,6 +199,16 @@ final class TextNotebookUITests: XCTestCase {
 
     private func fill(_ field: XCUIElement, with text: String, in app: XCUIApplication) {
         tap(field, in: app)
+        let focused = NSPredicate(format: "hasKeyboardFocus == true")
+        if XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: focused, object: field)], timeout: 2) != .completed {
+            // iOS 17 multiline fields can expose a hittable wrapper without acquiring focus.
+            field.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.5)).tap()
+            guard XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: focused, object: field)], timeout: 3) == .completed else {
+                capture(app, "Text field did not acquire keyboard focus")
+                XCTFail("Text field did not acquire keyboard focus: \(field)")
+                return
+            }
+        }
         let value = field.value as? String ?? ""
         let previous = value == field.placeholderValue ? "" : value
         if !previous.isEmpty {
@@ -262,8 +272,7 @@ final class TextNotebookUITests: XCTestCase {
     private func nameField(_ app: XCUIApplication) -> XCUIElement {
         // v2 captured index zero before the modal existed, permanently querying the covered root.
         XCTAssertTrue(app.collectionViews["textEditorForm"].waitForExistence(timeout: 5))
-        return app.collectionViews["textEditorForm"]
-            .descendants(matching: .any).matching(identifier: "textNameEditor").firstMatch
+        return app.collectionViews["textEditorForm"].textViews["textNameEditor"].firstMatch
     }
 
     private func rowIDs(_ app: XCUIApplication, kind: String) -> [String] {
@@ -638,6 +647,231 @@ final class TextNotebookUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["textGeneralNotes"].label, "Saved General note")
         tap(app.buttons[pitch], in: app)
         XCTAssertEqual(app.staticTexts["textPitchNotes"].label, "Saved pitch note")
+    }
+
+    func testSyntheticRouteAndPitchImagesReaderNotesAndRelaunchSmoke() {
+        let app = application()
+        // Synthetic providers exercise the production copy path, not the actual Photos UI.
+        app.launchEnvironment["NOTEBOOK_IMAGE_TEST"] = "1"
+        app.launch()
+        assertLibrary(app)
+        let area = create(app, kind: "area", name: "Image smoke area")
+        tap(app.buttons[area], in: app)
+        let route = create(app, kind: "route", name: "Image smoke route")
+        tap(app.buttons[route], in: app)
+        let general = "Complete General note\nFinal General line."
+        editNotes(app, action: "Edit General Notes", text: general)
+        let pitch = create(app, kind: "pitch", name: "Image smoke pitch")
+        tap(app.buttons["Select Synthetic Images"], in: app)
+        XCTAssertTrue(app.navigationBars["Add Images"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.collectionViews["textEditorForm"].exists)
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["Save"])
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed)
+        let captions = ["Topo reference", "Approach reference", "Descent reference"]
+        for (index, caption) in captions.enumerated() {
+            let field = app.collectionViews["textEditorForm"].descendants(matching: .any)
+                .matching(NSPredicate(format: "label == %@", "Caption for Image \(index + 1), optional")).firstMatch
+            fill(field, with: caption, in: app)
+        }
+        capture(app, "Image review editor with authored captions")
+        tap(app.buttons["Review Image 1"], in: app)
+        XCTAssertTrue(app.staticTexts["Image 1 of 3"].waitForExistence(timeout: 5))
+        app.buttons["imageReaderDone"].tap()
+        tap(app.buttons["Save"], in: app)
+        let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                               object: app.navigationBars["Add Images"])
+        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 5), .completed)
+        capture(app, "Saved route image index")
+        let savedHierarchy = XCTAttachment(string: app.debugDescription)
+        savedHierarchy.name = "Saved image index accessibility hierarchy"
+        savedHierarchy.lifetime = .keepAlways
+        add(savedHierarchy)
+        tap(app.descendants(matching: .any)["image-open-0"].firstMatch, in: app)
+        XCTAssertTrue(app.staticTexts[captions[0]].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.descendants(matching: .any)["Previous Image"].firstMatch.isEnabled)
+        app.buttons["imageReaderNext"].tap()
+        XCTAssertTrue(app.staticTexts["Image 2 of 3"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts[captions[1]].exists)
+        let tools = app.descendants(matching: .any)["imageReaderTools"].firstMatch
+        let loaded = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: tools)
+        XCTAssertEqual(XCTWaiter.wait(for: [loaded], timeout: 10), .completed)
+        tools.tap()
+        tapMenuItem(app, title: "Fit Width")
+        capture(app, "Original-backed dense image reader fit width")
+        app.buttons["imageReaderNotes"].tap()
+        XCTAssertTrue(app.navigationBars["Notes"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts[general].label, general)
+        app.navigationBars["Notes"].buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["Image 2 of 3"].waitForExistence(timeout: 5))
+        app.buttons["imageReaderTools"].tap()
+        tapMenuItem(app, title: "Fit Image")
+        app.buttons["imageReaderDone"].tap()
+        tap(app.buttons[pitch], in: app)
+        let notes = "Complete pitch note\nFinal pitch line."
+        editNotes(app, action: "Edit Notes", text: notes)
+        tap(app.buttons["Select Synthetic Images"], in: app)
+        XCTAssertTrue(app.navigationBars["Add Images"].waitForExistence(timeout: 5))
+        let pitchReady = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["Save"])
+        XCTAssertEqual(XCTWaiter.wait(for: [pitchReady], timeout: 10), .completed)
+        let field = app.collectionViews["textEditorForm"].descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "Caption for Image 1, optional")).firstMatch
+        fill(field, with: "Pitch-only reference", in: app)
+        tap(app.buttons["Save"], in: app)
+        tap(app.descendants(matching: .any)["image-open-0"].firstMatch, in: app)
+        XCTAssertTrue(app.staticTexts["Image 1 of 1"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Pitch-only reference"].exists)
+        XCTAssertFalse(app.descendants(matching: .any)["Next Image"].firstMatch.isEnabled)
+        app.buttons["imageReaderNotes"].tap()
+        let pitchReaderNotes = app.staticTexts.matching(NSPredicate(format: "label == %@ AND identifier != %@", notes, "textPitchNotes")).firstMatch
+        XCTAssertTrue(pitchReaderNotes.waitForExistence(timeout: 5))
+        XCTAssertEqual(pitchReaderNotes.label, notes)
+        XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label == %@ AND identifier != %@", general, "textGeneralNotes")).firstMatch.label, general)
+        app.navigationBars["Notes"].buttons["Done"].tap()
+        app.buttons["imageReaderDone"].tap()
+        relaunch(app)
+        tap(app.buttons[area], in: app)
+        tap(app.buttons[route], in: app)
+        for (index, caption) in captions.enumerated() {
+            let image = app.descendants(matching: .any)["image-open-\(index)"].firstMatch
+            reveal(image, in: app)
+            XCTAssertTrue(image.label.contains(caption))
+            XCTAssertTrue(image.label.contains("\(index + 1) of 3"))
+        }
+        XCTAssertFalse(app.descendants(matching: .any)["image-open-3"].firstMatch.exists)
+        reveal(app.staticTexts["textGeneralNotes"], in: app)
+        XCTAssertEqual(app.staticTexts["textGeneralNotes"].label, general)
+        tap(app.buttons[pitch], in: app)
+        XCTAssertEqual(app.staticTexts["textPitchNotes"].label, notes)
+        reveal(app.descendants(matching: .any)["image-open-0"].firstMatch, in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["image-open-0"].firstMatch.label.contains("Pitch-only reference"))
+        XCTAssertFalse(app.descendants(matching: .any)["image-open-1"].firstMatch.exists)
+    }
+
+    func testImageManagementDiscardFailureRetryAndRelaunchPreserveOrderAndCaptions() {
+        let app = application()
+        app.launchEnvironment["NOTEBOOK_IMAGE_TEST"] = "1"
+        app.launch()
+        assertLibrary(app)
+        let area = create(app, kind: "area", name: "Image management area")
+        tap(app.buttons[area], in: app)
+        let route = create(app, kind: "route", name: "Image management route")
+        tap(app.buttons[route], in: app)
+        tap(app.buttons["Select Synthetic Images"], in: app)
+        XCTAssertTrue(app.navigationBars["Add Images"].waitForExistence(timeout: 5))
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["Save"])
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed)
+        for (index, caption) in ["First reference", "Second reference", "Third reference"].enumerated() {
+            let field = app.collectionViews["textEditorForm"].descendants(matching: .any)
+                .matching(NSPredicate(format: "label == %@", "Caption for Image \(index + 1), optional")).firstMatch
+            fill(field, with: caption, in: app)
+        }
+        tap(app.buttons["Save"], in: app)
+        tap(app.buttons["Image Actions"], in: app)
+        tapMenuItem(app, title: "Manage Images")
+        tap(app.buttons["Move Image 1 Down"], in: app)
+        tap(app.buttons["Remove Image 3"], in: app)
+        app.buttons["Remove Attachment"].tap()
+        let caption = app.collectionViews["textEditorForm"].descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "Caption for Image 1, optional")).firstMatch
+        fill(caption, with: "Discard this caption", in: app)
+        tap(app.buttons["Cancel"], in: app)
+        capture(app, "Image management discard confirmation")
+        app.buttons["Keep Editing"].tap()
+        XCTAssertEqual(caption.value as? String, "Discard this caption")
+        capture(app, "Image management retains canceled edits")
+        tap(app.buttons["Cancel"], in: app)
+        app.buttons["Discard Changes"].tap()
+        relaunch(app, failSave: true)
+        tap(app.buttons[area], in: app)
+        tap(app.buttons[route], in: app)
+        for (index, expected) in ["First reference", "Second reference", "Third reference"].enumerated() {
+            let image = app.descendants(matching: .any)["image-open-\(index)"].firstMatch
+            reveal(image, in: app)
+            XCTAssertTrue(image.label.contains(expected))
+        }
+        tap(app.buttons["Image Actions"], in: app)
+        tapMenuItem(app, title: "Manage Images")
+        tap(app.buttons["Move Image 1 Down"], in: app)
+        tap(app.buttons["Remove Image 3"], in: app)
+        app.buttons["Remove Attachment"].tap()
+        let retainedCaption = app.collectionViews["textEditorForm"].descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "Caption for Image 1, optional")).firstMatch
+        fill(retainedCaption, with: "Saved second reference  ", in: app)
+        tap(app.buttons["Save"], in: app)
+        XCTAssertTrue(app.buttons["Retry Save"].waitForExistence(timeout: 5))
+        XCTAssertEqual(retainedCaption.value as? String, "Saved second reference  ")
+        XCTAssertTrue(app.navigationBars["Manage Images"].exists)
+        capture(app, "Image management failed save retains caption and order")
+        tap(app.buttons["Retry Save"], in: app)
+        let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                               object: app.navigationBars["Manage Images"])
+        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 5), .completed)
+        relaunch(app)
+        tap(app.buttons[area], in: app)
+        tap(app.buttons[route], in: app)
+        reveal(app.descendants(matching: .any)["image-open-0"].firstMatch, in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["image-open-0"].firstMatch.label.contains("Saved second reference  "))
+        reveal(app.descendants(matching: .any)["image-open-1"].firstMatch, in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["image-open-1"].firstMatch.label.contains("First reference"))
+        XCTAssertFalse(app.descendants(matching: .any)["image-open-2"].firstMatch.exists)
+    }
+
+    func testImageReaderMaximumTextDarkLayout() {
+        let app = application(accessibility: true, dark: true)
+        app.launchEnvironment["NOTEBOOK_IMAGE_TEST"] = "1"
+        app.launch()
+        assertLibrary(app)
+        let area = create(app, kind: "area", name: "Dark image area")
+        tap(app.buttons[area], in: app)
+        let route = create(app, kind: "route", name: "Dark image route")
+        tap(app.buttons[route], in: app)
+        tap(app.buttons["Select Synthetic Images"], in: app)
+        XCTAssertTrue(app.navigationBars["Add Images"].waitForExistence(timeout: 5))
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["Save"])
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed)
+        tap(app.buttons["Review Image 2"], in: app)
+        XCTAssertTrue(app.staticTexts["Image 2 of 3"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["imageReaderDone"].isHittable)
+        capture(app, "Maximum text dark review before Save")
+        app.buttons["imageReaderDone"].tap()
+        app.buttons["Save"].tap()
+        let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                               object: app.navigationBars["Add Images"])
+        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 5), .completed)
+        let dense = app.descendants(matching: .any)["image-open-1"].firstMatch
+        reveal(dense, in: app)
+        capture(app, "Maximum text dark saved route image index")
+        dense.tap()
+        XCTAssertTrue(app.staticTexts["Image 2 of 3"].waitForExistence(timeout: 5))
+        let tools = app.descendants(matching: .any)["imageReaderTools"].firstMatch
+        let loaded = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: tools)
+        XCTAssertEqual(XCTWaiter.wait(for: [loaded], timeout: 10), .completed)
+        tools.tap()
+        tapMenuItem(app, title: "Fit Width")
+        // At maximum text the native footer scrolls independently of the image viewport.
+        let footer = app.scrollViews.containing(.button, identifier: "imageReaderNotes").firstMatch
+        if !app.buttons["imageReaderNotes"].isHittable { footer.swipeUp() }
+        XCTAssertTrue(app.buttons["imageReaderNotes"].isHittable)
+        XCTAssertTrue(app.buttons["imageReaderDone"].isHittable)
+        capture(app, "Maximum text dark dense original fit width")
+        for _ in 0..<3 {
+            tools.tap()
+            let panDown = app.buttons["Pan Down"]
+            let menu = app.collectionViews.containing(.button, identifier: "Fit Width").firstMatch
+            for _ in 0..<3 where !panDown.exists || !panDown.isHittable {
+                menu.swipeUp()
+            }
+            tapMenuItem(app, title: "Pan Down")
+        }
+        capture(app, "Maximum text dark dense original lower area")
+        app.buttons["imageReaderNotes"].tap()
+        XCTAssertTrue(app.navigationBars["Notes"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Notes"].buttons["Done"].isHittable)
+        capture(app, "Maximum text dark reader Notes")
+        app.navigationBars["Notes"].buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["Image 2 of 3"].waitForExistence(timeout: 5))
+        app.buttons["imageReaderDone"].tap()
+        XCTAssertTrue(app.navigationBars["Dark image route"].waitForExistence(timeout: 5))
     }
 
     func testSingleAreaCreationAndProcessRelaunchSmoke() {

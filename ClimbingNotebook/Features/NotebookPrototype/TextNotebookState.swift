@@ -1,5 +1,11 @@
 import SwiftUI
 
+private final class NotebookSaveObservation {
+    let token: NSObjectProtocol
+    init(_ token: NSObjectProtocol) { self.token = token }
+    deinit { NotificationCenter.default.removeObserver(token) }
+}
+
 struct TextNotebookDraft: Identifiable {
     enum Kind {
         case addArea, addRoute(UUID), addPitch(UUID)
@@ -104,6 +110,7 @@ final class TextNotebookState {
     private(set) var acknowledgedRevision: Int?
     private var failNextSave = false
     private var failNextLoad = false
+    private var saveObserver: NotebookSaveObservation?
     let testNamespace: Bool
 
     init(source: Source = .notebook, root: URL? = nil) {
@@ -122,6 +129,22 @@ final class TextNotebookState {
         }
         self.root = selected
         testNamespace = generated
+        let observedRoot = selected.standardizedFileURL.path
+        saveObserver = NotebookSaveObservation(NotificationCenter.default.addObserver(forName: TextNotebookStore.didSave,
+            object: nil, queue: .main) { [weak self] notice in
+                guard notice.object as? String == observedRoot else { return }
+                Task { @MainActor [weak self] in self?.refreshSavedImages() }
+            })
+    }
+
+    func refreshSavedImages() {
+        guard !saving, let store else { return }
+        do {
+            let loaded = try store.load()
+            guard loaded.sourceToken == snapshot?.sourceToken else { return }
+            if loaded != snapshot { snapshot = loaded; acknowledgedRevision = nil }
+            loadError = nil
+        } catch { loadError = error.localizedDescription }
     }
 
     var areas: [TextArea] { snapshot?.areas ?? [] }
@@ -186,7 +209,10 @@ final class TextNotebookState {
                 order = route.pitches.map(\.id)
                 labels = Dictionary(uniqueKeysWithValues: route.pitches.enumerated().map { ($0.element.id, Self.pitchName($0.element, index: $0.offset)) })
             }
-            if case .deleteRoute = kind { warning = "Delete \(route.name), its \(route.pitches.count) pitches and 1 General note? All their notes will be removed. This cannot be undone." }
+            if case .deleteRoute = kind {
+                let count = route.images.count + route.pitches.reduce(0) { $0 + $1.images.count }
+                warning = "Delete \(route.name), its \(route.pitches.count) pitches and 1 General note? All their notes" + (count > 0 ? " and \(count) image attachments" : "") + " will be removed. This cannot be undone."
+            }
         case .notes(let routeID, let id), .renamePitch(let routeID, let id), .deletePitch(let routeID, let id):
             guard let route = route(routeID), let index = route.pitches.firstIndex(where: { $0.id == id }) else { return nil }
             let pitch = route.pitches[index]
@@ -194,7 +220,7 @@ final class TextNotebookState {
             if case .notes = kind { text = pitch.notes }
             if case .renamePitch = kind { text = pitch.name }
             if case .deletePitch = kind {
-                warning = "Delete \(Self.pitchName(pitch, index: index)) from \(route.name), including its notes? This cannot be undone."
+                warning = "Delete \(Self.pitchName(pitch, index: index)) from \(route.name), including its notes" + (pitch.images.isEmpty ? "" : " and \(pitch.images.count) image attachments") + "? This cannot be undone."
                 order = route.pitches.map(\.id)
             }
         }
@@ -214,6 +240,55 @@ final class TextNotebookState {
                                       expectedRevision: draft.revision, expectedRouteRevision: draft.routeRevision)
         snapshot = saved
         if saved.revision != before.revision { acknowledgedRevision = saved.revision }
+    }
+
+    func imageDraft(routeID: UUID, pitchID: UUID? = nil, adding: Bool) throws -> TextNotebookImageDraft {
+        guard source == .notebook, !saving, loadError == nil, let store, let snapshot,
+              let route = route(routeID), let area = area(route.areaID) else {
+            throw failure("Images cannot be edited in this notebook right now.")
+        }
+        let pitch = pitchID.flatMap { id in route.pitches.first { $0.id == id } }
+        guard pitchID == nil || pitch != nil else { throw failure("This pitch is no longer available.") }
+        let images = pitch?.images ?? route.images
+        let owner = pitch.map { value in
+            let index = route.pitches.firstIndex { $0.id == value.id } ?? 0
+            return "Pitch \(index + 1): \(Self.pitchName(value, index: index))"
+        } ?? "Route images"
+        let operation = adding ? try store.imageFiles.beginOperation(sourceMarker: store.sourceMarker) : nil
+        let draft = TextNotebookImageDraft(sourceToken: snapshot.sourceToken, revision: snapshot.revision,
+            routeRevision: route.revision, routeID: routeID, pitchID: pitchID, adding: adding,
+            context: "Notebook / \(area.name) / \(route.name) / \(owner)",
+            existingCount: images.count, images: adding ? [] : images, operationID: operation,
+            files: store.imageFiles)
+        draft.removeFile = { [weak store] assetID, operationID in
+            guard let store else { throw self.failure("The original notebook is unavailable. Keep this draft and retry.") }
+            try store.removeImageSelection(assetID: assetID, operationID: operationID)
+        }
+        return draft
+    }
+
+    func submitImages(_ draft: TextNotebookImageDraft) throws {
+        guard !saving, loadError == nil, let store, snapshot?.sourceToken == draft.sourceToken,
+              source == .notebook, draft.canSave else {
+            throw failure("Not saved. Review the selected images and their original notebook before retrying.")
+        }
+        saving = true
+        defer { saving = false; store.beforeSave = nil; failNextSave = false }
+        if failNextSave { store.beforeSave = { throw self.failure("Synthetic save failure. Your images remain in this editor.") } }
+        let before = try store.load()
+        let saved = try store.saveImages(routeID: draft.routeID, pitchID: draft.pitchID,
+            images: draft.attachments, operationID: draft.operationID, sourceToken: draft.sourceToken,
+            expectedRevision: draft.revision, expectedRouteRevision: draft.routeRevision, adding: draft.adding)
+        snapshot = saved
+        if saved.revision != before.revision { acknowledgedRevision = saved.revision }
+        draft.committed = true
+    }
+
+    func discardImages(_ draft: TextNotebookImageDraft) async {
+        await draft.cancelLoading()
+        guard !draft.committed, let id = draft.operationID else { return }
+        // A failed fresh graph read retains operation files rather than guessing ownership.
+        store?.discardImageOperation(id)
     }
 
     func reload(_ draft: TextNotebookDraft) throws -> TextNotebookDraft {

@@ -127,6 +127,7 @@ private struct TextSizeDiagnosticControl: UIViewRepresentable {
 }
 
 struct TextNotebookView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var notebook: TextNotebookState
     @State private var draft: TextNotebookDraft?
     @State private var examples = false
@@ -181,9 +182,12 @@ struct TextNotebookView: View {
                         Section {
                             Text(notebook.source == .notebook ? "No backup or recovery. Keep another copy of important notes." : "Example Notebook. Fictional content only, not climbing guidance. Changes stay separate from your notebook and retained prototype.")
                                 .font(.subheadline)
-                            Text(notebook.saveStatus).font(.body)
+                             Text(notebook.saveStatus).font(.body)
                                 .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("textSaveStatus")
+                                 .accessibilityIdentifier("textSaveStatus")
+                            if let warning = notebook.store?.cleanupWarning {
+                                Text(warning).fixedSize(horizontal: false, vertical: true)
+                            }
                         } header: {
                             Text(notebook.source == .notebook ? "Notebook" : "Example Notebook")
                                 .accessibilityIdentifier("sourceLabel")
@@ -235,6 +239,7 @@ struct TextNotebookView: View {
             }
         }
         .task { if notebook.snapshot == nil { notebook.load() } }
+        .onChange(of: scenePhase) { _, phase in if phase == .active { notebook.refreshSavedImages() } }
         .fullScreenCover(item: $draft) { TextNotebookEditor(draft: $0).environment(notebook) }
         .fullScreenCover(isPresented: $examples) {
             VStack(spacing: 0) {
@@ -320,6 +325,7 @@ private struct TextRouteView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let routeID: UUID
     @State private var draft: TextNotebookDraft?
+    @State private var imagePresentation = TextNotebookImagePresentation()
 
     var body: some View {
         Group {
@@ -329,6 +335,11 @@ private struct TextRouteView: View {
                         let actionLayout = dynamicTypeSize.isAccessibilitySize
                             ? AnyLayout(VStackLayout(spacing: 0)) : AnyLayout(HStackLayout())
                         actionLayout {
+                            if !route.images.isEmpty {
+                                Button("Images", systemImage: "photo") { proxy.scrollTo("routeImages", anchor: .top) }
+                                    .frame(minHeight: 48)
+                                Button("General") { proxy.scrollTo("general", anchor: .top) }.frame(minHeight: 48)
+                            }
                             if !route.pitches.isEmpty {
                                 Button("Jump to Pitches", systemImage: "list.number") { proxy.scrollTo("pitches", anchor: .top) }
                                     .frame(minHeight: 48)
@@ -345,11 +356,16 @@ private struct TextRouteView: View {
                                 Text("\(route.pitches.count) pitches entered")
                                 Text(notebook.saveStatus).font(.subheadline).accessibilityIdentifier("textSaveStatus")
                             }
+                            if notebook.source == .notebook || !route.images.isEmpty {
+                                Section {
+                                    TextNotebookImageSection(routeID: routeID, presentation: imagePresentation).id("routeImages")
+                                }
+                            }
                             Section("General") {
                                 Text(route.notes.isEmpty ? "No General notes entered" : route.notes)
                                     .textSelection(.enabled)
                                     .fixedSize(horizontal: false, vertical: true)
-                                    .accessibilityIdentifier("textGeneralNotes")
+                                    .accessibilityIdentifier("textGeneralNotes").id("general")
                                 Button("Edit General Notes") { draft = notebook.draft(.general(routeID)) }
                                     .frame(minHeight: 48)
                             }
@@ -362,7 +378,8 @@ private struct TextRouteView: View {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text("\(index + 1). \(TextNotebookState.pitchName(pitch, index: index))")
                                                 .font(.headline).fixedSize(horizontal: false, vertical: true)
-                                            if !pitch.grade.isEmpty { Text(pitch.grade).font(.subheadline).foregroundStyle(TextNotebookPalette.secondary) }
+                                             if !pitch.grade.isEmpty { Text(pitch.grade).font(.subheadline).foregroundStyle(TextNotebookPalette.secondary) }
+                                            if !pitch.images.isEmpty { Text("\(pitch.images.count) pitch images").font(.subheadline) }
                                         }
                                     }.accessibilityIdentifier("text-pitch-\(pitch.id.uuidString)")
                                         .accessibilityValue("Position \(index + 1) of \(route.pitches.count)")
@@ -388,6 +405,7 @@ private struct TextRouteView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .modifier(TextNotebookImagePresentationHost(presentation: imagePresentation))
         .fullScreenCover(item: $draft) { item in
             TextNotebookEditor(draft: item) { submitted in
                 if submitted.isDeletion { dismiss() }
@@ -402,6 +420,7 @@ private struct TextPitchView: View {
     let routeID: UUID
     @State var pitchID: UUID
     @State private var draft: TextNotebookDraft?
+    @State private var imagePresentation = TextNotebookImagePresentation()
 
     var body: some View {
         Group {
@@ -426,6 +445,11 @@ private struct TextPitchView: View {
                                 .accessibilityLabel("Next Pitch")
                         }
                     }.padding(.horizontal).padding(.top, 8)
+                    ScrollViewReader { proxy in
+                        if !pitch.images.isEmpty {
+                            Button("Images (\(pitch.images.count))", systemImage: "photo") { proxy.scrollTo("pitchImages", anchor: .top) }
+                                .frame(minHeight: 44)
+                        }
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
                             Text(TextNotebookState.pitchName(pitch, index: index)).font(.headline)
@@ -440,8 +464,16 @@ private struct TextPitchView: View {
                                 .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                                 .accessibilityIdentifier("textPitchNotes")
                             Text(notebook.saveStatus).font(.subheadline).foregroundStyle(TextNotebookPalette.secondary)
+                            if notebook.source == .notebook || !pitch.images.isEmpty {
+                                TextNotebookImageSection(routeID: routeID, pitchID: pitchID, presentation: imagePresentation).id("pitchImages")
+                            }
+                            if !route.images.isEmpty {
+                                NavigationLink("Route images (\(route.images.count))") { TextRouteView(routeID: routeID) }
+                                    .frame(minHeight: 44)
+                            }
                         }.frame(maxWidth: .infinity, alignment: .leading).padding()
                     }.id(pitchID)
+                    }
                 }
                 .navigationTitle(TextNotebookState.pitchName(pitch, index: index))
                 .toolbar {
@@ -457,6 +489,7 @@ private struct TextPitchView: View {
         }
         .background(TextNotebookPalette.canvas).foregroundStyle(TextNotebookPalette.text)
         .navigationBarTitleDisplayMode(.inline)
+        .modifier(TextNotebookImagePresentationHost(presentation: imagePresentation))
         .fullScreenCover(item: $draft) { item in
             TextNotebookEditor(draft: item) { submitted in
                 if case .deletePitch = submitted.kind {

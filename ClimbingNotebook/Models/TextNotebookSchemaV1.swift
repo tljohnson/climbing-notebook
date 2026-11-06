@@ -99,39 +99,3 @@ enum TextNotebookSchemaV1: VersionedSchema {
         }
     }
 }
-
-enum TextNotebookMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [TextNotebookSchemaV1.self] }
-    static var stages: [MigrationStage] { [] }
-}
-
-struct TextPitch: Identifiable, Equatable {
-    let id: UUID
-    var name: String
-    let grade: String
-    var notes: String
-}
-
-struct TextRoute: Identifiable, Equatable {
-    let id: UUID
-    let areaID: UUID
-    let generalNoteID: UUID
-    var name: String
-    let grade: String
-    let style: String
-    var notes: String
-    var pitches: [TextPitch]
-    var revision: Int = 0
-}
-
-struct TextArea: Identifiable, Equatable {
-    let id: UUID
-    var name: String
-    var routes: [TextRoute]
-}
-
-struct TextNotebookSnapshot: Equatable {
-    let sourceToken: String
-    let revision: Int
-    var areas: [TextArea]
-}
