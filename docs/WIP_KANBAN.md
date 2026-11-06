@@ -12,6 +12,14 @@ Historical prototype cards, completed work and deferred archive/migration invest
 
 ## Review
 
+- [ ] `TN-IMAGE-01` Plan image-supported route and pitch notebooks
+  - Priority: P1
+  - Owner: Kilo/local
+  - Depends on: None; owner-authorized planning and Stitch exploration only.
+  - Plan: [Image-Supported-Notebooks-FeaturePlan.md](../Image-Supported-Notebooks-FeaturePlan.md) §§1–6 (proposed, unapproved)
+  - Done when: Source-grounded image/storage/Save contract and visually reviewed Stitch journey are ready for explicit owner approval before implementation.
+  - Evidence: [Proposed image contract](../Image-Supported-Notebooks-FeaturePlan.md#1-selected-journey-and-scope), [Stitch comparison/references](../Image-Supported-Notebooks-FeaturePlan.md#6-proposed-image-notebook-exploration); documentation checks passed; owner approval pending, no app implementation.
+
 - [ ] `CF-07E` Deliver the complete text-first notebook milestone
   - Priority: P0
   - Owner: Kilo/local

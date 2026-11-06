@@ -1167,6 +1167,8 @@ Report the delivered change, actual scoped test results and material limitations
 
 ### 21.7 Text-Only Notebook Export Contract (Approved)
 
+**Priority deferred, owner direction 2026-11-06:** image-supported notebooks (§21.8) take priority. Export planning is complete and its approved contract below is preserved for possible later use; approval does not prioritize implementation now. No export code exists. Full backup/restore remains separate, not an image dependency.
+
 **Owner direction,2026-11-05; proposal2026-11-06:** plan bounded text-only export after CI handoff. Both routine hosted jobs now pass at `d742ea6`; exact run/revision and verification limits are in [canonical evidence](docs/verification/NotebookPrototype.md#conclusion). CF-07E remains Review pending explicit owner acceptance, not accepted by CI. Superseded prototype and deferred archive/migration cards remain preserved in `docs/WIP_KANBAN_ARCHIVE_2026-11-05.md`, not active export blockers.
 
 **Planning scope only:** propose complete hierarchy/full General and pitch-note export in saved sibling order as a readable text or Markdown file using native sharing. Define source selection, acknowledged snapshot versus unsaved buffers, exact authored text/Unicode, duplicate/empty names/notes, file lifetime/privacy, cancellation/error handling and focused tests. Keep ordinary storage and Save/Cancel contracts unchanged. This is Export, not an app-restorable Backup. No ZIP, attachments, import/restore, migration, networking, new dependencies or revival of archived research. Record the small contract here and obtain owner approval before feature implementation.
@@ -1225,3 +1227,7 @@ Filesystem-synchronized Xcode groups include new source/test files; no schema, d
 6. Brief hands-on check on phone and available iPad: Save to Files then open the readable `.txt`, confirm order/full note endings, native cancellation/retry and correct iPad presentation. Inspect added controls at regular/maximum text and light/dark. Run affected checks under §21.6.8, not exhaustive historical suites; report unavailable destination/device/VoiceOver checks honestly. External handoff success never establishes restore capability or sole-copy safety.
 
 **Owner approval,2026-11-06:** owner explicitly approved §§21.7.1–21.7.4 as the bounded scope for a subsequent export implementation assignment. TN-EXPORT-01 planning is complete. This turn remains planning-only; no export code is implemented or verified. Approval is distinct from CF-07E milestone acceptance and does not authorize commits, pushes, publication or settings changes.
+
+### 21.8 Image-Supported Route and Pitch Notebooks (Proposed)
+
+**Planning only, unapproved; TN-IMAGE-01:** the complete proposed behavior/data contract, source-grounded risks, acceptance checks and Stitch exploration now live in [Image-Supported-Notebooks-FeaturePlan.md](Image-Supported-Notebooks-FeaturePlan.md). Explicit owner approval is required before implementation; this routing entry grants none. CF-07E acceptance and deferred export/backup remain separate. Main plan §21.6.8 continues to govern delivery policy.
