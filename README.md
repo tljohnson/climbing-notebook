@@ -1,6 +1,6 @@
 # Climbing Notebook
 
-Updated: 2026-11-04
+Updated: 2026-11-06
 
 Native, iPhone-primary climbing notebook for iOS 17.5+ with minimal iPad support. Product requirements and integrity contracts are in the [approved plan](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md).
 
@@ -66,7 +66,7 @@ ZIPFoundation 0.9.20 is resolved at `22787ffb59de99e5dc1fbfe80b19c97a904ad48d` i
 
 Per-commit development targets the latest stable toolchain/iOS runtime installed on the current `macos-26` hosted image, selected explicitly by `Scripts/select-ci-ios.rb`. It exports `DEVELOPER_DIR` and `SIMULATOR_ID` for all later steps and logs exact versions/device; it does not pick the first iPhone or use the image's default Xcode. Runner inventory checked2026-11-05 lists Xcode26.6/iOS26.5, not the local primary iPhone18Pro/iOS27.0 target. Hosted latest-available is not exact local parity or proof of global latest-release availability. Backwards compatibility is separate: iPhone11/iOS17.5 is the owner-designated minimum target, iOS17.5 remains the deployment floor, and later major versions are intended to work. Run affected compatibility checks locally and broader compatibility qualification before releases; routine CI is not a minimum-OS matrix.
 
-GitHub Actions runs two independent30-minute jobs on PR/main: **Build + Unit Tests** (`core-unit`) and **UI Smoke Tests** (`smoke`). No mandatory coverage or merge job exists. Manual **Run workflow** offers `core`, `qualification` or exhaustive `all` in a separate180-minute extended job; use all before major releases. Jobs build independently on `macos-15` with read-only permissions, pinned Actions and superseded-run cancellation. Activity logs/summaries and compressed synthetic result bundles are retained7 days under suite-specific artifact names; no caches or user notebooks are uploaded. Previous hosted extended runs reported23 UI failures on Xcode16.4/iOS18.5; reducing routine scope does not resolve/relabel them. Hosted execution of the new split is unverified. Signing, identifiers, releases and support/privacy URLs remain owner-controlled; no publication/settings changes are authorized.
+GitHub Actions runs two independent30-minute jobs on PR/main: **Build + Unit Tests** (`core-unit`) and **UI Smoke Tests** (`smoke`). No mandatory coverage or merge job exists. Manual **Run workflow** offers `core`, `qualification` or exhaustive `all` in a separate180-minute extended job; use all before major releases. Jobs build independently on `macos-26` with read-only permissions, pinned Actions and superseded-run cancellation. Activity logs/summaries and compressed synthetic result bundles are retained7 days under suite-specific artifact names; no caches or user notebooks are uploaded. Both routine jobs passed in [run42130921302](https://github.com/tljohnson/climbing-notebook/actions/runs/42130921302), revision `d742ea63ab2e9c788c8afa2cdd1fedfd053ff636`; GitHub API run/job conclusions independently checked2026-11-06. Manual extended tests were not run. Previous hosted extended runs reported23 UI failures on Xcode16.4/iOS18.5; this routine pass does not resolve/relabel them or imply owner milestone acceptance. Signing, identifiers, releases and support/privacy URLs remain owner-controlled; no publication/settings changes are authorized.
 
 ## Verification References
 
