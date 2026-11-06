@@ -34,6 +34,8 @@ Preserve the owner-approved Alpine Technical Notebook direction (2026-10-30), re
 
 Keep note editing, naming, ordering and deletion separate. Back returns to the actual originating context. Reading and Previous/Next never mutate order or save. Pitch fallback titles such as Pitch 2 are presentation, not authored names. Never replace an unreadable library with an empty-library screen.
 
+Do not repeat routine “Saved/Loaded on this device” status on reading screens. Put the backup limitation in About & Data; keep unsaved-change indicators and actionable failures where they occur. Optional image captions use one persistent label, not identical label and placeholder text.
+
 The [approved image contract](Image-Supported-Notebooks-FeaturePlan.md) adds route-owned images before General/pitches with section jumps; pitch notes stay first with their own image jump and distinct route-reference link. No images retains the existing content with a quiet Add Images action. Previews are aspect-fit and identify content, never substitute for full-original reading. Dynamic Type scales notes/controls, not raster text; provide native zoom alternatives. Dark mode changes chrome, never original image colors. Keep missing originals visible with Retry/return rather than silently dropping attachments. Photos removal remains outside app attachment removal. Feature exploration and proposal history belong in the feature plan, not this rules document.
 
 ### Editor Hierarchy

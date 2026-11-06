@@ -272,7 +272,9 @@ final class TextNotebookUITests: XCTestCase {
     private func nameField(_ app: XCUIApplication) -> XCUIElement {
         // v2 captured index zero before the modal existed, permanently querying the covered root.
         XCTAssertTrue(app.collectionViews["textEditorForm"].waitForExistence(timeout: 5))
-        return app.collectionViews["textEditorForm"].textViews["textNameEditor"].firstMatch
+        let form = app.collectionViews["textEditorForm"]
+        let field = form.textFields["textNameEditor"].firstMatch
+        return field.exists ? field : form.textViews["textNameEditor"].firstMatch
     }
 
     private func rowIDs(_ app: XCUIApplication, kind: String) -> [String] {
@@ -474,8 +476,7 @@ final class TextNotebookUITests: XCTestCase {
                 XCTAssertTrue(routeRow.label.contains("\(route.pitches.count) pitches entered"))
                 tap(routeRow, in: app)
                 if loaded {
-                    reveal(app.staticTexts["textSaveStatus"], in: app)
-                    XCTAssertEqual(app.staticTexts["textSaveStatus"].label, "Loaded from this device")
+                    XCTAssertFalse(app.staticTexts["textSaveStatus"].exists)
                 }
                 let general = app.staticTexts["textGeneralNotes"]
                 reveal(general, in: app)
@@ -647,6 +648,83 @@ final class TextNotebookUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["textGeneralNotes"].label, "Saved General note")
         tap(app.buttons[pitch], in: app)
         XCTAssertEqual(app.staticTexts["textPitchNotes"].label, "Saved pitch note")
+    }
+
+    func testUF01Through03QuietReadingAboutDataAndSingleCaptionLabel() {
+        let app = application()
+        app.launchEnvironment["NOTEBOOK_IMAGE_TEST"] = "1"
+        app.launch()
+        assertLibrary(app)
+        let warning = "No backup or recovery. Keep another copy of important notes and images."
+        XCTAssertFalse(app.staticTexts["textSaveStatus"].exists)
+        XCTAssertFalse(app.staticTexts[warning].exists)
+        capture(app, "UF01-03 quiet Library")
+        tap(app.buttons["About & Data"], in: app)
+        XCTAssertTrue(app.navigationBars["About & Data"].waitForExistence(timeout: 3))
+        XCTAssertEqual(app.staticTexts["textDataWarning"].label, warning)
+        capture(app, "UF01-03 About & Data warning")
+        tap(app.navigationBars["About & Data"].buttons["Done"], in: app)
+        assertLibrary(app)
+        XCTAssertFalse(app.staticTexts["textDataWarning"].exists)
+        let area = create(app, kind: "area", name: "Quiet notebook area")
+        tap(app.buttons[area], in: app)
+        let route = create(app, kind: "route", name: "Quiet notebook route")
+        tap(app.buttons[route], in: app)
+        let general = "Saved General buffer  "
+        editNotes(app, action: "Edit General Notes", text: general)
+        XCTAssertEqual(app.staticTexts["textGeneralNotes"].label, general)
+        XCTAssertFalse(app.staticTexts["textSaveStatus"].exists)
+        let pitch = create(app, kind: "pitch", name: "Quiet notebook pitch")
+        tap(app.buttons[pitch], in: app)
+        let notes = "Saved pitch buffer  "
+        editNotes(app, action: "Edit Notes", text: notes)
+        XCTAssertEqual(app.staticTexts["textPitchNotes"].label, notes)
+        XCTAssertFalse(app.staticTexts["textSaveStatus"].exists)
+        let draft = "Uncommitted pitch buffer  "
+        editNotes(app, action: "Edit Notes", text: draft, save: false)
+        tap(app.buttons["Cancel"], in: app)
+        XCTAssertTrue(app.buttons["Keep Editing"].waitForExistence(timeout: 3))
+        app.buttons["Keep Editing"].tap()
+        XCTAssertEqual(app.textViews["textNoteEditor"].value as? String, draft)
+        discard(app)
+        XCTAssertEqual(app.staticTexts["textPitchNotes"].label, notes)
+        tap(app.buttons["Select Synthetic Images"], in: app)
+        XCTAssertTrue(app.navigationBars["Add Images"].waitForExistence(timeout: 5))
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["Save"])
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed)
+        let form = app.collectionViews["textEditorForm"]
+        XCTAssertEqual(form.staticTexts.matching(NSPredicate(format: "label == %@", "Caption (optional)")).count, 1)
+        let caption = form.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "Caption for Image 1, optional")).firstMatch
+        XCTAssertTrue(caption.exists)
+        XCTAssertTrue((caption.placeholderValue ?? "").isEmpty)
+        XCTAssertTrue((caption.value as? String ?? "").isEmpty)
+        capture(app, "UF01-03 single persistent caption label and empty input")
+        fill(caption, with: "Saved caption buffer  ", in: app)
+        tap(app.buttons["Cancel"], in: app)
+        XCTAssertTrue(app.buttons["Keep Editing"].waitForExistence(timeout: 3))
+        app.buttons["Keep Editing"].tap()
+        XCTAssertEqual(caption.value as? String, "Saved caption buffer  ")
+        XCTAssertEqual(form.staticTexts.matching(NSPredicate(format: "label == %@", "Caption (optional)")).count, 1)
+        tap(app.buttons["Save"], in: app)
+        let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                               object: app.navigationBars["Add Images"])
+        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 5), .completed)
+        let image = app.descendants(matching: .any)["image-open-0"].firstMatch
+        reveal(image, in: app)
+        XCTAssertTrue(image.label.contains("Saved caption buffer  "))
+        relaunch(app)
+        verify(app, areas: [Area(id: area, name: "Quiet notebook area", routes: [
+            Route(id: route, name: "Quiet notebook route", notes: general, pitches: [
+                Pitch(id: pitch, name: "Quiet notebook pitch", notes: notes)
+            ])
+        ])])
+        tap(app.buttons[area], in: app)
+        tap(app.buttons[route], in: app)
+        tap(app.buttons[pitch], in: app)
+        reveal(image, in: app)
+        XCTAssertTrue(image.label.contains("Saved caption buffer  "))
+        XCTAssertFalse(app.staticTexts["textSaveStatus"].exists)
     }
 
     func testSyntheticRouteAndPitchImagesReaderNotesAndRelaunchSmoke() {
@@ -1747,17 +1825,20 @@ final class TextNotebookUITests: XCTestCase {
             app.launchArguments = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategory\(category)"]
             app.launch()
             assertLibrary(app)
-            let status = app.staticTexts["textSaveStatus"]
-            reveal(status, in: app)
-            XCTAssertEqual(status.label, "Loaded from this device")
-            measurements.append("\(category): \(status.frame)")
-            if category == "XS" { smallestHeight = status.frame.height }
-            if category == "AccessibilityXXXL" { XCTAssertGreaterThan(status.frame.height, smallestHeight) }
-            capture(app, "Library status cold launch \(category)")
+            XCTAssertFalse(app.staticTexts["textSaveStatus"].exists)
+            tap(app.buttons["About & Data"], in: app)
+            let warning = app.staticTexts["textDataWarning"]
+            XCTAssertTrue(warning.waitForExistence(timeout: 3))
+            XCTAssertEqual(warning.label, "No backup or recovery. Keep another copy of important notes and images.")
+            measurements.append("\(category): \(warning.frame)")
+            if category == "XS" { smallestHeight = warning.frame.height }
+            if category == "AccessibilityXXXL" { XCTAssertGreaterThan(warning.frame.height, smallestHeight) }
+            capture(app, "About & Data warning cold launch \(category)")
+            tap(app.navigationBars["About & Data"].buttons["Done"], in: app)
             app.terminate()
         }
         let attachment = XCTAttachment(string: measurements.joined(separator: "\n"))
-        attachment.name = "Status AX frames across twelve cold-launch categories; live scaling remains separate"
+        attachment.name = "About & Data warning AX frames across twelve cold-launch categories; live scaling remains separate"
         attachment.lifetime = .keepAlways
         add(attachment)
     }
@@ -1768,6 +1849,9 @@ final class TextNotebookUITests: XCTestCase {
         app.launchEnvironment["NOTEBOOK_TEST_LIGHT"] = "1"
         app.launch()
         assertLibrary(app)
+        XCTAssertFalse(app.staticTexts["textSaveStatus"].exists)
+        tap(app.buttons["About & Data"], in: app)
+        XCTAssertTrue(app.staticTexts["textDataWarning"].waitForExistence(timeout: 3))
         var heights: [Int] = []
         var measurements: [String] = []
         let screen = app.screenshot().image
@@ -1783,16 +1867,17 @@ final class TextNotebookUITests: XCTestCase {
             let observed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", category),
                                                     object: app.buttons["cycleTestTextSize"])
             XCTAssertEqual(XCTWaiter.wait(for: [observed], timeout: 3), .completed)
-            let status = app.staticTexts["textSaveStatus"]
-            reveal(status, in: app)
-            XCTAssertEqual(status.label, "Loaded from this device")
-            heights.append(Int((status.frame.height * scale).rounded()))
-            measurements.append("Library observed \(category): \(status.frame), backing-pixel height \(heights.last!)")
-            capture(app, "Live same-library status \(category)")
+            let warning = app.staticTexts["textDataWarning"]
+            XCTAssertTrue(warning.isHittable)
+            XCTAssertEqual(warning.label, "No backup or recovery. Keep another copy of important notes and images.")
+            heights.append(Int((warning.frame.height * scale).rounded()))
+            measurements.append("About & Data observed \(category): \(warning.frame), backing-pixel height \(heights.last!)")
+            capture(app, "Live same-sheet backup warning \(category)")
         }
         XCTAssertGreaterThan(heights[1], heights[0])
         XCTAssertGreaterThan(heights[2], heights[1])
         XCTAssertEqual(heights[1], heights[3])
+        tap(app.navigationBars["About & Data"].buttons["Done"], in: app)
         beginName(app, action: "Add Area", name: "Live draft Cafe\u{301}  ")
         let draftIdentity = (app.buttons["cycleEditorTestTextSize"].value as? String ?? "")
             .split(separator: "|", maxSplits: 1).dropFirst().joined(separator: "|")
@@ -1846,12 +1931,13 @@ final class TextNotebookUITests: XCTestCase {
         let app = application(accessibility: accessibility, dark: dark)
         app.launch()
         assertLibrary(app)
-        reveal(app.staticTexts["textSaveStatus"], in: app)
-        capture(app, "Library status at \(accessibility ? "AXXXL" : "ordinary") text size")
-        let statusEvidence = XCTAttachment(string: "Rendered status: \(app.staticTexts["textSaveStatus"].label); frame: \(app.staticTexts["textSaveStatus"].frame)")
-        statusEvidence.name = "Library status Dynamic Type frame"
-        statusEvidence.lifetime = .keepAlways
-        add(statusEvidence)
+        XCTAssertFalse(app.staticTexts["textSaveStatus"].exists)
+        let source = library(app).descendants(matching: .any).matching(identifier: "sourceLabel").firstMatch
+        capture(app, "Notebook header without reading status at \(accessibility ? "AXXXL" : "ordinary") text size")
+        let sourceEvidence = XCTAttachment(string: "Rendered source: \(source.label); frame: \(source.frame); persistent save status absent")
+        sourceEvidence.name = "Notebook header Dynamic Type frame"
+        sourceEvidence.lifetime = .keepAlways
+        add(sourceEvidence)
         let area = create(app, kind: "area", name: "Synthetic long area name with wrapping and Cafe\u{301}")
         tap(app.buttons[area], in: app)
         let route = create(app, kind: "route", name: "Synthetic route with a long readable contextual name")

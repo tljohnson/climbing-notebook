@@ -132,6 +132,7 @@ struct TextNotebookView: View {
     @State private var draft: TextNotebookDraft?
     @State private var examples = false
     @State private var retained = false
+    @State private var dataInformation = false
     let showsSources: Bool
 
     init(notebook: TextNotebookState? = nil, showsSources: Bool = true) {
@@ -179,21 +180,18 @@ struct TextNotebookView: View {
                     ProgressView("Loading notebook")
                 } else {
                     List {
-                        Section {
-                            Text(notebook.source == .notebook ? "No backup or recovery. Keep another copy of important notes." : "Example Notebook. Fictional content only, not climbing guidance. Changes stay separate from your notebook and retained prototype.")
-                                .font(.subheadline)
-                             Text(notebook.saveStatus).font(.body)
-                                .fixedSize(horizontal: false, vertical: true)
-                                 .accessibilityIdentifier("textSaveStatus")
-                            if let warning = notebook.store?.cleanupWarning {
+                        if notebook.source == .examples {
+                            Section("Example Notebook") {
+                                Text("Fictional content only, not climbing guidance. Changes stay separate from your notebook and retained prototype.")
+                                    .font(.subheadline)
+                            }.textCase(nil)
+                        }
+                        if let warning = notebook.store?.cleanupWarning {
+                            Section {
                                 Text(warning).fixedSize(horizontal: false, vertical: true)
                             }
-                        } header: {
-                            Text(notebook.source == .notebook ? "Notebook" : "Example Notebook")
-                                .accessibilityIdentifier("sourceLabel")
                         }
-                        .textCase(nil)
-                        Section("Areas (\(notebook.areas.count))") {
+                        Section {
                             if notebook.areas.isEmpty {
                                 ContentUnavailableView("No areas entered", systemImage: "mountain.2", description: Text("Add an area, then a route and its notes."))
                             }
@@ -211,6 +209,10 @@ struct TextNotebookView: View {
                             }
                             Button("Add Area", systemImage: "plus") { draft = notebook.draft(.addArea) }
                                 .frame(minHeight: 48)
+                        } header: {
+                            Text("\(notebook.source == .notebook ? "Notebook" : "Example Notebook") · Areas (\(notebook.areas.count))")
+                                .accessibilityLabel(notebook.source == .notebook ? "Notebook" : "Example Notebook")
+                                .accessibilityIdentifier("sourceLabel")
                         }.listRowBackground(TextNotebookPalette.surface)
                         if showsSources {
                             Section("Other Notebooks") {
@@ -225,8 +227,13 @@ struct TextNotebookView: View {
             }
             .navigationTitle(notebook.source == .notebook ? "Library" : "Example Notebook")
             .toolbar {
+                ToolbarItem(placement: .bottomBar) {
+                    Button("About & Data", systemImage: "info.circle") { dataInformation = true }
+                }
                 if notebook.snapshot != nil, notebook.loadError == nil, !notebook.areas.isEmpty {
-                    Button("Edit Area Order") { draft = notebook.draft(.areas) }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Edit Area Order") { draft = notebook.draft(.areas) }
+                    }
                 }
             }
         }
@@ -240,6 +247,26 @@ struct TextNotebookView: View {
         }
         .task { if notebook.snapshot == nil { notebook.load() } }
         .onChange(of: scenePhase) { _, phase in if phase == .active { notebook.refreshSavedImages() } }
+        .sheet(isPresented: $dataInformation) {
+            NavigationStack {
+                List {
+                    Section("Your Data") {
+                        Text("No backup or recovery. Keep another copy of important notes and images.")
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("textDataWarning")
+                    }
+                }
+                .navigationTitle("About & Data")
+                .navigationBarTitleDisplayMode(.inline)
+                .safeAreaInset(edge: .bottom) {
+                    if _isDebugAssertConfiguration(), notebook.testNamespace,
+                       ProcessInfo.processInfo.environment["NOTEBOOK_TEST_LIVE_SIZE"] == "1" {
+                        TextSizeDiagnosticControl().frame(height: 44)
+                    }
+                }
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dataInformation = false } } }
+            }
+        }
         .fullScreenCover(item: $draft) { TextNotebookEditor(draft: $0).environment(notebook) }
         .fullScreenCover(isPresented: $examples) {
             VStack(spacing: 0) {
@@ -354,7 +381,6 @@ private struct TextRouteView: View {
                                 if !route.grade.isEmpty { Text(route.grade) }
                                 if !route.style.isEmpty { Text(route.style) }
                                 Text("\(route.pitches.count) pitches entered")
-                                Text(notebook.saveStatus).font(.subheadline).accessibilityIdentifier("textSaveStatus")
                             }
                             if notebook.source == .notebook || !route.images.isEmpty {
                                 Section {
@@ -463,7 +489,6 @@ private struct TextPitchView: View {
                             Text(pitch.notes.isEmpty ? "No notes entered" : pitch.notes)
                                 .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                                 .accessibilityIdentifier("textPitchNotes")
-                            Text(notebook.saveStatus).font(.subheadline).foregroundStyle(TextNotebookPalette.secondary)
                             if notebook.source == .notebook || !pitch.images.isEmpty {
                                 TextNotebookImageSection(routeID: routeID, pitchID: pitchID, presentation: imagePresentation).id("pitchImages")
                             }

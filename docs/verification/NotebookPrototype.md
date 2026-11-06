@@ -4,6 +4,10 @@ Updated: 2026-11-06
 
 ## Conclusion
 
+### User Findings UF-01–03 (2026-11-06)
+
+Removed routine local-storage status from current library/route/pitch reading and moved the backup warning into About & Data; failures and unsaved-draft controls remain. Caption inputs keep one persistent optional label and no duplicate placeholder. Focused UI1/1 passed on primary iPhone18Pro/iOS27 in `.build/Tests-20261106-140956.xcresult`, covering warning access/dismissal, no status copy, one caption label, exact caption buffer through Keep Editing/Save and relaunch. State18/18 passed in135838 (earlier UI helper failure retained). Captures in `.build/uf01-03-evidence/` visually inspected without material clipping of requested controls. The existing Invalid frame dimension runtime warning remains. UF-04 design-fidelity work is not included; ephemeral user tracker remains until testing ends.
+
 ### Image Implementation Handoff (2026-11-06)
 
 **TN-IMAGE-02 implemented and ready for owner review, not milestone acceptance.** Native Photos review/explicit Save, contextual route/pitch images, captions/order/confirmed removal, full-original tiled reader/Notes, memory-only Cancel boundaries and V1-preserving V2 persistence are in source. Exact received bytes/orientation and file-before-metadata publication are covered by meaningful file/store/state tests; no app rebuild/redesign, export implementation, restore infrastructure or CI changes.

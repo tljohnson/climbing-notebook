@@ -355,7 +355,7 @@ struct TextNotebookImageEditor: View {
                     .accessibilityLabel("Review Image \(index + 1)")
             }
             Text("Caption (optional)").font(.subheadline).foregroundStyle(.secondary)
-            TextField("Caption (optional)", text: Binding(get: {
+            TextField("", text: Binding(get: {
                 draft.selections.first { $0.id == item.id }?.caption ?? ""
             }, set: { caption in
                 if let index = draft.selections.firstIndex(where: { $0.id == item.id }) { draft.selections[index].caption = caption }
