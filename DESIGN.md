@@ -268,7 +268,7 @@ These are gaps to resolve with the owner, not permission to improvise or impleme
 | Classification | Small user-selectable tile collection: area/route ownership, meaning and editing; custom tag ownership/display, including descriptions such as High altitude; no fixed taxonomy inferred |
 | Route notes | Custom-section placement and preservation of authored section titles/order; empty sections and creation/editing of future Approach/Descent/Gear sections |
 | Reading states | Remaining Pitch/Reference empty, long, boundary and failure compositions beyond the rules already approved |
-| Sources and intake | Sources interactions; Inbox/manual review and target selection; Photos/Files/paste/share/URL copying; distinguish a link from copied bytes |
+| Sources and intake | Sources interactions; future Inbox/manual review, target selection and Files/paste/share/URL copying; distinguish a link from copied bytes. Photos-to-Add-References review is already approved above, not an open composition decision. |
 | PDFs | Page navigation and relationship to reference collection navigation and notes |
 | Metadata | Grade/style/length editing and route moves; no values inferred from note text |
 | Data portability | Export, backup and replace restore screens; preserve count preview, export opportunity, destructive-loss explanation and final confirmation required by the technical plan |
