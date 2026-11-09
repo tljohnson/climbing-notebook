@@ -1,6 +1,6 @@
 # Climbing Notebook System Documentation Index
 
-Updated: 2026-11-04
+Updated: 2026-11-09
 
 ## Reading Workflow
 
@@ -43,7 +43,7 @@ Plan links below define approved requirements and contracts, not completed funct
 
 | Task | Read first |
 |---|---|
-| UI / navigation / editing | [screen specifications](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#4-screen-and-interaction-specifications), [prototype scope](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2144-owner-approved-prototype-first-reset), [prototype evidence](docs/verification/NotebookPrototype.md) |
+| UI / navigation / editing | [Product overview, navigation and approved screens](DESIGN.md), then the assigned behavior/data contract in [current notebook scope](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#216-consolidated-text-notebook-milestone-approved) or [image contract](Image-Supported-Notebooks-FeaturePlan.md). Consult [evidence](docs/verification/NotebookPrototype.md) only for relevant implementation limits; older prototype compositions are not the current design target. |
 | UI design / layout / controls / copy / review | Load [native-interface-design](.kilo/skills/native-interface-design/SKILL.md), then [product design rules and visual references](DESIGN.md) and the assigned plan section; read the skill file directly if not tool-discovered. Design guidance does not change functional/save/data contracts. |
 | Route/pitch images / Photos review / original reader | [Approved image feature plan](Image-Supported-Notebooks-FeaturePlan.md), [design rules](DESIGN.md), `TextNotebookImages.swift`, `TextNotebookImageReader.swift`, `TextNotebookImageFiles.swift`; broader intake/restore remains deferred. |
 | Persistence / schema / migrations / managed files | [Approved image V1→V2/ownership contract](Image-Supported-Notebooks-FeaturePlan.md#3-architecture-and-schema-compatibility), [architecture](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#5-architecture-and-technology-decisions), [data model](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#6-logical-data-model), [service contracts](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#7-contracts-and-api-boundaries), [data integrity](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#8-media-storage-and-data-integrity) |
@@ -69,6 +69,6 @@ Discover current files with search rather than expanding this index into an exha
 
 The [approved plan](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md) owns delivery contracts, owner decisions and approval scope; its [section 21 handoff](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#21-implementation-handoff) defines the bounded M0/M1 assignment and gates for later work. This index does not expand that authorization. Plan approval does not authorize commits, pushes, publication, website deployment, signing changes or developer-portal registration.
 
-The [README](README.md) owns current capabilities, setup and reusable verification commands. [Kanban](docs/WIP_KANBAN.md) owns task status. Topic references under `docs/verification/` own consolidated conclusions, decisive measurements, reproducible checks and remaining limits; read only the relevant topic. Source and test results establish implemented behavior, not planned features presented as live. Raw ignored `.build/` artifacts are local diagnostics, not required context for every task.
+The [design reference](DESIGN.md) owns the approved product overview, navigation, screen composition, shared presentation rules and current visual-reference index; it distinguishes intended design from implementation scope. The [README](README.md) owns current capabilities, setup and reusable verification commands. [Kanban](docs/WIP_KANBAN.md) owns task status. Topic references under `docs/verification/` own consolidated conclusions, decisive measurements, reproducible checks and remaining limits; read only the relevant topic. Source and test results establish implemented behavior, not planned features presented as live. Raw ignored `.build/` artifacts are local diagnostics, not required context for every task.
 
 Update this index only for navigation, architecture or cross-cutting invariants. Update topic documents in place; retain earlier failures only when they explain a current limitation or decision. Do not append per-turn worklogs, repeated test tables, superseded instructions or transient worktree observations to README, plans or this index. Do not create one report per agent/packet when an existing topic fits. Keep contracts/owner decisions in plans and release history in `CHANGELOG.md`/Git; maintain one updated date.
