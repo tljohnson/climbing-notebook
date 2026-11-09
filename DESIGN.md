@@ -131,7 +131,7 @@ These apply to Name, Note, Order, Add References and Manage References workflows
 | Leaving changed draft | Block silent interactive dismissal; offer Discard Changes and Keep Editing |
 | Invalid name | Explain the applicable requirement at the field and retain input, without a permanent naming tutorial |
 
-Save closes only after acknowledged success. Cancel abandons only uncommitted changes; Cancel uses the ordinary accent, confirmed discard is destructive. No autosave or recovery of uncommitted work after termination is promised. The older plan §4.3 buffered autosave/Done-Back direction is not this editor contract; adopting it requires separate authorization.
+Save closes only after acknowledged success. Cancel abandons only uncommitted changes; Cancel uses the ordinary accent, confirmed discard is destructive. No autosave or recovery of uncommitted work after termination is promised. Plan §4.3 is reconciled to this explicit-save contract; historical buffered-autosave/Done-Back wording does not govern current or future editors.
 
 ### Note Editor Composition
 

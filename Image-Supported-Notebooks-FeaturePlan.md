@@ -4,6 +4,8 @@
 
 ## 1. Selected Journey and Scope
 
+**Design reconciliation, 2026-11-09:** [DESIGN.md](DESIGN.md) owns the later owner-approved compositions, functional UI labels and current visual index. The images-first Route layout and original mockups below describe the initial image milestone, not a competing design target. Intended Route Details is written-sections-first with References later; applying it requires separately scoped work. Keep this plan's caption limits, source/UUID binding, batch/failure semantics, schema compatibility and original-file ownership intact. The approved pitch-reader Notes composition shows pitch notes; this plan's additional General-note presentation is not required by that newer composition. No new intake types or schema changes follow from visual approval.
+
 **Recommend a contextual reading notebook, not a photo gallery:** ordinary route/pitch **Add Images → native Photos picker → review local copies/captions → Save → read original with complete notes → relaunch/read offline**. See [Stitch comparison and final proposed references](#6-proposed-image-notebook-exploration). Mockups are not native implementation, owner approval, provider testing or accessibility evidence.
 
 - **Route:** compact Images / General / Pitches scroll-to-section actions; captioned **Route images** index first, then complete General notes and ordered pitches. Images lead because finding the right consolidated topo/approach/descent reference is the task; jumps prevent images burying notes/pitches. Optional captions and saved order, not mandatory categories, find the right image. No inferred descriptions, grades or extracted text.
