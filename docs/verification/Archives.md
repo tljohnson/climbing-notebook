@@ -1,12 +1,12 @@
 # Archive Feasibility Verification
 
-Updated: 2026-11-04
+Updated: 2026-11-09
 
 ## Conclusion and Boundary
 
 **MVP routing:** [§21.6.8](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2168-mvp-delivery-and-verification-policy) keeps this work as preserved opt-in research, not a notebook feature-delivery prerequisite. Read this topic only for assigned archive/restore work; do not repeat its tests for unrelated MVP changes. No existing assertion or measured finding is waived.
 
-Archive research is **paused** under [plan §21.4.4](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2144-owner-approved-prototype-first-reset). Do not resume CF-05G without explicit reprioritization. Bounded ZIP64 interoperability works on the host, but complete hostile-archive inspection, exact extraction consumption and compatibility guarantees remain unproven. These gate production restore, not the transient notebook or ordinary save/relaunch. [Kanban](../WIP_KANBAN.md) retains separate Review/Blocked statuses; no CF-05/M1 acceptance is implied.
+Archive research is **paused** under [plan §21.4.4](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2144-owner-approved-prototype-first-reset). Do not resume CF-05G without explicit reprioritization. Bounded ZIP64 interoperability works on the host, but complete hostile-archive inspection, exact extraction consumption and compatibility guarantees remain unproven. These gate production restore, not ordinary notebook delivery. Prior Review/Blocked statuses are preserved in the [owner-approved archive](../WIP_KANBAN_ARCHIVE_2026-11-05.md), not active assignments; no CF-05/M1 acceptance is implied.
 
 ZIPFoundation 0.9.20 revision `22787ffb59de99e5dc1fbfe80b19c97a904ad48d` is linked only to unit tests. The structural preflight and host driver are research-only. No production parser, strict extraction API, fork candidate or alternative decoder is implemented. The unused byte-identical CF-05G source copy was removed; the earlier read-only file mode issue was not a capability or permission-policy blocker. Leif remains maintainer with separate agent-assisted review, not an independent human security audit. Plans §§21.4.1-21.4.3 retain design/ownership/approval contracts, superseded only in immediate sequencing by §21.4.4.
 
@@ -63,8 +63,8 @@ Latest archive-specific execution (CF-05E,2026-10-28): focused17/17 each on iOS1
 If explicitly assigned to resume archive verification, use [README commands](../../README.md#build-and-test), fresh paths and these focused selections:
 
 ```sh
-SIMULATOR_ID=<verified-UUID> RESULT_BUNDLE_PATH=<new.xcresult> bash Scripts/test-ios.sh -quiet -only-testing:ClimbingNotebookTests/ArchiveHostileFeasibilityTests -only-testing:ClimbingNotebookTests/ArchiveFeasibilityTests -test-timeouts-enabled YES -maximum-test-execution-time-allowance 120 -collect-test-diagnostics never
+SIMULATOR_ID="verified-UUID" RESULT_BUNDLE_PATH=".build/new-archive-result.xcresult" bash Scripts/test-ios.sh --suite all -quiet -only-testing:ClimbingNotebookTests/ArchiveHostileFeasibilityTests -only-testing:ClimbingNotebookTests/ArchiveFeasibilityTests -test-timeouts-enabled YES -maximum-test-execution-time-allowance 120 -collect-test-diagnostics never
 CF05D_PREFLIGHT=1 bash Scripts/test-archive-boundaries.sh --run-large
 ```
 
-The large harness requires the existing resolved checkout, >=16GiB free and about8.03GiB logical fixture space; installs nothing, checks pinned/clean sources and cleans only owned scratch on exit. An existing stale cached object-alternate warning was observed despite successful read-only verification; do not patch dependency metadata as incidental cleanup. Re-run large probes when archive/shared-harness/dependency code changes, not for unrelated UI/docs. Archived local artifacts may not exist in another checkout; source tests and these bounded conclusions remain the reproducible reference.
+`--suite all` permits ad-hoc selectors here; this command is focused, not a full-suite run. Coverage/rejection-self-test results above are historical measurements, not current gates. The large harness requires the existing resolved checkout, >=16GiB free and about8.03GiB logical fixture space; installs nothing, checks pinned/clean sources and cleans only owned scratch on exit. An existing stale cached object-alternate warning was observed despite successful read-only verification; do not patch dependency metadata as incidental cleanup. Re-run large probes for assigned archive/shared-harness/dependency changes, not unrelated UI/docs. Archived artifacts may be absent; source tests and bounded conclusions remain the reference.

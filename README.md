@@ -1,6 +1,6 @@
 # Climbing Notebook
 
-Updated: 2026-11-06
+Updated: 2026-11-09
 
 Native, iPhone-primary climbing notebook for iOS 17.5+ with minimal iPad support. Product requirements and integrity contracts are in the [approved plan](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md).
 
@@ -8,17 +8,13 @@ Native, iPhone-primary climbing notebook for iOS 17.5+ with minimal iPad support
 
 ## Current Capabilities
 
-The notebook opens an initially empty ordered library with area/route/pitch creation, rename, reorder and confirmed deletion, General/pitch notes, isolated examples and retained read-only prototype access. Route/pitch images can be selected through the native Photos picker, reviewed and explicitly saved as independent local originals, then read with zoom/pan and complete notes. Caption/order/removal use a separate Save/Cancel editor; removing an attachment never deletes its Photos source. Image core units and focused simulator workflows pass, with actual Photos/device/VoiceOver limits and a baseline automation failure recorded in [verification](docs/verification/NotebookPrototype.md#image-implementation-handoff-2026-11-06). Prior owner checks do not accept the new feature. Backup/restore remains unimplemented. Keep another copy of important notes and images.
+The notebook opens an initially empty ordered library with area/route/pitch creation, rename, reorder and confirmed deletion, General/pitch notes, isolated examples and retained read-only prototype access. Route/pitch images can be selected through the native Photos picker, reviewed and explicitly saved as independent local originals, then read with zoom/pan and complete notes. Caption/order/removal use a separate Save/Cancel editor; removing an attachment never deletes its Photos source. Read complete notes with Jump to Pitches and pinned adjacent-pitch navigation. Examples and retained content stay separate from the ordinary notebook.
 
-Historical prototype: CF-07A's owner-accepted synthetic-data browsing/explicit editing and CF-07C reading/navigation are preserved. The retained ordinary-entry reader is read-only; legacy mutation tests remain active separately. CF-07B's explicit durable note/order saves still have separate owner acceptance pending. Do not enter personal climbing data.
+Save commits creation, names, notes, images and ordering on this device before closing; confirmed Delete remains separate. Cancel confirms discard when changed. Unsaved drafts/edits can be lost if the app closes; failures retain the editor for retry. Backup/restore, share delivery, website capture, URL copying, OCR, PDF, sync and export are not implemented. Keep another copy of important notes and images; this app is not qualified as the only copy of valuable data. Use synthetic fixtures for development and verification, not personal climbing data.
 
-CF-07C shows full General notes, Jump to Pitches and pinned adjacent-pitch navigation. Historical CF-07D adds name-only Add/Cancel route drafts in existing fixture areas; its verification remains paused with tests retained and owner acceptance pending. The new notebook carries creation/cancel/retry requirements forward without retroactively accepting CF-07D; see [current results](docs/verification/NotebookPrototype.md#cf-07d-current-results). Neither slice establishes automatic saving or full-product completion.
-
-Save commits creation, names, notes, images and ordering on this device before closing; confirmed Delete remains separate. Cancel confirms discard when changed. Unsaved drafts/edits can be lost if the app closes; failures retain the editor for retry. The retained legacy test flow keeps its historical labels. CF-07E acceptance remains separate from image implementation; share delivery, website capture, URL copying, OCR, PDF, sync, export and backup/restore are not implemented. Text export's approved contract is deferred in favor of images. M1 remains incomplete; archive research stays paused. See [Kanban](docs/WIP_KANBAN.md) and [verification](#verification-references) for status and limits.
+Implemented capability is not milestone or release acceptance. [Kanban](docs/WIP_KANBAN.md) owns current status; [verification topics](#verification-references) own results, failed checks and unverified Photos/device/VoiceOver limits. Historical CF-07B/CF-07D were superseded by CF-07E with no separate acceptance or resumed qualification requested; this does not retroactively accept those slices. Retained data and legacy tests remain preserved; see the [archive disposition](docs/WIP_KANBAN_ARCHIVE_2026-11-05.md) only for history.
 
 ## Prerequisites
-
-The supported minimum is iOS17.5, with qualification limits retained in [current evidence](docs/verification/NotebookPrototype.md#consolidated-final-disposition). Historical full suites ran on17.5 and27:129/161 and153/161 passed, with coverage97.12% and98.08%. These are failed full-suite results, not a current MVP-core result. Known automation/audit findings and paused migration research are classified separately under the [MVP policy](ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2168-mvp-delivery-and-verification-policy).
 
 - macOS, Xcode and installed iOS Simulator runtimes; verify using `xcodebuild -version` and `xcrun simctl list devices available`.
 - Git and network access for the approved Swift Package Manager dependency.
@@ -33,7 +29,7 @@ SIMULATOR_ID="installed-simulator-UUID" bash Scripts/test-ios.sh --suite fast -q
 git diff --check
 ```
 
-`Scripts/test-ios.sh` defaults to `fast`: complete current/retained-format unit classes plus three UI workflows in `Scripts/mvp-smoke-tests.txt`. `core-unit` and `smoke` run these separately in CI. Image units cover originals, migration, metadata/state and reader rendering; smoke adds synthetic select/review/Save/read/relaunch to the existing hierarchy checks. Synthetic providers use the same file-copy/save path but do not establish actual Photos-provider behavior. `core`/`mvp-core-tests.txt` preserves extended functional regressions; `core-ui` selects those UI workflows. Update selections by risk, not coverage percentage. Existing assertions remain active.
+`Scripts/test-ios.sh` defaults to `fast`: complete current/retained-format unit classes plus the UI workflows in `Scripts/mvp-smoke-tests.txt`. `core-unit` and `smoke` run these separately in CI. Image units cover originals, migration, metadata/state and reader rendering; smoke adds synthetic select/review/Save/read/relaunch to the existing hierarchy checks. Synthetic providers use the same file-copy/save path but do not establish actual Photos-provider behavior. `core`/`mvp-core-tests.txt` preserves extended functional regressions; `core-ui` selects those UI workflows. Update selections by risk, not coverage percentage. Existing assertions remain active.
 
 Use `--suite qualification` for the historical core complement (audits, diagnostics and research); use `--suite all` for every test, including the smoke additions. Run affected extended checks when warranted and manually trigger all tests before major releases. These suites can still fail on recorded findings. `--suite fast --list` prints selection without a simulator. Direct Xcode Test still runs all tests.
 
@@ -72,15 +68,15 @@ ZIPFoundation 0.9.20 is resolved at `22787ffb59de99e5dc1fbfe80b19c97a904ad48d` i
 
 ## CI and Distribution
 
-Per-commit development targets the latest stable toolchain/iOS runtime installed on the current `macos-26` hosted image, selected explicitly by `Scripts/select-ci-ios.rb`. It exports `DEVELOPER_DIR` and `SIMULATOR_ID` for all later steps and logs exact versions/device; it does not pick the first iPhone or use the image's default Xcode. Runner inventory checked2026-11-05 lists Xcode26.6/iOS26.5, not the local primary iPhone18Pro/iOS27.0 target. Hosted latest-available is not exact local parity or proof of global latest-release availability. Backwards compatibility is separate: iPhone11/iOS17.5 is the owner-designated minimum target, iOS17.5 remains the deployment floor, and later major versions are intended to work. Run affected compatibility checks locally and broader compatibility qualification before releases; routine CI is not a minimum-OS matrix.
+GitHub Actions runs native build/unit and UI smoke checks on pull requests and pushes to `main`. `Scripts/select-ci-ios.rb` explicitly selects the latest stable Xcode and available iOS runtime installed on the hosted runner, exports `DEVELOPER_DIR` and `SIMULATOR_ID`, and logs actual versions/device. Hosted latest-available is not exact local parity or proof of global latest-release availability. Routine CI is not minimum-OS qualification; use the [runtime targets](#climbing-notebook) for affected local compatibility checks and broader qualification before releases.
 
-GitHub Actions runs two independent30-minute jobs on PR/main: **Build + Unit Tests** (`core-unit`) and **UI Smoke Tests** (`smoke`). No mandatory coverage or merge job exists. Manual **Run workflow** offers `core`, `qualification` or exhaustive `all` in a separate180-minute extended job; use all before major releases. Jobs build independently on `macos-26` with read-only permissions, pinned Actions and superseded-run cancellation. Activity logs/summaries and compressed synthetic result bundles are retained7 days under suite-specific artifact names; no caches or user notebooks are uploaded. Both routine jobs passed in [run42130921302](https://github.com/tljohnson/climbing-notebook/actions/runs/42130921302), revision `d742ea63ab2e9c788c8afa2cdd1fedfd053ff636`; GitHub API run/job conclusions independently checked2026-11-06. Manual extended tests were not run. Previous hosted extended runs reported23 UI failures on Xcode16.4/iOS18.5; this routine pass does not resolve/relabel them or imply owner milestone acceptance. Signing, identifiers, releases and support/privacy URLs remain owner-controlled; no publication/settings changes are authorized.
+Use Actions → **iOS MVP Core** → **Run workflow** to select `core`, `qualification` or exhaustive `all` for extended checks; use `all` before major releases. The [workflow](.github/workflows/ios-ci.yml) owns the job matrix, runner image, timeouts, artifact retention and other execution settings. No mandatory coverage or merge job exists. Artifacts contain synthetic test evidence, not user notebooks or caches. Consult [verification](docs/verification/NotebookPrototype.md#conclusion) for hosted outcomes and limits, not an inferred full-suite pass or owner acceptance. Signing, identifiers, releases and support/privacy URLs remain owner-controlled; no publication/settings changes are authorized.
 
 ## Verification References
 
 | Topic | Canonical Evidence |
 | --- | --- |
-| Accepted prototype, simulator results and accessibility limits | [Notebook prototype](docs/verification/NotebookPrototype.md) |
+| Current notebook/image results, historical prototype evidence and accessibility limits | [Notebook prototype](docs/verification/NotebookPrototype.md) |
 | Migration/recovery blockers and URL-policy findings | [Persistence and URL policy](docs/verification/Persistence.md) |
 | ZIP64 measurements, hostile-input counterexamples and paused research | [Archives](docs/verification/Archives.md) |
 

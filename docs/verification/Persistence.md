@@ -1,12 +1,12 @@
 # Persistence and URL Policy Verification
 
-Updated: 2026-11-04
+Updated: 2026-11-09
 
 ## Conclusion
 
 **MVP routing:** apply [§21.6.8](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2168-mvp-delivery-and-verification-policy). Current save/ownership/exact-text regressions remain core checks; migration/generation/URL feasibility is separate opt-in research. Historical escalation and exhaustive qualification suggestions below are not assignments to resume investigation. Preserve the evidence and safe-filesystem boundaries; revisit only for an explicitly assigned dependent feature or a concrete new core defect.
 
-The diagnostic `LibraryStore`/generation components remain feasibility harnesses, not a production library or restore service. CF-07B separately implements a bounded ordinary SwiftData save/relaunch slice for synthetic route notes, pitch notes and pitch order. CF-04A established bounded in-process recovery behavior; CF-04B migration preservation and independent closed-generation recovery remain unproven. Ordinary-slice results do not accept migration, generation replacement or valuable-data safety. [Plan §§6.4, 9.5 and 21](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md) own contracts and sequencing; [Kanban](../WIP_KANBAN.md) owns status.
+The diagnostic `LibraryStore`/generation components remain feasibility harnesses, not a production library or restore service. CF-04A established bounded in-process recovery; CF-04B migration preservation and independent closed-generation recovery remain unproven. Ordinary notebook results do not qualify migration, generation replacement or valuable-data safety. Active V1→V2 image compatibility/file ownership is in the [image contract](../../Image-Supported-Notebooks-FeaturePlan.md#3-architecture-and-schema-compatibility) and [image verification](NotebookPrototype.md#image-implementation-handoff-2026-11-06). [Plan §§6.4, 9.5](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md) own prospective release contracts; Kanban owns current status. CF-07B/CF-07D were superseded with no separate acceptance or qualification requested.
 
 ## Ordinary Fixture Store
 
@@ -17,6 +17,8 @@ Commands validate ownership, route revision, exact sibling-ID permutation and 1 
 Focused on-disk/state checks include UUID ownership/order round trips, repeated loading, empty/Unicode/byte-limit cases, invalid orders/graphs, stale revisions, staged rollback/retry, missing/corrupt stores, initialization failure and namespace isolation. Actual process terminate/relaunch proof and consolidated runtime results are in [NotebookPrototype.md](NotebookPrototype.md). Fault injection proves application rollback/retry handling, not real ENOSPC or power-loss durability. Temporary diagnostic/test stores are retained rather than deleted while contexts may be alive. Physical-device file protection/backup, crash/power-loss durability and incomplete-initialization repair remain unverified/unimplemented.
 
 ## CF-07D Creation Boundary
+
+Historical retained-format scope/results below are not current assignments. No separate CF-07D acceptance is requested; do not rerun its former coverage/full-suite matrix. Tests and format safeguards remain intact.
 
 The owner approved §21.5.1 on 2026-10-31. The implementation extends `NotebookStore` in place: UUID-valued snapshots/commands, name-only creation of additional routes in either existing area, one General section and zero pitches. `NotebookSchemaV1`, version `1.0.0`, marker `CF-07B-1`, slice path and ModelContainer configuration are unchanged; no migration or diagnostic-store adoption is performed. Fixed area/route/note/pitch identities, immutable fixture metadata and ownership remain mandatory. Validation checks global UUID uniqueness, fetched/inverse ownership sets, General shape, bounded content, revisions and exact fixture pitch membership with persisted contiguous order. Existing note bytes and pitch order are saved content, not initialization defaults.
 
@@ -32,9 +34,14 @@ Commands check source tokens before mutation; structural edits check notebook re
 
 Retained prototype reading adds only an absent-root initialization guard to the old store/state and read-only presentation. Its schema, marker, path, graph validation and saved bytes are not transformed. Independent predecessor-writing tests compare IDs, revisions, relationships, exact Unicode text and order while creating/reopening separate notebook and example stores. Existing unknown saved edits are not labeled disposable synthetic content.
 
-Initial iPhone18Pro/iOS27 focused verification passed 38/38 new/legacy persistence tests, followed by 29/29 new state/persistence tests including strengthened fresh-container UTF-8 comparisons. Exact bundle names, subsequent UI failures and pending final acceptance checks are in [notebook verification](NotebookPrototype.md#cf-07e-text-notebook-milestone). This is in-progress ordinary storage evidence, not a completed milestone, migration/recovery result or sole-copy personal-data recommendation. Fault injection is pre-save, not actual ENOSPC; retained contexts are not claimed closed and diagnostic roots are not deleted on that assumption.
+Historical initial iPhone18Pro/iOS27 checks passed 38/38 new/legacy persistence and 29/29 state/persistence tests, including fresh-container UTF-8 comparisons. Subsequent outcomes live in [notebook verification](NotebookPrototype.md), not duplicated here. Fault injection is pre-save, not real ENOSPC; retained contexts are not claimed closed and diagnostic roots are not deleted on that assumption. None of this qualifies migration/recovery or sole-copy personal-data safety.
 
 ### Minimum-Runtime Model Identity Blocker
+
+<details>
+<summary>Historical iOS17.0 model-identity evidence and later runtime comparisons</summary>
+
+The owner selected iOS17.5 after this investigation. Retain the exact runtime-specific results below; old proposals to escalate/requalify the floor, "latest" suite descriptions and coverage gates are historical, not fresh instructions. The ignored standalone artifacts/UUIDs in the recorded commands may not exist now; they are not portable setup instructions or authorization to recreate probes.
 
 **2026-11-02 crash classification:** controlled17.5 UI crash reports show null-address `SIGSEGV` in injected `XCTAutomationSupport`'s `runtime_issue_os_log_fault_callback` through accessibility snapshot/logging quarantine, not Core Data insertion. The exact bundled direct-workflow report is `.build/CF07E-v35-direct-crash-20261102.ips`; the unchanged isolated direct five-pitch process-readback test passes1/1 in v36. The excessive-log trigger and broader recurrence remain unresolved automation limits; no persistence/schema change is justified by those stacks. See [focused diagnosis](NotebookPrototype.md#focused-diagnosis-and-fixes-2026-11-02). Migration lifetime barriers remain separate and unchanged.
 
@@ -65,6 +72,8 @@ Latest independent-review assertions require invalid pitch permutations at the c
 
 Latest full bundles `.build/CF07E-owner-final-full-v28-iOS27-20261101.xcresult` and `CF07E-owner-final-full-v27-iOS17-20261101.xcresult` pass149/156 and112/156, respectively, with0 skipped/runtime warnings. Current units106/108 fail only `MigrationFeasibilityTests/testFailedMigrationRecoversAndRetriesFromIndependentClosedGeneration` and `MigrationFeasibilityTests/testOnDiskSyntheticMigrationPreservesRelationshipsAndSavedChangesAfterReopen` at context lifetime barriers; minimum98/108 fail those at container barriers plus the unchanged eight ordinary persistence/state methods. Actual combined coverage gates pass current4546/4639 (98.00%) and minimum3572/4639 (77.00%); rejection self-test passes. All eight current cancellation/termination UI scenarios now pass, including unsaved rename/pitch notes, but both behavior suites remain failed. Exact UI IDs/results are in the [consolidated disposition](NotebookPrototype.md#consolidated-final-disposition). Retain the iOS17 blocker/escalate existing first-throw evidence to Apple, or require an explicit owner-qualified floor; no supported public-API remedy or intermediate-runtime qualification was established. Coverage and ordinary-save evidence do not accept migration, real I/O/power-loss safety, backup/recovery or personal-data safety.
 
+</details>
+
 ## Recovery Baseline
 
 `LibraryGenerationManager.swift` rejects initialization/replacement over pending recovery and same-generation journals. `PersistenceFoundationTests.swift` covers prepared, descriptor-switched-before-journal-update and switched interruption checkpoints; invalid replacement metadata; corrupt/missing stores and fallbacks; repeated recovery; and retry after fixture repair. Serialized journal phases remain `prepared`/`switched`, distinct from injected checkpoints.
@@ -90,6 +99,6 @@ Original isolated CF-04B evidence: `.build/MigrationSafetyFinal-iOS17-20261028.x
 
 ## Reproduction and Stop Rules
 
-Use [README test/coverage commands](../../README.md#build-and-test) with freshly verified iOS 17/current destinations and new paths. Add `-only-testing:ClimbingNotebookTests/MigrationFeasibilityTests`, `PersistenceFoundationTests` or `URLPolicyFeasibilityTests` as appropriate (each as a full `-only-testing:ClimbingNotebookTests/<class>` argument). Inspect result summaries and retained directory attachments; coverage success does not establish behavioral acceptance.
+Only for assigned dependent research, use [README commands](../../README.md#build-and-test) with verified destinations and fresh paths. Explicitly select `--suite all` before any `-only-testing:ClimbingNotebookTests/<class>` argument, selecting MigrationFeasibilityTests, PersistenceFoundationTests or URLPolicyFeasibilityTests as appropriate. This permits focused selection, not an implied full-suite run; named cohorts reject overrides. Inspect result summaries and retained-directory attachments. Coverage is optional and does not establish acceptance; do not reproduce historical percentage gates.
 
 Do not copy a live generation, weaken lifetime assertions, silently switch to Core Data or investigate process boundaries under an unrelated packet. A sequential-process fixture handoff with confirmed exit and retention-path inspection was proposed, not implemented; an explicit-close fallback would require review. Under §§21.4.4-21.4.5 these gaps gate generation replacement/migration recovery, not the separately approved ordinary fixture-save slice. M1 remains incomplete.

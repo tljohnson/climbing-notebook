@@ -1,8 +1,23 @@
 # Notebook Prototype Verification
 
-Updated: 2026-11-06
+Updated: 2026-11-09
 
 ## Conclusion
+
+This topic owns dated verification evidence, not task status or screen design. [Kanban](../WIP_KANBAN.md) owns current assignments/acceptance; [DESIGN](../../DESIGN.md) owns intended screens; [README](../../README.md#build-and-test) owns runnable test guidance. CF-07E remains in Review pending owner acceptance. CF-07B/CF-07D were superseded, with no separate acceptance or resumed qualification requested ([archive disposition](../WIP_KANBAN_ARCHIVE_2026-11-05.md)).
+
+The latest image and text-copy checks are below. Historical full suites remain Failed; later focused/core passes do not replace them. Automated audit findings and paused migration research remain recorded, but their former blocking status was superseded by [MVP policy §21.6.8](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2168-mvp-delivery-and-verification-policy). No diagnosis, audit waiver, minimum-device qualification or valuable-data safety is implied. Do not repeat historical probes without an assigned dependent feature or a concrete new defect.
+
+## Current Reproduction Guidance
+
+Use README's named suites on a freshly verified destination with a fresh result path. For an assigned focused check, explicitly select `--suite all` before ad-hoc selectors; this is a selection override, not a full-suite run:
+
+```sh
+SIMULATOR_ID="verified-UUID" RESULT_BUNDLE_PATH=".build/new-result.xcresult" bash Scripts/test-ios.sh --suite all -only-testing:ClimbingNotebookTests/TextNotebookPersistenceTests -only-testing:ClimbingNotebookTests/TextNotebookStateTests -quiet
+git diff --check
+```
+
+For an explicitly needed complete scheme run, use `--suite all` without selectors. For focused retained-format checks, select `NotebookPersistenceTests` / `NotebookPrototypeTests`; UI selection uses the `ClimbingNotebookUITests` target or specific classes/methods. Named cohorts reject overrides. Coverage is optional, not a threshold/rejection-checker gate. Preserve generated UUID namespaces across process relaunches; never reset ordinary stores. Ignored local artifacts may be absent in another checkout. Inspect bundles with `xcrun xcresulttool get test-results summary --path <bundle>`.
 
 ### User Findings UF-01–03 (2026-11-06)
 
@@ -30,6 +45,11 @@ Actual screenshots inspected: `.build/image-smoke-passing/` (review/index/readab
 
 ### Implementation Diagnostic Sequence
 
+<details>
+<summary>Historical image diagnostic sequence (superseded by the handoff above)</summary>
+
+The pending/in-progress wording in this sequence describes intermediate checks, not outstanding assignments or current status.
+
 **Image feature implementation in verification,2026-11-06:** owner approved [image notebook contract](../../Image-Supported-Notebooks-FeaturePlan.md) and end-to-end implementation. Current code adds V2 attachments, independent exact received originals, Photos review, contextual route/pitch reading and management. Final core units123/123 passed on iPhone15Pro/iOS17.5 (`.build/Tests-20261106-085152.xcresult`, also084617); includes exact-byte/HEIC/orientation, async timeout/copy cancellation, reader render/resize, V1 migration and injected file/metadata boundaries. Earlier118/119 result exposed the real post-schema/pre-marker failure; narrow in-place marker completion now passes the strengthened test (also1/1 iOS27 `.build/Migration-Marker-Retry-20261106.xcresult`).
 
 Both new image UI workflows individually passed on iPhone18Pro/iOS27: management/discard/failure/retry/relaunch in `.build/Image-UI-NativeModalTap-20261106.xcresult` (bundle also retains earlier smoke failure), final select/review/Save/reader/Notes/pitch/relaunch smoke1/1 in `.build/Image-Smoke-ScopedNotes-20261106.xcresult`. Fresh dense reader screenshot `.build/image-smoke-passing/0E9658B6-6B15-433F-91BA-10EDEE155932.png` visually inspected: fit-width text readable, earlier gray tiles/grid gone. Review/editor/index and management confirmation/failed-save captures also inspected. Reader6/6 after tile-gutter/fade fix passed17.5 (`.build/Tests-20261106-085834.xcresult`).
@@ -38,7 +58,14 @@ Preserved diagnostic history: blank modal fixed by item-bound payload; persisten
 
 Baseline follow-up `.build/Tests-20261106-093533.xcresult`: single-area create/process-relaunch smoke passed after bounded focus acquisition in the test helper (exact text assertions unchanged, no device settings). Opt-in maximum-text/dark image test failed separately; diagnosis/representative layout verification remains in progress. No baseline image pass inferred from the successful area smoke.
 
+</details>
+
+### Hosted CI Handoff (2026-11-06)
+
 **CI handoff closed,2026-11-06:** GitHub's public run/jobs API independently confirms [run42130921302](https://github.com/tljohnson/climbing-notebook/actions/runs/42130921302), attempt1, `main` revision `d742ea63ab2e9c788c8afa2cdd1fedfd053ff636` (also local HEAD), completed successfully2026-11-05 at23:52:08Z. **Build + Unit Tests** job127607010386 and **UI Smoke Tests** job127607009991 both succeeded on `macos-26`; **Manual Extended Tests** was skipped as configured for push. This confirms hosted job outcomes, not independently parsed test counts/toolchain versions or a new full-suite pass. The owner also reports both jobs passed. Prior downloaded-artifact input/query investigation is closed unless a new failure occurs; retain diagnostics and earlier failures, with no further workaround or rerun requested. CF-07E remains Review pending explicit owner milestone acceptance; VoiceOver, backup/restore and historical full-suite limits are unchanged.
+
+<details>
+<summary>Historical hosted-input diagnosis and MVP gate measurements</summary>
 
 **Historical hosted input investigation,2026-11-05 (closed by the passing handoff above):** owner-provided Xcode26.6/iOS26.5 smoke summaries fail1/2 with variable prefix-only values (`Smoke ` before dismissal; previous run failed exact input after dismissal). Earlier failures on18.5 included saved `Saved pitch` versus `Saved pitch note`. These establish input/observation discrepancies, not a proven persistence defect or autocorrection diagnosis. Source review found stable draft IDs, editor-local State, direct native bindings, no per-keystroke resets/normalization or concurrent text writer. Save captures the current draft; native input/binding ordering remains an unproven separate risk, not a justified production change. Local unchanged iPhone17/iOS26.4 baseline `.build/Smoke-input-baseline-iOS26-20261105.xcresult` passes2/2. Exact hosted26.5/Xcode26.6 is unavailable locally. Subsequent input/query investigation used downloaded result artifacts per owner handoff; those downloads remain diagnostics, not staged deliverables. No new artifact analysis was performed for this closeout.
 
@@ -50,7 +77,16 @@ The shared helper previously read one immediate accessibility value after bulk `
 
 **MVP core gate,2026-11-04:** `Scripts/mvp-core-tests.txt` selects75 tests from four complete current/retained-format unit classes and25 explicit functional UI workflows. `Scripts/test-ios.sh` defaults to core; qualification is its complementary selection and all preserves the full scheme. CI explicitly selects core. No test body/assertion or coverage denominator was removed; new functionality must maintain the allowlist. `MVP-core-v1-iOS27-20261104.xcresult` passed86/100 with all75 units passing and14 UI failures clustered in Select All, Retry reachability and virtualized row enumeration. Captured hierarchy/screens showed inherited maximum simulator text size in ordinary tests (including oversized rename/Paste menu). The shared UI launcher now explicitly requests normal Large/light unless a test requests maximum/dark, without changing simulator settings; Retry is revealed before its enabled assertion. No production code change. Complete rerun `.build/MVP-core-v2-iOS27-20261104.xcresult` **passes100/100**, zero skips/expected failures/runtime warnings, on iPhone18Pro/iOS27.0 (`24A434`), Xcode27.1. Actual unchanged combined coverage **3710/4832 (76.78%)**, including extension0/22; >=70% passes, rejection self-test passes. No cross-run percentage merging. Run duration about61 minutes; CI timeout increased to90. Shell syntax/cohort listing/mock argument forwarding, invalid selector rejection and diff checks pass. Qualification/all-tests not rerun; prior failed findings remain. Hosted CI and other runtime/device executions are unverified, software-keyboard evidence remains conditional in existing helpers, and formal owner acceptance is pending. This is a passing local MVP gate, not release/backup/accessibility qualification.
 
-CF-07A's native flow was accepted by Leif on 2026-10-29 (`4591da1`). The 2026-10-31 owner handoff reports CF-07C human testing passed; its committed reading/navigation implementation (`423685d`) is accepted. CF-07B's bounded durable implementation was approved in [§21.4.5](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#2145-cf-07b-approved-ordinary-durable-saverelaunch-slice), but its separate owner acceptance remains pending. These acceptances do not establish M1 completion, migration safety, a complete notebook or release readiness. [Kanban](../WIP_KANBAN.md) owns task status.
+</details>
+
+## Historical Prototype Evidence
+
+<details>
+<summary>Retained CF-07A/B/C/D evidence and compatibility boundaries</summary>
+
+Historical command defaults, coverage gates, UI copy and pending qualification descriptions below are not current instructions. Use Current Reproduction Guidance above; preserve exact recorded results and failed assertions. CF-07B/CF-07D were superseded, not retroactively accepted.
+
+CF-07A's native flow was accepted by Leif on 2026-10-29 (`4591da1`). The 2026-10-31 owner handoff accepts CF-07C (`423685d`). CF-07B's bounded durable scope was approved; no separate acceptance is now requested. These outcomes do not establish M1 completion, migration safety or release readiness.
 
 Browse areas/routes/pitches and read notes without mutation. Previous/Next changes pitch selection; Edit Notes and Edit Pitch Order isolate editing in full-screen workflows. Reordering moves complete stable-ID pitch values, preserving names/notes. Finish Editing/Done explicitly save to a separate fixture store before closing. Cancel confirms discard, failures retain working buffers for Retry, and unacknowledged edits may be lost on termination. A commit can complete just before termination interrupts its UI acknowledgment; only successful explicit saves are presented as saved. Successful load validates fixed identities/relationships without reseeding. The earlier reported notes mismatch was clarified as navigation-versus-reorder confusion, not a reproduced data defect; that accepted separation remains intentional.
 
@@ -70,12 +106,10 @@ CF-07B adds on-disk and state tests for explicit save/reopen, fixed UUID relatio
 
 ## Reproduction
 
-Use [README commands](../../README.md#build-and-test), reverify current simulator availability, and choose fresh result paths. Leif revised the cadence on 2026-10-30: affected focused tests during development on iPhone 18 Pro; one final full unit/UI run each on iPhone 15 and iPhone 18 Pro, superseding redundant focused runs on unchanged code. Tablet iteration is reserved for layout changes. The selected Device Hub destinations are iPhone 15/iOS 17.0, iPhone 18 Pro/iOS 27.0 and iPad (10th generation)/iOS 26.4; UUIDs are in README. No further iPhone Duo suite is planned. Historical Duo/15 Pro/iPad17 runs remain evidence for their actual devices/runtimes, not acceptance for the replacement matrix. Full-run command:
+The original matrix used iPhone 15/iOS 17.0, iPhone 18 Pro/iOS 27.0 and iPad10/iOS26.4; these are historical destinations, not a standing assignment. For an explicitly assigned retained full-scheme reproduction, adapt fresh destinations/paths under the current policy:
 
 ```sh
-SIMULATOR_ID=<verified-UUID> RESULT_BUNDLE_PATH=<new.xcresult> bash Scripts/test-ios.sh -quiet -test-timeouts-enabled YES -maximum-test-execution-time-allowance 300 -collect-test-diagnostics never
-bash Scripts/check-coverage.sh <new.xcresult>
-bash Scripts/check-coverage.sh --self-test
+SIMULATOR_ID="verified-UUID" RESULT_BUNDLE_PATH=".build/new-result.xcresult" bash Scripts/test-ios.sh --suite all -quiet -test-timeouts-enabled YES -maximum-test-execution-time-allowance 300 -collect-test-diagnostics never
 git diff --check
 ```
 
@@ -109,7 +143,7 @@ Limits: final captures are light portrait; attempted dark launch arguments did n
 
 ## CF-07D Current Results
 
-The owner approved §21.5.1 and subsequently directed recording current results, keeping automated tests and moving on (2026-10-31). Implementation is retained, but verification is incomplete and CF-07D is paused in Blocked, not Review/Done or accepted. The running creation batch was stopped at that direction; no follow-up schedules remain. CF-07B acceptance remains separate.
+The owner approved §21.5.1 and stopped incomplete verification on 2026-10-31 with tests retained. The former Blocked status is historical; CF-07D/CF-07B were later superseded with no separate acceptance or resumed qualification requested.
 
 Implemented: existing-area name-only Add/Cancel drafts; actual UUID snapshots/commands; duplicate names, blank metadata and zero pitches; explicit General-note saves; stable-ID retry with reserved/collision rejection; strict additive graph validation and unchanged V1 schema, marker, namespace and initialization policy. No migration, reset/reseed, diagnostic-store adoption or personal data. Added tests remain active in source, not skipped or deleted.
 
@@ -124,15 +158,22 @@ The stricter software-keyboard prerequisite failed in `.build/CF07D-creation-v5-
 
 The v2 reachability reproduction failed; v4 and v7 were interrupted without valid finalized bundles. The final v8 functional batch was still running when the owner ended verification and was explicitly stopped; it supplies no completed pass claim. The four duplicate/Cancel-validation/XXXL/dark scenarios therefore have no completed functional pass under the final helper. Last passing v3 predates the final capture/assertion adjustment. Dark and XXXL screenshots alone do not establish successful flows.
 
-Remaining, not executed/completed: final full suites on both selected phones, both final coverage gates and rejection self-test, selected-iPad touched-layout checks, final complete creation UI coverage, rendered software-keyboard/VoiceOver/physical-device checks and owner acceptance. The two historical CF-04B migration tests remain active and were not run in these focused bundles: `testFailedMigrationRecoversAndRetriesFromIndependentClosedGeneration` and `testOnDiskSyntheticMigrationPreservesRelationshipsAndSavedChangesAfterReopen`. No current CF-04B pass/failure is inferred, and none of the new UI failures is classified as known CF-04B. No valuable-data, migration, backup, actual ENOSPC or crash/power-loss safety claim follows from these results.
+At the stop, full phone suites, coverage/rejection checks, tablet layouts, complete creation UI and device/VoiceOver acceptance were not completed. These are historical gaps, not remaining CF-07D assignments. The two CF-04B methods remain active and were not run in these focused bundles: `testFailedMigrationRecoversAndRetriesFromIndependentClosedGeneration` and `testOnDiskSyntheticMigrationPreservesRelationshipsAndSavedChangesAfterReopen`. No CF-04B outcome is inferred or new UI failure reclassified. No valuable-data, migration, backup, actual ENOSPC or crash/power-loss safety follows.
 
 ## Retained Data Boundary
 
 CF-07B remains limited to existing synthetic fixtures and three durable mutations. Do not accept valuable data, adopt this limited format into a complete library without a reviewed migration, connect diagnostic stores, add creation/deletion or resume archive research under this packet. Generation-replacement, restore and URL-copy gaps gate their dependent features; M1 and release integrity requirements remain unchanged. Incomplete first initialization fails closed with retained files and no repair UI. Physical-device protection/backup, actual full-disk behavior and crash/power-loss durability are not proven by simulator relaunch/fault injection.
 
+</details>
+
 ## CF-07E Text Notebook Milestone
 
-Latest status: **Blocked**, not implementation-complete or owner-acceptance ready. Resumed from clean commit `8c00e04`; see the consolidated disposition below. Historical bundles remain evidence only for their actual source/runtime.
+The milestone is in Review pending owner acceptance; see Kanban. The former blocked qualification record below is historical, governed now by §21.6.8.
+
+<details>
+<summary>Historical CF-07E implementation and qualification evidence</summary>
+
+All dated pending/blocking instructions, runtime recommendations and coverage gates below describe their original phase, not current assignments. Measurements/failures remain valid for their actual source/runtime; they do not establish today's design implementation. Do not restart diagnostic variants from this record.
 
 Owner approved consolidated [§21.6](../../ClimbingNotebook-Offline-iOS-Notebook-Architecture-and-Implementation-FeaturePlan.md#216-consolidated-text-notebook-milestone-approved) on 2026-10-31. The new ordered notebook is a separate initially empty format; legacy content remains retained/read-only and examples are explicitly separate. Its user-created text workflow does not imply sole-copy personal-data safety, backup, migration or recovery acceptance.
 
@@ -172,7 +213,7 @@ Xcode27.1 (`27A9275`), selected iPhone18Pro/iOS27.0 (`24A434`): finalized `CF07E
 
 Final explicit-normal-launch comparison `CF07E-minimal-audits-v74-iOS27-20261104.xcresult` passes2/9 (plain/styled status); native List status reports Contrast nearly passed, and all six editors fail, with12 Dynamic Type,11 contrast and3 near-contrast findings across the failing methods. Zero skips/expected failures/runtime warnings. This differs from inherited-size v73, so preserve launch-condition limits rather than claiming status always passes. Selected iPad10/iOS26.4 (`23E244`) `CF07E-minimal-audits-v75-iPad26-20261104.xcresult` passes2/4: plain/styled status pass, both native editor appearances fail with four Dynamic Type issues total; four existing orientation warnings, zero skips/expected failures. The device/runtime comparison changes both variables and does not isolate an OS regression. Initial v71 logged3/9 but stalled after test completion without finalized Info.plist; it was stopped and is not a finalized result. v72 onward use `-collect-test-diagnostics never` solely to avoid stalled verbose diagnostic collection; audit issue attachments, screenshots and failure reporting remain enabled.
 
-**Disposition:** bounded reproducer delivered, audits not cleared. Native-toolbar findings are now reproducible without notebook state/persistence or custom styling; prepare an Apple reproduction using these exact controls/results, or test the same bounded probes on a separately approved installed destination/toolchain. No external report was submitted. No speculative production palette/font/control change, suppression, waiver or full-suite/coverage claim. Older-iOS automation and paused migration/recovery work remain separate. Independent source review verified isolation/no exclusions and identified fail-fast collection, corrected before v73/v74; rendered-appearance/category verification limits remain explicit.
+**Historical disposition:** bounded reproducer delivered, audits not cleared. An Apple reproduction or another bounded destination comparison was proposed, not assigned; no external report was submitted. §21.6.8 retires the former blocker without declaring a false positive, changing assertions or recommending speculative controls/palette fixes. Independent review verified isolation/no exclusions and corrected fail-fast collection before v73/v74; appearance/category limits remain explicit.
 
 **Owner focused review,2026-11-04:** owner reports successful addition/removal of areas, routes, pitches and notes (General and pitch notes), plus pitch renaming and reordering, in both light and dark mode. Accessibility settings were tested at regular and maximum text sizes; all navigation buttons remained visible, no drafts were lost and no visual issues were reported. **VoiceOver was not tested.** Build, device model, physical-device versus simulator environment and OS version were not supplied; do not infer runtime/device coverage, keyboard-specific checks, live Settings-transition preservation or measured contrast compliance. This establishes successful owner-observed workflows at the reported appearances/text sizes, not an automated audit pass, a false-positive diagnosis, an audit-standard waiver or blanket milestone/release acceptance. Unrestricted Dynamic Type/Contrast failures, older-runtime automation limits and separate migration barriers remain open. Earlier statements that device/accessibility checks are unrun describe the recorded automated qualification or checks beyond this bounded owner report.
 
@@ -197,7 +238,7 @@ The scoped coordinate diagnostic correction checks containment in the actual ava
 
 The two full suites precede this final test-only navigation-bar correction; complete post-correction suites and tablet diagnostics remain unrun. Full-suite totals above are not relabeled green. Coverage includes42 additional first-party lines compared with historical bundles, including gated diagnostics; report raw denominators rather than combining run percentages. Coverage rejection self-test and `git diff --check` pass. Independent internal review found no concrete source defects in the diagnostic diff; runtime verification exposed the covered-bar assumption described above. Original acceptance assertions, audit types,300-second allowance and migration tests are unchanged.
 
-**Implementation versus acceptance:** the complete text-first feature set exists; milestone qualification and owner acceptance remain blocked by unresolved unrestricted27 audits and remaining tooling/device limits. Bounded checks now include twelve cold categories, live app-scene transitions, explicit actual light/dark native Cancel audits and ordinary-touch menu editor transitions. No evidence-supported production font/palette/menu/schema fix was identified. A consequential decision to accept an unresolved27 audit/tool-framework boundary requires the owner's explicit change to the unchanged audit standard, or further diagnostic capability that exposes the evaluated category/color pair; none is assumed. No floor increase, suppression, setting change or acceptance waiver is recommended.
+**Historical implementation versus qualification:** the text-first feature set existed, with unresolved audits/tooling/device limits. Bounded checks included twelve cold categories, live scene transitions, light/dark native Cancel audits and ordinary-touch transitions; no supported font/palette/menu/schema fix was identified. The owner later changed MVP delivery policy (§21.6.8), retiring audit-only blockage without clearing failed results or establishing compliance. Owner milestone acceptance remains separate.
 
 ##### Newest-iOS Interaction Severity Thresholds
 
@@ -234,12 +275,12 @@ Owner decision,2026-11-02: temporarily deprioritize older-iOS accessibility-spec
 | Issue | Affected runtime/evidence | Practical scope and priority |
 | --- | --- | --- |
 | Actions-menu accessibility hit-testing |17.5 v46 and18.6 v34/v37/v40: visible Area/Route/Pitch Actions report invalid hitpoints.17.5 visible-center diagnostics v48/v51 reach all rename/delete/order editors; largest-text Pitch uses native More overflow. | Older-iOS AX targeting remains a known, temporarily lower-priority defect. Simulator touch access to editors is established, not physical-device access or completed structural mutations via touch. Existing AX tests stay active. |
-| Dynamic Type audit |17.5 v35 and27 v42 library failures; earlier editor/tablet findings vary.27 live scene-local XS/Large/AX5/Large transitions pass v56 with retained draft identity and exact bytes. | Older-iOS accessibility-specific remediation temporarily lower priority. The27 unrestricted audit remains an active quality blocker; local live scaling does not prove Settings-driven changes or clear the audit. |
+| Dynamic Type audit |17.5 v35 and27 v42 library failures; earlier editor/tablet findings vary.27 live scene-local XS/Large/AX5/Large transitions pass v56 with retained draft identity and exact bytes. | Historical audit finding retained, not an MVP blocker by itself under §21.6.8; local live scaling does not prove Settings-driven changes or clear the audit. |
 | Cancel contrast audit |27 v42 and explicit light/dark v49 editor audits fail on native Cancel; retained crops show both actual appearances but no audit-evaluated color pair. | Unresolved27 audit finding, not deprioritized. Neither insufficient rendered contrast nor a false positive is established. No palette speculation or native-control replacement. |
 | Injected automation crash |17.5 reports: null-address SIGSEGV in XCTest runtime-issue logging callback; isolated direct workflow passes v36. | Qualification/tooling limitation, not a proven ordinary-use crash or persistence defect. Not classified as a visually impaired-user feature defect. |
 | Migration lifetime barriers | Two unchanged MigrationFeasibilityTests fail in historical full suites and targeted17.5/18.6 comparisons. | Separate migration/recovery limitation, not waived or reprioritized by this decision; paused research stays paused. |
 
-Full17.5 suites/combined coverage have now run with the failed suite and passed coverage result above. Physical-device ordinary-touch/accessibility, Settings-driven transitions and complete post-correction suites/tablet diagnostics remain unrun. Fixed helper timeouts, subpixel geometry and tablet menu targeting are recorded below as corrected, not outstanding bugs. CF-07E remains blocked by unresolved27 audits and tooling/device qualification; owner acceptance and sole-copy personal-data safety are not established.
+The historical17.5 full suite failed despite passing its then-required coverage check. Device/Settings/post-correction full/tablet evidence remained unrun; corrected helper failures are identified below. These limits do not impose audit-only MVP blockage under the later policy. Owner acceptance and sole-copy personal-data safety are not established.
 
 ##### Focused Diagnosis and Fixes, 2026-11-02
 
@@ -374,4 +415,6 @@ Additional decisive bundles under `.build/`, all suffixed `-20261031.xcresult`:
 
 The two baseline migration methods remain active and fail separately. Complete phone suites,combined coverage and changed tablet/audits have now run with the exact failed/passed disposition above. No failed criterion is waived. Hosted CI,physical-device protection,real disk-full/power-loss behavior and backup/restore remain unverified.
 
-Future device checklist using replaceable notes: empty-to-five-pitch creation and full notes; all-kind rename/reorder/delete/cancel; explicit saves then offline force-quit/relaunch; source separation; largest text/light-dark/VoiceOver/real keyboard. This is not a request to accept the blocked build.
+Historical device-check suggestions: replaceable hierarchy/notes, rename/order/delete/cancel, acknowledged saves then offline relaunch, source isolation and representative text/appearance/keyboard/VoiceOver. Select checks by current scope and §21.6.8, not this old blocked handoff.
+
+</details>
