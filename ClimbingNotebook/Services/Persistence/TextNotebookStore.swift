@@ -283,6 +283,9 @@ final class TextNotebookStore {
                 let saved = try loadLocked()
                 noteCleanup(imageFiles.discard(operationID: id, referencedKeys: referencedKeys(saved)))
             } catch {
+                // Drained drafts are abandoned even when references cannot yet be validated.
+                // Release only the registry entry; a later validated load owns reclamation.
+                try? imageFiles.releaseOperation(id)
                 cleanupWarning = "Temporary image files were retained because the notebook could not be validated. Retry loading the notebook before cleanup."
             }
         }

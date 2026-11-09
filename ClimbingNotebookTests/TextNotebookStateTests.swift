@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 import SwiftUI
 import XCTest
 @testable import ClimbingNotebook
@@ -566,6 +567,43 @@ final class TextNotebookStateTests: XCTestCase {
         XCTAssertNil(first.acknowledgedRevision, "A no-op cannot announce another window's save")
         XCTAssertEqual(first.saveStatus, "Loaded from this device")
         try assertDisk(first, equals: external)
+    }
+
+    func testReloadClearsRefreshErrorOnlyAfterSuccessfulSameSourceValidation() throws {
+        let fixture = try populated(), state = fixture.state
+        let store = try XCTUnwrap(state.store), baseline = try XCTUnwrap(state.snapshot)
+        let draft = try edited(state, .general(fixture.routes[0]))
+        let marker = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>()).first)
+        let format = marker.format, markerID = marker.id
+        marker.format = "Unavailable-test-format"
+        try store.context.save()
+        state.refreshSavedImages()
+        let error = try XCTUnwrap(state.loadError)
+        XCTAssertThrowsError(try state.reload(draft))
+        XCTAssertEqual(state.loadError, error)
+        XCTAssertEqual(state.snapshot, baseline)
+        XCTAssertEqual(draft.text, "  Synthetic \u{5ca9} e\u{0301}\nTail\n")
+        XCTAssertThrowsError(try state.submit(draft))
+
+        let restored = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>()).first)
+        restored.format = format
+        restored.id = UUID()
+        try store.context.save()
+        XCTAssertThrowsError(try state.reload(draft), "A valid but different source must not clear the original error")
+        XCTAssertEqual(state.loadError, error)
+        XCTAssertEqual(state.snapshot, baseline)
+        let sameSource = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>()).first)
+        sameSource.id = markerID
+        try store.context.save()
+        var replacement = try state.reload(draft)
+        XCTAssertNil(state.loadError)
+        XCTAssertEqual(replacement.sourceToken, draft.sourceToken)
+        XCTAssertEqual(replacement.text, "")
+        XCTAssertEqual(draft.text, "  Synthetic \u{5ca9} e\u{0301}\nTail\n")
+        replacement.text = "Saved after validated reload"
+        try state.submit(replacement)
+        XCTAssertEqual(state.route(fixture.routes[0])?.notes, replacement.text)
+        try assertDisk(state, equals: XCTUnwrap(state.snapshot))
     }
 
     func testLoadFailureIsNotValidEmptyNotebookAndRetainsUnavailableNamespace() throws {

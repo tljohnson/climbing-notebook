@@ -295,6 +295,7 @@ final class TextNotebookState {
         guard !saving, let store, snapshot?.sourceToken == draft.sourceToken else { throw failure("This editor's original notebook is unavailable.") }
         let loaded = try store.load()
         guard loaded.sourceToken == draft.sourceToken else { throw failure("The notebook source changed. The editor has been retained.") }
+        loadError = nil
         snapshot = loaded
         acknowledgedRevision = nil
         guard var replacement = self.draft(draft.kind) else { throw failure("This item is no longer available. Cancel to return to its parent.") }

@@ -254,6 +254,49 @@ final class TextNotebookImageStateTests: XCTestCase {
         try assertDisk(state, equals: baseline)
     }
 
+    func testFailedRemovalAcknowledgmentBlocksSaveUntilIdempotentRemovalRetry() async throws {
+        for boundary in [TextNotebookImageFiles.Boundary.manifest, .manifestPublished] {
+            let fixture = try populated(), state = fixture.state
+            try state.submitImages(try await ready(fixture))
+            let savedImages = try XCTUnwrap(state.route(fixture.route)).images
+            let baseline = try XCTUnwrap(state.snapshot), store = try XCTUnwrap(state.store)
+            let draft = try await ready(fixture, count: 2)
+            draft.selections[0].caption = "  Remove e\u{0301}\nTail  "
+            draft.selections[1].caption = "Keep ready image  "
+            let selected = draft.selections[0], attachments = draft.attachments
+            let operation = try XCTUnwrap(draft.operationID)
+            let staged = try XCTUnwrap(draft.imageURL(selected))
+            _ = try store.imageFiles.publish(attachments[0].original, operationID: operation)
+            let faulted = try TextNotebookStore(root: state.root, imageFileFault: {
+                if $0 == boundary { throw CocoaError(.fileWriteUnknown) }
+            })
+            draft.removeFile = { try faulted.removeImageSelection(assetID: $0, operationID: $1) }
+            draft.remove(selected.id)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: staged.path))
+            XCTAssertEqual(draft.attachments, attachments, "A failed removal retains identities and exact captions")
+            XCTAssertNotNil(draft.selections[0].removalError)
+            XCTAssertNil(draft.selections[0].error, "Removal recovery is separate from provider retry")
+            XCTAssertNil(draft.imageURL(draft.selections[0]))
+            draft.retry(selected.id)
+            XCTAssertFalse(draft.loading, "Provider Retry must not revive a selection pending removal")
+            XCTAssertFalse(draft.canSave, "Removed bytes must not remain saveable after manifest failure")
+            XCTAssertThrowsError(try state.submitImages(draft))
+            XCTAssertEqual(state.snapshot, baseline)
+            draft.removeFile = { try store.removeImageSelection(assetID: $0, operationID: $1) }
+            draft.remove(selected.id)
+            draft.remove(selected.id)
+            XCTAssertEqual(draft.attachments, [attachments[1]])
+            XCTAssertTrue(draft.canSave)
+            draft.error = "Ordinary save failures must still allow Retry Save"
+            XCTAssertTrue(draft.canSave)
+            try state.submitImages(draft)
+            let reopened = try loaded(root: state.root), reopenedStore = try XCTUnwrap(reopened.store)
+            XCTAssertEqual(reopened.route(fixture.route)?.images, savedImages + [attachments[1]])
+            for image in savedImages + [attachments[1]] { try reopenedStore.imageFiles.validatePublished(image.original) }
+            XCTAssertFalse(FileManager.default.fileExists(atPath: try store.imageFiles.originalURL(attachments[0].original).path))
+        }
+    }
+
     func testManagementCancelNoOpFailureAndRetryPreserveOtherOwner() async throws {
         let fixture = try populated(), state = fixture.state
         try state.submitImages(try await ready(fixture, count: 3))

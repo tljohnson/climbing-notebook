@@ -73,6 +73,39 @@ final class TextNotebookImagePersistenceTests: XCTestCase {
         XCTAssertEqual(try add(store, snapshot: before, route: route, pitchID: nil, operation: operation, values: values), saved)
     }
 
+    func testDiscardWithInvalidGraphReleasesDrainedOperationForValidatedReopen() throws {
+        let (store, before, route, _) = try populated()
+        let (committedOperation, committed) = try staged(store, count: 1)
+        let saved = try add(store, snapshot: before, route: route, pitchID: nil,
+                            operation: committedOperation, values: committed)
+        let (abandonedOperation, abandoned) = try staged(store, count: 1)
+        let abandonedURL = try store.imageFiles.publish(abandoned[0].original, operationID: abandonedOperation)
+        let stagedURL = try store.imageFiles.stagedOriginalURL(abandoned[0].original, operationID: abandonedOperation)
+        let manifest = store.root.appendingPathComponent("Images/Operations/\(abandonedOperation.uuidString).json")
+        let (activeOperation, active) = try staged(store, count: 1)
+        let activeURL = try store.imageFiles.publish(active[0].original, operationID: activeOperation)
+        defer { store.discardImageOperation(activeOperation) }
+        let marker = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>()).first)
+        let format = marker.format
+        marker.format = "Unavailable-test-format"
+        try store.context.save()
+        store.discardImageOperation(abandonedOperation)
+        XCTAssertNotNil(store.cleanupWarning)
+        for url in [abandonedURL, stagedURL, manifest, activeURL] {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: url.path), "No reclamation without validated references")
+        }
+        let restored = try XCTUnwrap(store.context.fetch(FetchDescriptor<TextNotebookSchemaV2.NotebookState>()).first)
+        restored.format = format
+        try store.context.save()
+        let reopened = try TextNotebookStore(root: store.root)
+        XCTAssertEqual(try reopened.load(), saved)
+        for url in [abandonedURL, stagedURL, manifest] {
+            XCTAssertFalse(FileManager.default.fileExists(atPath: url.path), "Validated reopen reclaims only abandoned ownership")
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: activeURL.path))
+        try reopened.imageFiles.validatePublished(committed[0].original)
+    }
+
     func testManageOrderCaptionRemovalAndParentDeletePreserveOtherOwner() throws {
         let (store, before, route, pitch) = try populated()
         let (routeOp, routeValues) = try staged(store)

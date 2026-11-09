@@ -15,6 +15,7 @@ final class TextNotebookImageDraft: Identifiable {
         var caption: String
         var original: TextImageOriginal?
         var error: String?
+        var removalError: String?
         var loading: Bool
     }
 
@@ -63,7 +64,9 @@ final class TextNotebookImageDraft: Identifiable {
         }
     }
     var canSave: Bool {
-        !cancelled && !loading && selections.allSatisfy { $0.original != nil && $0.error == nil && $0.caption.count <= 120 }
+        !cancelled && !loading && selections.allSatisfy {
+            $0.original != nil && $0.error == nil && $0.removalError == nil && $0.caption.count <= 120
+        }
             && (!adding || !selections.isEmpty)
     }
     var availableSelectionCount: Int { max(0, min(10 - selections.count, 20 - existingCount - selections.count)) }
@@ -84,7 +87,8 @@ final class TextNotebookImageDraft: Identifiable {
     }
 
     func retry(_ id: UUID) {
-        guard let index = selections.firstIndex(where: { $0.id == id }), !selections[index].loading else { return }
+        guard let index = selections.firstIndex(where: { $0.id == id }), !selections[index].loading,
+              selections[index].removalError == nil else { return }
         selections[index].error = nil; selections[index].loading = true
         startLoading()
     }
@@ -96,7 +100,11 @@ final class TextNotebookImageDraft: Identifiable {
         do {
             if let operationID { try removeFile?(item.assetID, operationID) }
             selections.removeAll { $0.id == id }
-        } catch { self.error = error.localizedDescription }
+        } catch {
+            if let index = selections.firstIndex(where: { $0.id == id }) {
+                selections[index].removalError = error.localizedDescription
+            }
+        }
     }
 
     func move(_ id: UUID, by amount: Int) {
@@ -105,7 +113,7 @@ final class TextNotebookImageDraft: Identifiable {
     }
 
     func imageURL(_ selection: Selection) -> URL? {
-        guard let original = selection.original else { return nil }
+        guard selection.removalError == nil, let original = selection.original else { return nil }
         if let operationID { return try? files.stagedOriginalURL(original, operationID: operationID) }
         return try? files.originalURL(original)
     }
@@ -263,8 +271,8 @@ struct TextNotebookImageEditor: View {
                     }
                 }
                 Section(draft.adding ? "Review Images" : "Saved Image Order") {
-                    ForEach(draft.selections.filter { $0.error != nil }) { item in selection(item) }
-                    ForEach(draft.selections.filter { $0.error == nil }) { item in selection(item) }
+                    ForEach(draft.selections.filter { $0.error != nil || $0.removalError != nil }) { item in selection(item) }
+                    ForEach(draft.selections.filter { $0.error == nil && $0.removalError == nil }) { item in selection(item) }
                         .onMove { indices, offset in
                             if !draft.adding { draft.selections.move(fromOffsets: indices, toOffset: offset) }
                         }
@@ -344,7 +352,11 @@ struct TextNotebookImageEditor: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Image \(index + 1) of \(draft.selections.count)").font(.headline)
             if item.loading { ProgressView("Loading image…") }
-            if let error = item.error {
+            if let error = item.removalError {
+                Text("Selection removal did not finish. Retry Remove Selection before saving.")
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(error).fixedSize(horizontal: false, vertical: true)
+            } else if let error = item.error {
                 Text(error).fixedSize(horizontal: false, vertical: true)
                 Button("Retry") { draft.retry(item.id) }.frame(minHeight: 44)
                     .accessibilityLabel("Retry Image \(index + 1)")
