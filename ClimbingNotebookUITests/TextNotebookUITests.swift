@@ -84,17 +84,19 @@ final class TextNotebookUITests: XCTestCase {
 
     private func foregroundList(_ app: XCUIApplication) -> XCUIElement? {
         // Identifier queries re-resolve after navigation/modal transitions; captured indexes do not.
-        let identifiers = ["textEditorForm", "textRoutePitches", "textAreaRoutes", "textExamplesLibrary", "textLibrary"]
+        let identifiers = ["textEditorContextScroll", "textEditorForm", "textRoutePitches", "textAreaRoutes", "textExamplesLibrary", "textLibrary"]
         let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             identifiers.contains { identifier in
                 let list = app.collectionViews[identifier]
-                return list.exists
+                return list.exists || app.scrollViews[identifier].exists
             }
         }, object: app)
         _ = XCTWaiter.wait(for: [ready], timeout: 5)
         for identifier in identifiers {
             let list = app.collectionViews[identifier]
             if list.exists { return list }
+            let scroll = app.scrollViews[identifier]
+            if scroll.exists { return scroll }
         }
         return nil
     }
@@ -186,8 +188,15 @@ final class TextNotebookUITests: XCTestCase {
 
     private func assertClosed(_ app: XCUIApplication) {
         let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
-                                               object: app.staticTexts["textEditorSaveState"])
+                                               object: app.staticTexts["textEditorContext"])
         XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 5), .completed)
+    }
+
+    private func assertNoEditorStatus(_ app: XCUIApplication) {
+        XCTAssertTrue(app.staticTexts["textEditorContext"].exists)
+        let absent = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                               object: app.staticTexts["textEditorSaveState"])
+        XCTAssertEqual(XCTWaiter.wait(for: [absent], timeout: 5), .completed)
     }
 
     private func assertState(_ app: XCUIApplication, _ text: String) {
@@ -249,7 +258,7 @@ final class TextNotebookUITests: XCTestCase {
         // typeText returning is not an accessibility-value publication barrier.
         // Await delivery without adding keystrokes, repairing text or retrying the test.
         guard assertInput(text, stage: "After typing, before keyboard dismissal") else { return }
-        tap(app.buttons["Dismiss keyboard"], in: app)
+        if app.buttons["Hide Keyboard"].exists { app.buttons["Hide Keyboard"].tap() }
         _ = assertInput(text, stage: "After keyboard dismissal, before Save or Cancel")
     }
 
@@ -259,12 +268,17 @@ final class TextNotebookUITests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 3))
         XCTAssertEqual(field.label, action == "Add Pitch" ? "Name, optional" : "Name, required")
         assertConciseSaveEditor(app)
+        assertNoEditorStatus(app)
         fill(field, with: name, in: app)
     }
 
     private func assertConciseSaveEditor(_ app: XCUIApplication) {
         XCTAssertTrue(app.navigationBars.buttons["Save"].exists)
         XCTAssertFalse(app.buttons["Finish Editing"].exists)
+        XCTAssertFalse(app.staticTexts["Plain-Text Notes"].exists)
+        XCTAssertFalse(app.staticTexts["Sibling Order"].exists)
+        XCTAssertFalse(app.staticTexts["Editing"].exists)
+        XCTAssertFalse(app.buttons["Hide Keyboard"].exists)
         XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "metadata is unchanged")).firstMatch.exists)
         XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Only ")).firstMatch.exists)
     }
@@ -273,6 +287,10 @@ final class TextNotebookUITests: XCTestCase {
         // v2 captured index zero before the modal existed, permanently querying the covered root.
         XCTAssertTrue(app.collectionViews["textEditorForm"].waitForExistence(timeout: 5))
         let form = app.collectionViews["textEditorForm"]
+        if !form.descendants(matching: .any).matching(identifier: "textNameEditor").firstMatch.exists {
+            // Full wrapping context can virtualize the input below the first viewport.
+            form.swipeUp()
+        }
         let field = form.textFields["textNameEditor"].firstMatch
         return field.exists ? field : form.textViews["textNameEditor"].firstMatch
     }
@@ -967,6 +985,98 @@ final class TextNotebookUITests: XCTestCase {
         capture(app, "Single-area process readback")
     }
 
+    func testSharedEditorAlignmentLight() {
+        checkSharedEditorAlignment(accessibility: false, dark: false)
+    }
+
+    func testSharedEditorAlignmentLargestTextDark() {
+        checkSharedEditorAlignment(accessibility: true, dark: true)
+    }
+
+    private func checkSharedEditorAlignment(accessibility: Bool, dark: Bool) {
+        let app = application(accessibility: accessibility, dark: dark)
+        app.launch()
+        assertLibrary(app)
+        let areaName = "Synthetic Cafe\u{301} area"
+        let routeName = "Synthetic long route with a complete contextual name"
+        let pitchName = "Open book with a complete authored pitch name"
+        let area = create(app, kind: "area", name: areaName)
+        tap(app.buttons[area], in: app)
+        let route = create(app, kind: "route", name: routeName)
+        tap(app.buttons[route], in: app)
+        let first = create(app, kind: "pitch", name: pitchName)
+        let second = create(app, kind: "pitch", name: "")
+        relaunch(app, failSave: true)
+        tap(app.buttons[area], in: app)
+        tap(app.buttons[route], in: app)
+        tap(app.buttons[first], in: app)
+        actions(app, kind: "Pitch", action: "Rename")
+        XCTAssertEqual(nameField(app).label, "Name, optional")
+        assertNoEditorStatus(app)
+        XCTAssertEqual(app.staticTexts["textEditorContext"].label,
+                       "Notebook / \(areaName) / \(routeName) / Pitch 1: \(pitchName)")
+        capture(app, "Shared name editor \(dark ? "largest dark" : "default light")")
+        tap(app.buttons["Cancel"], in: app)
+        assertClosed(app)
+        tap(app.buttons["Edit Notes"], in: app)
+        assertConciseSaveEditor(app)
+        assertNoEditorStatus(app)
+        let editor = app.textViews["textNoteEditor"]
+        let context = app.staticTexts["textEditorContext"]
+        let contextScroll = app.scrollViews["textEditorContextScroll"]
+        XCTAssertLessThanOrEqual(contextScroll.frame.maxY, editor.frame.minY)
+        XCTAssertEqual(context.label, "Notebook / \(areaName) / \(routeName) / Pitch 1: \(pitchName)")
+        let text = "Cafe\u{301} / 雪 / exact plain text\nSecond line\nReturn does not save."
+        fill(editor, with: text, in: app)
+        XCTAssertTrue(app.navigationBars["Edit Notes"].exists)
+        XCTAssertEqual(Array((editor.value as? String ?? "").utf8), Array(text.utf8))
+        tap(editor, in: app)
+        let keys = app.keyboards.keys.allElementsBoundByIndex.filter { $0.isHittable && app.frame.intersects($0.frame) }
+        if keys.isEmpty {
+            let limitation = XCTAttachment(string: "No hittable software keyboard keys rendered. Functional multiline typing and explicit Save asserted; keyboard-associated control visibility unverified. No simulator settings changed.")
+            limitation.name = "Shared editor keyboard limit"
+            limitation.lifetime = .keepAlways
+            add(limitation)
+        } else {
+            XCTAssertTrue(app.buttons["Hide Keyboard"].isHittable)
+        }
+        capture(app, "Shared note focused \(dark ? "largest dark" : "default light")")
+        if app.buttons["Hide Keyboard"].exists { app.buttons["Hide Keyboard"].tap() }
+        tap(app.buttons["Save"], in: app)
+        assertFailure(app)
+        XCTAssertEqual(Array((editor.value as? String ?? "").utf8), Array(text.utf8))
+        let retry = app.buttons["Retry"]
+        reveal(retry, in: app)
+        XCTAssertLessThanOrEqual(contextScroll.frame.maxY, editor.frame.minY)
+        XCTAssertTrue(retry.isHittable)
+        XCTAssertLessThanOrEqual(retry.frame.intersection(contextScroll.frame).maxY, editor.frame.minY)
+        capture(app, "Shared note failure above input \(dark ? "largest dark" : "default light")")
+        tap(retry, in: app)
+        assertClosed(app)
+        XCTAssertEqual(app.staticTexts["textPitchNotes"].label, text)
+        back(app)
+        beginOrder(app, kind: "Pitch")
+        assertNoEditorStatus(app)
+        let up = app.buttons["move-up-\(recordID(first))"]
+        XCTAssertFalse(up.isEnabled)
+        XCTAssertEqual(up.label, "Move \(pitchName) Up")
+        capture(app, "Shared order \(dark ? "largest dark" : "default light")")
+        move(app, id: second, direction: "up")
+        tap(app.buttons["Save"], in: app)
+        assertClosed(app)
+        tap(app.buttons[first], in: app)
+        actions(app, kind: "Pitch", action: "Delete")
+        assertNoEditorStatus(app)
+        XCTAssertFalse(app.navigationBars.buttons["Delete"].exists)
+        let delete = app.buttons["textConfirmDeletion"]
+        reveal(delete, in: app)
+        XCTAssertEqual(delete.label, "Delete Pitch")
+        capture(app, "Shared deletion \(dark ? "largest dark" : "default light")")
+        tap(app.buttons["Cancel"], in: app)
+        assertClosed(app)
+        XCTAssertEqual(app.staticTexts["textPitchNotes"].label, text)
+    }
+
     func testCanceledAndTerminatedGeneralNotesRetainAcknowledgedGraph() {
         let app = application()
         app.launch()
@@ -1118,7 +1228,8 @@ final class TextNotebookUITests: XCTestCase {
         tap(app.buttons[area], in: app)
         let route = create(app, kind: "route", name: "Delete route")
         actions(app, kind: "Area", action: "Delete")
-        XCTAssertFalse(app.buttons["Delete"].exists)
+        assertNoEditorStatus(app)
+        XCTAssertFalse(app.buttons["textConfirmDeletion"].exists)
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "contains 1 routes")).firstMatch.exists)
         tap(app.buttons["Cancel"], in: app)
         assertClosed(app)
@@ -1136,7 +1247,7 @@ final class TextNotebookUITests: XCTestCase {
         assertClosed(app)
         XCTAssertFalse(app.buttons["Previous Pitch"].isEnabled)
         actions(app, kind: "Pitch", action: "Delete")
-        tap(app.buttons["Delete"], in: app)
+        tap(app.buttons["textConfirmDeletion"], in: app)
         assertClosed(app)
         XCTAssertEqual(app.staticTexts["textPitchNotes"].label, "Retained until last pitch deletion")
         XCTAssertFalse(app.buttons["Previous Pitch"].isEnabled)
@@ -1150,7 +1261,7 @@ final class TextNotebookUITests: XCTestCase {
         tap(app.buttons[route], in: app)
         tap(app.buttons[last], in: app)
         actions(app, kind: "Pitch", action: "Delete")
-        tap(app.buttons["Delete"], in: app)
+        tap(app.buttons["textConfirmDeletion"], in: app)
         assertClosed(app)
         XCTAssertTrue(app.buttons["Edit General Notes"].exists)
         XCTAssertTrue(rowIDs(app, kind: "pitch").isEmpty)
@@ -1159,14 +1270,14 @@ final class TextNotebookUITests: XCTestCase {
         tap(app.buttons["Cancel"], in: app)
         assertClosed(app)
         actions(app, kind: "Route", action: "Delete")
-        tap(app.buttons["Delete"], in: app)
+        tap(app.buttons["textConfirmDeletion"], in: app)
         assertClosed(app)
         XCTAssertTrue(rowIDs(app, kind: "route").isEmpty)
         actions(app, kind: "Area", action: "Delete")
         tap(app.buttons["Cancel"], in: app)
         assertClosed(app)
         actions(app, kind: "Area", action: "Delete")
-        tap(app.buttons["Delete"], in: app)
+        tap(app.buttons["textConfirmDeletion"], in: app)
         assertClosed(app)
         for _ in 0..<2 {
             relaunch(app)
@@ -1174,7 +1285,7 @@ final class TextNotebookUITests: XCTestCase {
         }
         tap(app.buttons[survivor.id], in: app)
         actions(app, kind: "Area", action: "Delete")
-        tap(app.buttons["Delete"], in: app)
+        tap(app.buttons["textConfirmDeletion"], in: app)
         assertClosed(app)
         relaunch(app)
         XCTAssertTrue(app.staticTexts["No areas entered"].exists)
@@ -1243,7 +1354,7 @@ final class TextNotebookUITests: XCTestCase {
         XCTAssertEqual(app.textViews["textNoteEditor"].value as? String, "Failed buffer retained")
         tap(app.buttons["Reload Saved Version"], in: app)
         app.buttons["Reload and Discard Changes"].tap()
-        assertState(app, "No unsaved changes")
+        assertNoEditorStatus(app)
         XCTAssertEqual(app.textViews["textNoteEditor"].value as? String, saved)
         tap(app.buttons["Save"], in: app)
         assertClosed(app)
@@ -1354,11 +1465,11 @@ final class TextNotebookUITests: XCTestCase {
             actions(app, kind: kind, action: "Delete")
             reveal(app.staticTexts["textEditorContext"], in: app)
             let context = app.staticTexts["textEditorContext"].label
-            tap(app.buttons["Delete"], in: app)
+            tap(app.buttons["textConfirmDeletion"], in: app)
             assertFailure(app)
             reveal(app.staticTexts["textEditorContext"], in: app)
             XCTAssertEqual(app.staticTexts["textEditorContext"].label, context)
-            XCTAssertTrue(app.buttons["Delete"].exists)
+            XCTAssertTrue(app.buttons["textConfirmDeletion"].exists)
             // Cancel after failed staging, then process-reopen to prove the acknowledged item survived.
             tap(app.buttons["Cancel"], in: app)
             assertClosed(app)
@@ -1370,7 +1481,7 @@ final class TextNotebookUITests: XCTestCase {
                 XCTAssertEqual(app.staticTexts["textPitchNotes"].label, "Pitch retry exact\nSecond line.")
             }
             actions(app, kind: kind, action: "Delete")
-            tap(app.buttons["Delete"], in: app)
+            tap(app.buttons["textConfirmDeletion"], in: app)
             assertFailure(app)
             tap(app.buttons["Retry"], in: app)
             assertClosed(app)
@@ -1495,12 +1606,12 @@ final class TextNotebookUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["textPitchRouteIdentity"].label, routeName)
         XCTAssertTrue(app.buttons["Next Pitch"].isHittable)
         tap(app.buttons["Edit Notes"], in: app)
-        for label in ["Dismiss keyboard", "Save", "Cancel"] {
+        for label in ["Save", "Cancel"] {
             reveal(app.buttons[label], in: app)
             XCTAssertTrue(app.buttons[label].isHittable)
         }
         reveal(app.staticTexts["textEditorContext"], in: app)
-        XCTAssertEqual(app.staticTexts["textEditorContext"].label, "\(routeName) / \(pitchName)")
+        XCTAssertEqual(app.staticTexts["textEditorContext"].label, "Notebook / Boundary names / \(routeName) / Pitch 1: \(pitchName)")
         capture(app, "AXXXL full 500-character route and pitch editor context")
         tap(app.buttons["Cancel"], in: app)
         assertClosed(app)
@@ -1538,14 +1649,14 @@ final class TextNotebookUITests: XCTestCase {
         app.buttons["Next Pitch"].tap()
         XCTAssertEqual(app.staticTexts["textPitchIdentity"].label, "Middle deleted")
         actions(app, kind: "Pitch", action: "Delete")
-        tap(app.buttons["Delete"], in: app)
+        tap(app.buttons["textConfirmDeletion"], in: app)
         assertClosed(app)
         XCTAssertEqual(app.staticTexts["textPitchIdentity"].label, "Last next")
         XCTAssertEqual(app.staticTexts["textPitchNotes"].label, "Last UUID notes")
         XCTAssertTrue(app.buttons["Previous Pitch"].isEnabled)
         XCTAssertFalse(app.buttons["Next Pitch"].isEnabled)
         actions(app, kind: "Pitch", action: "Delete")
-        tap(app.buttons["Delete"], in: app)
+        tap(app.buttons["textConfirmDeletion"], in: app)
         assertClosed(app)
         XCTAssertEqual(app.staticTexts["textPitchIdentity"].label, "First survivor")
         XCTAssertEqual(app.staticTexts["textPitchNotes"].label, "First UUID notes")
@@ -1984,10 +2095,10 @@ final class TextNotebookUITests: XCTestCase {
             add(limitation)
             capture(app, "Focused editor without rendered software keys")
         } else {
-            XCTAssertTrue(app.buttons["Dismiss keyboard"].isHittable)
+            XCTAssertTrue(app.buttons["Hide Keyboard"].isHittable)
             capture(app, "Rendered software keyboard and reachable dismissal")
         }
-        tap(app.buttons["Dismiss keyboard"], in: app)
+        if app.buttons["Hide Keyboard"].exists { app.buttons["Hide Keyboard"].tap() }
         discard(app)
         XCTAssertEqual(app.staticTexts["textPitchNotes"].label, text)
         back(app)

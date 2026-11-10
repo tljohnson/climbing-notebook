@@ -537,7 +537,79 @@ private struct TextNotebookEditor: View {
     @State private var saving = false
     @State private var discard = false
     @State private var reload = false
+    @State private var editorContext: String?
+    @State private var deletionIdentity: String?
     @FocusState private var focused: Bool
+
+    // Capture display context once from this draft's source, not a later selection or notebook.
+    private func captureContext() {
+        guard editorContext == nil else { return }
+        let source = notebook.source == .notebook ? "Notebook" : "Example Notebook"
+        var parts = [source]
+        var areaID: UUID?
+        var routeID: UUID?
+        var pitchID: UUID?
+        switch draft.kind {
+        case .addArea, .areas: parts.append("Library")
+        case .addRoute(let id), .routes(let id), .renameArea(let id), .deleteArea(let id): areaID = id
+        case .addPitch(let id), .pitches(let id), .general(let id): routeID = id
+        case .renameRoute(let area, let route), .deleteRoute(let area, let route):
+            areaID = area; routeID = route
+        case .notes(let route, let pitch), .renamePitch(let route, let pitch), .deletePitch(let route, let pitch):
+            routeID = route; pitchID = pitch
+        }
+        guard notebook.snapshot?.sourceToken == draft.sourceToken else {
+            editorContext = draft.context
+            return
+        }
+        if let routeID, let route = notebook.route(routeID) { areaID = route.areaID }
+        if let areaID, let area = notebook.area(areaID) {
+            parts.append(area.name)
+            deletionIdentity = area.name
+        }
+        if let routeID, let route = notebook.route(routeID) {
+            parts.append(route.name)
+            deletionIdentity = route.name
+            if case .general = draft.kind { parts.append("General") }
+            if let pitchID, let index = route.pitches.firstIndex(where: { $0.id == pitchID }) {
+                let pitch = route.pitches[index]
+                let name = TextNotebookState.pitchName(pitch, index: index)
+                let identity = pitch.name.isEmpty ? name : "Pitch \(index + 1): \(name)"
+                parts.append(identity)
+                deletionIdentity = identity
+            }
+        }
+        editorContext = parts.joined(separator: " / ")
+    }
+
+    private var contextAndStatus: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(editorContext ?? draft.context)
+                .font(.subheadline).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("textEditorContext")
+            if saving || error != nil || (!draft.isDeletion && draft.dirty) {
+                Text(saving ? (draft.isDeletion ? "Deleting" : "Saving") : error != nil ? "Not saved - retry" : "Unsaved changes")
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("textEditorSaveState")
+            }
+            if let error {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("textEditorError")
+                ViewThatFits(in: .horizontal) {
+                    HStack {
+                        Button("Retry") { finish() }.frame(minHeight: 44)
+                        Button("Reload Saved Version") { reload = true }.frame(minHeight: 44)
+                    }
+                    VStack(alignment: .leading) {
+                        Button("Retry") { finish() }.frame(minHeight: 44)
+                        Button("Reload Saved Version") { reload = true }.frame(minHeight: 44)
+                    }
+                }.buttonStyle(.bordered)
+            }
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
 
     private var blockedDeletion: Bool {
         if case .deleteArea(let id) = draft.kind { return notebook.area(id)?.routes.isEmpty == false }
@@ -561,18 +633,45 @@ private struct TextNotebookEditor: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                if !draft.isOrder && !draft.isDeletion {
-                    Button("Hide Keyboard") {
-                        focused = false
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                    }.frame(minHeight: 44).accessibilityLabel("Dismiss keyboard")
-                }
+            GeometryReader { geometry in
+                if draft.isNotes {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ScrollView {
+                            contextAndStatus.padding(.horizontal).padding(.top, 8)
+                        }
+                        .accessibilityIdentifier("textEditorContextScroll")
+                        .frame(maxHeight: geometry.size.height * 0.4)
+                        .fixedSize(horizontal: false, vertical: true)
+                        TextEditor(text: $draft.text).focused($focused)
+                            .font(.body)
+                            .scrollContentBackground(.hidden)
+                            .padding(8)
+                            .background(TextNotebookPalette.surface, in: RoundedRectangle(cornerRadius: 12))
+                            .padding(.horizontal).padding(.bottom, 8)
+                            .accessibilityLabel(draft.title).accessibilityIdentifier("textNoteEditor")
+                    }
+                    .background(TextNotebookPalette.canvas)
+                } else {
                 Form {
+                    Section {
+                        contextAndStatus
+                    }.listRowBackground(Color.clear).listRowSeparator(.hidden)
                     if draft.isDeletion {
-                        Section("Confirm Deletion") { Text(draft.warning).fixedSize(horizontal: false, vertical: true) }
+                        Section {
+                            Text(deletionIdentity ?? draft.context).font(.title2.weight(.bold))
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(draft.warning).fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("textDeletionConsequences")
+                            if !blockedDeletion {
+                                Button(draft.title, role: .destructive) { finish() }
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                                    .buttonStyle(.borderedProminent).tint(.red)
+                                    .foregroundStyle(.white)
+                                    .accessibilityIdentifier("textConfirmDeletion")
+                            }
+                        }.listRowBackground(Color.clear).listRowSeparator(.hidden)
                     } else if draft.isOrder {
-                        Section("Sibling Order") {
+                        Section {
                             ForEach(Array(draft.order.enumerated()), id: \.element) { index, id in
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("\(index + 1). \(draft.labels[id] ?? "Unavailable item")").font(.headline)
@@ -581,23 +680,18 @@ private struct TextNotebookEditor: View {
                                         .accessibilityValue("Position \(index + 1) of \(draft.order.count)")
                                         .accessibilityAction(named: "Move \(draft.labels[id] ?? "item") Up") { draft.move(id, by: -1) }
                                         .accessibilityAction(named: "Move \(draft.labels[id] ?? "item") Down") { draft.move(id, by: 1) }
-                                    VStack(alignment: .leading) {
-                                        Button("Move Up") { draft.move(id, by: -1) }
-                                            .disabled(index == 0).frame(minHeight: 44)
-                                            .accessibilityLabel("Move \(draft.labels[id] ?? "item") Up")
-                                            .accessibilityIdentifier("move-up-\(id.uuidString)")
-                                        Button("Move Down") { draft.move(id, by: 1) }
-                                            .disabled(index + 1 == draft.order.count).frame(minHeight: 44)
-                                            .accessibilityLabel("Move \(draft.labels[id] ?? "item") Down")
-                                            .accessibilityIdentifier("move-down-\(id.uuidString)")
+                                    ViewThatFits(in: .horizontal) {
+                                        HStack {
+                                            moveButton(id, index: index, up: true)
+                                            moveButton(id, index: index, up: false)
+                                        }
+                                        VStack(alignment: .leading) {
+                                            moveButton(id, index: index, up: true)
+                                            moveButton(id, index: index, up: false)
+                                        }
                                     }.buttonStyle(.bordered)
                                 }
                             }.onMove { draft.order.move(fromOffsets: $0, toOffset: $1) }
-                        }
-                    } else if draft.isNotes {
-                        Section("Plain-Text Notes") {
-                            TextEditor(text: $draft.text).frame(minHeight: 300).focused($focused)
-                                .accessibilityLabel(draft.title).accessibilityIdentifier("textNoteEditor")
                         }
                     } else {
                         Section {
@@ -609,39 +703,37 @@ private struct TextNotebookEditor: View {
                                 .accessibilityLabel(draft.nameRequired ? "Name, required" : "Name, optional")
                         }
                     }
-                    Section {
-                        Text(saving ? "Saving" : error != nil ? "Not saved - retry" : draft.dirty ? "Unsaved changes" : draft.isCreation ? "Not added yet" : "No unsaved changes")
-                            .accessibilityIdentifier("textEditorSaveState")
-                        if let error {
-                            Label(error, systemImage: "exclamationmark.triangle")
-                            Button("Retry") { finish() }.frame(minHeight: 44)
-                            Button("Reload Saved Version") { reload = true }.frame(minHeight: 44)
-                        }
-                    }
-                    Section("Editing") {
-                        Text(draft.context).font(.headline).fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("textEditorContext")
-                    }
                 }
                 .accessibilityIdentifier("textEditorForm")
                 .modifier(TextNotebookListStyle())
                 .scrollDismissesKeyboard(.interactively)
                 .environment(\.editMode, draft.isOrder ? .constant(.active) : nil)
+                }
             }
             .disabled(saving)
-            .navigationTitle(draft.title).navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(draft.isNotes ? "Edit Notes" : draft.title).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", role: .cancel) { if draft.dirty { discard = true } else { dismiss() } }
                         .disabled(saving)
                 }
-                if !blockedDeletion {
+                if !draft.isDeletion {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(draft.completion, role: draft.isDeletion ? .destructive : nil) { finish() }
+                        Button("Save") { finish() }
                             .disabled(saving)
                     }
                 }
+                ToolbarItemGroup(placement: .keyboard) {
+                    if !draft.isOrder && !draft.isDeletion {
+                        Spacer()
+                        Button("Hide Keyboard") {
+                            focused = false
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }.accessibilityLabel("Hide Keyboard")
+                    }
+                }
             }
+            .onAppear { captureContext() }
         }
         .tint(TextNotebookPalette.action)
         .safeAreaInset(edge: .bottom) {
@@ -657,10 +749,21 @@ private struct TextNotebookEditor: View {
         }
         .alert("Discard changes and reload saved version?", isPresented: $reload) {
             Button("Reload and Discard Changes", role: .destructive) {
-                do { draft = try notebook.reload(draft); error = nil }
+                do {
+                    draft = try notebook.reload(draft); error = nil
+                    editorContext = nil; captureContext()
+                }
                 catch { self.error = error.localizedDescription }
             }
             Button("Keep Editing", role: .cancel) { }
         }
+    }
+
+    private func moveButton(_ id: UUID, index: Int, up: Bool) -> some View {
+        Button(up ? "Move Up" : "Move Down") { draft.move(id, by: up ? -1 : 1) }
+            .disabled(up ? index == 0 : index + 1 == draft.order.count)
+            .frame(minHeight: 44)
+            .accessibilityLabel("Move \(draft.labels[id] ?? "item") \(up ? "Up" : "Down")")
+            .accessibilityIdentifier("move-\(up ? "up" : "down")-\(id.uuidString)")
     }
 }
